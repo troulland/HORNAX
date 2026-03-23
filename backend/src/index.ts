@@ -28,7 +28,7 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', service: 'hornax-api', timestamp: new Date().toISOString() })
 })
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`\n⚡ HORNAX API running on http://localhost:${PORT}`)
   console.log(`   Health: http://localhost:${PORT}/api/health\n`)
 })
