@@ -101,7 +101,7 @@ const boGroups = computed<BoGroup[]>(() => {
 
 const ROLE_ORDER = ['top', 'jgl', 'mid', 'adc', 'sup', 'sub', 'coach', 'manager']
 const rosterPlayers = computed(() =>
-  [...team.roster].sort(
+  [...team.roster].filter(p => !['coach', 'manager'].includes(p.game_role)).sort(
     (a, b) => ROLE_ORDER.indexOf(a.game_role) - ROLE_ORDER.indexOf(b.game_role)
   )
 )
