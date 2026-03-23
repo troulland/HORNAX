@@ -114,13 +114,19 @@ async function search() {
   }
 }
 
+function queueToType(queueId: number): 'scrim' | 'tournament' | 'official' {
+  if ([420, 440].includes(queueId)) return 'official'    // Ranked Solo/Duo, Ranked Flex
+  if (queueId === 0)                return 'tournament'  // Custom
+  return 'scrim'                                         // Normal, ARAM, etc.
+}
+
 async function importAsMatch(m: RiotMatch) {
   importing.value = m.matchId
   const created = await matchStore.createMatch({
     opponent:   'Adversaire inconnu',
     date:       m.date,
     time:       null,
-    type:       'scrim',
+    type:       queueToType(m.queueId),
     result:     m.win ? 'win' : 'loss',
     notes:      `Import Riot — ${m.champion} ${m.kills}/${m.deaths}/${m.assists} (${m.queueLabel}, ${m.duration}min)`,
     riot_data:  m.riotData ? JSON.stringify(m.riotData) : null,

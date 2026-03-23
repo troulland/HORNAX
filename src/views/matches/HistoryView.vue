@@ -333,45 +333,44 @@ async function saveEdit() {
         <!-- ── Game row (riot_data imported) ── -->
         <div
           v-if="getPersonalParticipant(m)"
-          class="hist__game-row"
-          :class="{ 'hist__game-row--selected': isSelected(m.id) }"
+          class="hist__row hist__row--game"
+          :class="{ 'hist__row--selected': isSelected(m.id) }"
         >
           <span class="hist__cb-col">
             <button class="hist__cb" :class="{ 'hist__cb--checked': isSelected(m.id) }" @click.stop="toggleSelect(m.id)" />
           </span>
-          <!-- Champ icon + name -->
-          <div class="hist__game-champ">
+          <!-- RÉS. -->
+          <span class="hist__badge" :class="getPersonalParticipant(m)!.win ? 'hist__badge--win' : 'hist__badge--loss'">
+            {{ getPersonalParticipant(m)!.win ? 'V' : 'D' }}
+          </span>
+          <!-- DATE -->
+          <span class="hist__date">{{ fmtDate(m.date) }}</span>
+          <!-- ADVERSAIRE → champion joué -->
+          <span class="hist__opp">
             <div class="hist__game-champ-wrap" :class="getPersonalParticipant(m)!.win ? 'hist__game-champ-wrap--win' : 'hist__game-champ-wrap--loss'">
               <img :src="champIcon(getPersonalParticipant(m)!.champion)" :alt="getPersonalParticipant(m)!.champion"
                 class="hist__game-champ-img" @error="($event.target as HTMLImageElement).src='/logo.png'" />
             </div>
             <div class="hist__game-champ-info">
               <span class="hist__game-champ-name">{{ getPersonalParticipant(m)!.champion }}</span>
-              <span class="hist__game-champ-role">{{ queueLabel(m) }}</span>
+              <span class="hist__game-champ-kda">{{ getPersonalParticipant(m)!.kills }}/{{ getPersonalParticipant(m)!.deaths }}/{{ getPersonalParticipant(m)!.assists }}
+                <span :style="{ color: getPersonalParticipant(m)!.deaths === 0 || (getPersonalParticipant(m)!.kills + getPersonalParticipant(m)!.assists) / getPersonalParticipant(m)!.deaths >= 3 ? '#10B981'
+                  : (getPersonalParticipant(m)!.kills + getPersonalParticipant(m)!.assists) / getPersonalParticipant(m)!.deaths >= 2 ? 'var(--accent)' : '#EF4444' }">
+                  ({{ fmtKda(getPersonalParticipant(m)!) }} KDA)
+                </span>
+              </span>
             </div>
-          </div>
-          <!-- Result badge -->
-          <span class="hist__badge" :class="getPersonalParticipant(m)!.win ? 'hist__badge--win' : 'hist__badge--loss'">
-            {{ getPersonalParticipant(m)!.win ? 'V' : 'D' }}
           </span>
-          <!-- KDA -->
-          <div class="hist__game-kda">
-            <span class="hist__game-kda-score">{{ getPersonalParticipant(m)!.kills }}/{{ getPersonalParticipant(m)!.deaths }}/{{ getPersonalParticipant(m)!.assists }}</span>
-            <span class="hist__game-kda-ratio"
-              :style="{ color: getPersonalParticipant(m)!.deaths === 0 || (getPersonalParticipant(m)!.kills + getPersonalParticipant(m)!.assists) / getPersonalParticipant(m)!.deaths >= 3 ? '#10B981'
-                : (getPersonalParticipant(m)!.kills + getPersonalParticipant(m)!.assists) / getPersonalParticipant(m)!.deaths >= 2 ? 'var(--accent)' : '#EF4444' }"
-            >{{ fmtKda(getPersonalParticipant(m)!) }} KDA</span>
-          </div>
-          <!-- Stats -->
-          <div class="hist__game-stats">
-            <span class="hist__game-stat"><span class="hist__game-stat-label">CS</span>{{ getPersonalParticipant(m)!.cs }}</span>
-            <span class="hist__game-stat"><span class="hist__game-stat-label">DMG</span>{{ (getPersonalParticipant(m)!.damage / 1000).toFixed(1) }}k</span>
-          </div>
-          <!-- Meta -->
-          <div class="hist__game-meta">
-            <span class="hist__game-vs">vs {{ m.opponent }}</span>
-            <span class="hist__date">{{ fmtDate(m.date) }}</span>
-          </div>
+          <!-- SÉRIE → CS + DMG -->
+          <span class="hist__series hist__game-stats-inline">
+            <span class="hist__game-stat-label">CS</span> {{ getPersonalParticipant(m)!.cs }}
+            &nbsp;·&nbsp;
+            <span class="hist__game-stat-label">DMG</span> {{ (getPersonalParticipant(m)!.damage / 1000).toFixed(1) }}k
+          </span>
+          <!-- TYPE → queue -->
+          <span class="hist__type" :style="{ color: TYPE_COLOR[m.type], borderColor: TYPE_COLOR[m.type] + '44', background: TYPE_COLOR[m.type] + '14' }">
+            {{ queueLabel(m) }}
+          </span>
           <span class="hist__actions">
             <button class="hist__action-btn hist__action-btn--del" :disabled="deleting === m.id" @click="remove(m)" title="Supprimer"><Trash2 :size="12" /></button>
           </span>
@@ -752,10 +751,12 @@ async function saveEdit() {
 .hist__game-kda { display: flex; flex-direction: column; gap: 1px; }
 .hist__game-kda-score { font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700; color: #EEF2FF; }
 .hist__game-kda-ratio { font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; }
+.hist__game-champ-kda { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 600; color: #8892B0; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 
 .hist__game-stats { display: flex; flex-direction: column; gap: 2px; }
 .hist__game-stat { display: flex; align-items: center; gap: 4px; font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; color: #8892B0; }
 .hist__game-stat-label { font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 1.5px; color: #3D4460; }
+.hist__game-stats-inline { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; color: #8892B0; display: flex; align-items: center; gap: 2px; flex-wrap: wrap; }
 
 .hist__game-meta { display: flex; flex-direction: column; gap: 2px; }
 .hist__game-vs { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; color: #8892B0; }
