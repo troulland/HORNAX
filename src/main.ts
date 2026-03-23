@@ -4,10 +4,23 @@ import router from './router'
 import App from './App.vue'
 import './style.css'
 
-// Reload page if Vite chunk fails to load after a new deploy
+// Reload once if Vite chunk fails to load after a new deploy
+const RELOAD_KEY = 'chunk_reload'
+window.addEventListener('unhandledrejection', (e) => {
+  const msg = e.reason?.message ?? ''
+  if (/dynamically imported module|Unable to preload CSS/.test(msg)) {
+    if (!sessionStorage.getItem(RELOAD_KEY)) {
+      sessionStorage.setItem(RELOAD_KEY, '1')
+      window.location.reload()
+    }
+  }
+})
 router.onError((err) => {
-  if (/Failed to fetch dynamically imported module|Unable to preload CSS/.test(err.message)) {
-    window.location.reload()
+  if (/dynamically imported module|Unable to preload CSS/.test(err.message)) {
+    if (!sessionStorage.getItem(RELOAD_KEY)) {
+      sessionStorage.setItem(RELOAD_KEY, '1')
+      window.location.reload()
+    }
   }
 })
 
