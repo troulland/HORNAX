@@ -324,8 +324,8 @@ async function saveEdit() {
         </span>
         <span>RÉS.</span>
         <span>DATE</span>
-        <span>ADVERSAIRE</span>
-        <span>SÉRIE</span>
+        <span>KDA</span>
+        <span>CS</span>
         <span>TYPE</span>
         <span></span>
       </div>
