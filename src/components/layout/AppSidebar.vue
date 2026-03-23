@@ -1,0 +1,136 @@
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import {
+  LayoutDashboard, Swords, BarChart3,
+  Map, Calendar, User, LogOut, ChevronRight, ChevronDown
+} from 'lucide-vue-next'
+
+const route  = useRoute()
+const router = useRouter()
+const auth   = useAuthStore()
+const calOpen = ref(route.path.startsWith('/calendar'))
+
+const isRoyalty  = computed(() => auth.user?.team_slug === 'hornax-royalty')
+const logoSrc    = computed(() => isRoyalty.value ? '/hornax-royalty.png' : '/logo.png')
+const teamLabel  = computed(() => isRoyalty.value ? 'ROYALTY' : 'HORNAX')
+
+const navItems = [
+  { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+  { label: 'Parties',   path: '/matches',   icon: Swords },
+  { label: 'Analytics', path: '/analytics', icon: BarChart3 },
+  { label: 'Draft',     path: '/draft',     icon: Map,        soon: true },
+]
+
+const calSub = [
+  { label: 'Disponibilités', path: '/calendar/availability' },
+  { label: 'Matchs & Scrims', path: '/calendar/matches' },
+]
+
+const isActive = (path: string) => path === '/matches' ? route.path.startsWith('/matches') : route.path === path
+function logout() { auth.logout(); router.push('/login') }
+</script>
+
+<template>
+  <aside class="sidebar">
+    <RouterLink to="/dashboard" class="sidebar__logo">
+      <img :src="logoSrc" alt="HORNAX" class="sidebar__logo-img" />
+      <span class="sidebar__logo-text">{{ teamLabel }}</span>
+    </RouterLink>
+    <div class="sidebar__divider" />
+
+    <nav class="sidebar__nav">
+      <template v-for="item in navItems" :key="item.path">
+        <div
+          v-if="item.soon"
+          class="sidebar__item sidebar__item--soon"
+        >
+          <component :is="item.icon" :size="17" class="sidebar__icon" />
+          <span class="sidebar__label">{{ item.label }}</span>
+          <span class="sidebar__soon-tag">SOON</span>
+        </div>
+        <RouterLink
+          v-else
+          :to="item.path"
+          class="sidebar__item"
+          :class="{ 'sidebar__item--active': isActive(item.path) }"
+        >
+          <component :is="item.icon" :size="17" class="sidebar__icon" />
+          <span class="sidebar__label">{{ item.label }}</span>
+          <ChevronRight v-if="isActive(item.path)" :size="13" class="sidebar__arrow" />
+        </RouterLink>
+      </template>
+
+      <!-- Calendar collapsible -->
+      <button
+        class="sidebar__item sidebar__item--cal"
+        :class="{ 'sidebar__item--active': route.path.startsWith('/calendar') }"
+        @click="calOpen = !calOpen"
+      >
+        <Calendar :size="17" class="sidebar__icon" />
+        <span class="sidebar__label">Calendrier</span>
+        <component :is="calOpen ? ChevronDown : ChevronRight" :size="13" class="sidebar__arrow" />
+      </button>
+      <Transition name="sub">
+        <div v-if="calOpen" class="sidebar__sub">
+          <RouterLink
+            v-for="sub in calSub" :key="sub.path"
+            :to="sub.path"
+            class="sidebar__sub-item"
+            :class="{ 'sidebar__sub-item--active': route.path === sub.path }"
+          >{{ sub.label }}</RouterLink>
+        </div>
+      </Transition>
+    </nav>
+
+    <div class="sidebar__bottom">
+      <div class="sidebar__divider" />
+      <RouterLink to="/profile" class="sidebar__item" :class="{ 'sidebar__item--active': isActive('/profile') }">
+        <User :size="17" class="sidebar__icon" />
+        <span class="sidebar__label">Mon Profil</span>
+        <ChevronRight v-if="isActive('/profile')" :size="13" class="sidebar__arrow" />
+      </RouterLink>
+      <button class="sidebar__item sidebar__item--logout" @click="logout">
+        <LogOut :size="17" class="sidebar__icon" />
+        <span class="sidebar__label">Déconnexion</span>
+      </button>
+    </div>
+  </aside>
+</template>
+
+<style scoped>
+.sidebar { width: 220px; flex-shrink: 0; background: #0D1018; border-right: 1px solid #1A1F2E; display: flex; flex-direction: column; height: 100vh; }
+.sidebar__logo { display: flex; align-items: center; gap: 10px; padding: 22px 20px; text-decoration: none; cursor: pointer; transition: opacity .15s; }
+.sidebar__logo:hover { opacity: .8; }
+.sidebar__logo-img { width: 28px; height: 28px; object-fit: contain; filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 70%, transparent)); }
+.sidebar__logo-text { font-family: 'Rajdhani', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: 4px; color: #EEF2FF; }
+.sidebar__divider { height: 1px; background: #1A1F2E; margin: 0 16px; }
+.sidebar__nav { flex: 1; padding: 12px 10px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; }
+
+.sidebar__item {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 6px;
+  text-decoration: none; color: #8892B0; transition: all .15s; cursor: pointer;
+  border: none; background: transparent; width: 100%; text-align: left; font-family: inherit;
+}
+.sidebar__item:hover { background: #111520; color: #EEF2FF; }
+.sidebar__item--active { background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent); border-left: 2px solid var(--accent); padding-left: 10px; }
+.sidebar__item--active:hover { background: color-mix(in srgb, var(--accent) 15%, transparent); }
+.sidebar__item--soon { opacity: .45; cursor: not-allowed; pointer-events: none; }
+.sidebar__item--logout:hover { color: #EF4444; background: rgba(239,68,68,.08); }
+
+.sidebar__icon { flex-shrink: 0; }
+.sidebar__label { font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; flex: 1; }
+.sidebar__arrow { opacity: .6; }
+.sidebar__soon-tag { font-family: 'Rajdhani', sans-serif; font-size: 8px; font-weight: 700; letter-spacing: 2px; color: #3D4460; background: #1A1F2E; padding: 2px 5px; border-radius: 3px; }
+
+.sidebar__sub { padding-left: 36px; display: flex; flex-direction: column; gap: 1px; margin-top: 1px; }
+.sidebar__sub-item { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 1px; color: #8892B0; text-decoration: none; padding: 7px 12px; border-radius: 5px; transition: all .15s; }
+.sidebar__sub-item:hover { color: #EEF2FF; background: #111520; }
+.sidebar__sub-item--active { color: var(--accent); }
+
+.sub-enter-active, .sub-leave-active { transition: all .2s ease; }
+.sub-enter-from, .sub-leave-to { opacity: 0; transform: translateY(-6px); }
+
+.sidebar__bottom { padding: 10px 10px 16px; display: flex; flex-direction: column; gap: 2px; }
+</style>
