@@ -31,6 +31,52 @@ const QUEUE_COLOR: Record<string, string> = {
   'ARAM': '#F0B429', 'Quickplay': '#8892B0',
 }
 
+const SUMMONER_KEY: Record<number, string> = {
+  1: 'SummonerBoost', 3: 'SummonerExhaust', 4: 'SummonerFlash',
+  6: 'SummonerHaste', 7: 'SummonerHeal', 11: 'SummonerSmite',
+  12: 'SummonerTeleport', 13: 'SummonerMana', 14: 'SummonerIgnite',
+  21: 'SummonerBarrier', 32: 'SummonerSnowball',
+}
+const RUNE_PATH: Record<number, string> = {
+  8005: 'precision/presstheattack/presstheattack',
+  8008: 'precision/lethaltempo/lethaltempoTemp',
+  8021: 'precision/fleetfootwork/fleetfootwork',
+  8010: 'precision/conqueror/conqueror',
+  8112: 'domination/electrocute/electrocute',
+  8124: 'domination/predator/predator',
+  8128: 'domination/darkharvest/darkharvest',
+  9923: 'domination/hailofblades/hailofblades',
+  8214: 'sorcery/summonaery/summonaery',
+  8229: 'sorcery/arcanecomet/arcanecomet',
+  8230: 'sorcery/phaserush/phaserush',
+  8437: 'resolve/graspoftheundying/graspoftheundying',
+  8439: 'resolve/veteranaftershock/aftershock',
+  8465: 'resolve/guardian/guardian',
+  8351: 'inspiration/glacialaugment/glacialaugment',
+  8360: 'inspiration/unsealedspellbook/unsealedspellbook',
+  8369: 'inspiration/firststrike/firststrike',
+}
+function itemIcon(id: number) {
+  if (!id) return ''
+  const ddv = profile.value?.riot_stats?.ddVersion ?? '15.6.1'
+  return `https://ddragon.leagueoflegends.com/cdn/${ddv}/img/item/${id}.png`
+}
+function spellIcon(id: number) {
+  const name = SUMMONER_KEY[id]; if (!name) return ''
+  const ddv = profile.value?.riot_stats?.ddVersion ?? '15.6.1'
+  return `https://ddragon.leagueoflegends.com/cdn/${ddv}/img/spell/${name}.png`
+}
+function runeIcon(id: number) {
+  const path = RUNE_PATH[id]; if (!path) return ''
+  return `https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/perk-images/styles/${path}.png`
+}
+function fmtDur(sec: number | undefined, minOnly: number) {
+  if (sec) return `${Math.floor(sec / 60)}m ${String(sec % 60).padStart(2, '0')}s`
+  return `${minOnly}m`
+}
+function pKillColor(v: number) { return v >= 70 ? '#10B981' : v >= 50 ? '#F0B429' : '#8892B0' }
+function dmgColor(v: number) { return v >= 30 ? '#F87171' : v >= 20 ? '#F0B429' : '#8892B0' }
+
 function champIcon(name: string) {
   const ddv = profile.value?.riot_stats?.ddVersion ?? '15.6.1'
   return `https://ddragon.leagueoflegends.com/cdn/${ddv}/img/champion/${CHAMP_SPECIAL[name] ?? name}.png`
@@ -42,10 +88,10 @@ function kdaColor(v: string | number) {
 function wrColor(v: number) { return v >= 60 ? '#00C896' : v >= 50 ? '#F0B429' : '#EF4444' }
 function rankNoDiv(tier: string) { return ['MASTER','GRANDMASTER','CHALLENGER'].includes(tier) }
 function fmtDate(d: string) {
-  const diff = Math.floor((Date.now() - new Date(d).getTime()) / 86400000)
-  if (diff === 0) return "Aujourd'hui"
-  if (diff === 1) return 'Hier'
-  return `il y a ${diff}j`
+  const diff = Math.floor((Date.now() - new Date(d).getTime()) / 3600000)
+  if (diff < 1) return "Récemment"
+  if (diff < 24) return `il y a ${diff}h`
+  return `il y a ${Math.floor(diff / 24)}j`
 }
 
 /* ── Computed from recent games ── */
@@ -285,29 +331,56 @@ onMounted(loadProfile)
 
             <!-- Main row -->
             <div class="pp__match-main">
-              <!-- Left: queue + date + portrait -->
-              <div class="pp__match-left">
-                <span class="pp__match-queue" :style="{ color: QUEUE_COLOR[g.queueLabel] ?? '#8892B0' }">
-                  {{ g.queueLabel }}
-                </span>
-                <span class="pp__match-date">{{ fmtDate(g.date) }}</span>
-                <div class="pp__match-portrait-wrap">
-                  <img :src="champIcon(g.champion)" :alt="g.champion" class="pp__match-portrait"
-                    @error="($event.target as HTMLImageElement).src='/logo.png'" />
-                  <span v-if="g.role" class="pp__match-role-badge">{{ ROLE_ICON[g.role] ?? g.role }}</span>
+              <!-- 1. Info zone -->
+              <div class="pp__match-info">
+                <div class="pp__match-info-top">
+                  <span class="pp__match-queue" :style="{ color: QUEUE_COLOR[g.queueLabel] ?? '#8892B0' }">{{ g.queueLabel }}</span>
+                  <span class="pp__match-date">{{ fmtDate(g.date) }}</span>
                 </div>
-                <span class="pp__match-champ-name">{{ g.champion }}</span>
+                <div class="pp__match-info-bot">
+                  <span class="pp__match-vd" :class="g.win ? 'pp__match-vd--win' : 'pp__match-vd--loss'">
+                    {{ g.win ? 'Victoire' : 'Défaite' }}
+                  </span>
+                  <span class="pp__match-dur">{{ fmtDur(g.durationSec, g.duration) }}</span>
+                </div>
               </div>
 
-              <!-- Result + duration -->
-              <div class="pp__match-result">
-                <span class="pp__match-vd" :class="g.win ? 'pp__match-vd--win' : 'pp__match-vd--loss'">
-                  {{ g.win ? 'Victoire' : 'Défaite' }}
-                </span>
-                <span class="pp__match-dur">{{ g.duration }}m</span>
+              <!-- 2. Champion zone -->
+              <div class="pp__match-champ-zone">
+                <div class="pp__match-champ-top">
+                  <div class="pp__match-portrait-wrap">
+                    <img :src="champIcon(g.champion)" :alt="g.champion" class="pp__match-portrait"
+                      @error="($event.target as HTMLImageElement).src='/logo.png'" />
+                    <span v-if="g.champLevel" class="pp__match-level">{{ g.champLevel }}</span>
+                  </div>
+                  <div class="pp__match-spells-col">
+                    <img v-if="spellIcon(g.summoners?.[0] ?? 0)" class="pp__match-spell"
+                      :src="spellIcon(g.summoners?.[0] ?? 0)"
+                      @error="($event.target as HTMLImageElement).src='/logo.png'" />
+                    <div v-else class="pp__match-spell pp__slot-empty" />
+                    <img v-if="spellIcon(g.summoners?.[1] ?? 0)" class="pp__match-spell"
+                      :src="spellIcon(g.summoners?.[1] ?? 0)"
+                      @error="($event.target as HTMLImageElement).src='/logo.png'" />
+                    <div v-else class="pp__match-spell pp__slot-empty" />
+                    <img v-if="runeIcon(g.primaryRune ?? 0)" class="pp__match-rune"
+                      :src="runeIcon(g.primaryRune ?? 0)"
+                      @error="($event.target as HTMLImageElement).src='/logo.png'" />
+                    <div v-else class="pp__match-rune pp__slot-empty pp__slot-empty--round" />
+                  </div>
+                </div>
+                <div class="pp__match-items-row">
+                  <div v-for="(itemId, i) in (g.items ?? [0,0,0,0,0,0])" :key="i" class="pp__match-item-slot">
+                    <img v-if="itemId" class="pp__match-item" :src="itemIcon(itemId)"
+                      @error="($event.target as HTMLImageElement).src='/logo.png'" />
+                  </div>
+                  <div class="pp__match-item-slot pp__match-item-slot--trinket">
+                    <img v-if="g.trinket" class="pp__match-item" :src="itemIcon(g.trinket)"
+                      @error="($event.target as HTMLImageElement).src='/logo.png'" />
+                  </div>
+                </div>
               </div>
 
-              <!-- KDA -->
+              <!-- 3. KDA zone -->
               <div class="pp__match-kda">
                 <span class="pp__match-score">
                   <span class="pp__match-k">{{ g.kills }}</span>
@@ -319,37 +392,37 @@ onMounted(loadProfile)
                 <span class="pp__match-ratio" :style="{ color: kdaColor(g.kda) }">{{ g.kda }} KDA</span>
               </div>
 
-              <!-- Stats -->
+              <!-- 4. Stats zone -->
               <div class="pp__match-stats">
+                <div v-if="g.pKill != null" class="pp__match-stat-row">
+                  <span class="pp__match-stat-lbl">P/Kill</span>
+                  <span class="pp__match-stat-val" :style="{ color: pKillColor(g.pKill) }">{{ g.pKill }}%</span>
+                </div>
                 <div class="pp__match-stat-row">
                   <span class="pp__match-stat-lbl">CS</span>
                   <span class="pp__match-stat-val">{{ g.cs }}<span class="pp__match-stat-sub"> ({{ g.csMin }}/m)</span></span>
                 </div>
                 <div class="pp__match-stat-row">
                   <span class="pp__match-stat-lbl">Dégâts</span>
-                  <span class="pp__match-stat-val">{{ g.damage ? (g.damage / 1000).toFixed(1) + 'k' : '—' }}</span>
-                </div>
-                <div class="pp__match-stat-row">
-                  <span class="pp__match-stat-lbl">Vision</span>
-                  <span class="pp__match-stat-val">{{ g.vision ?? '—' }}</span>
+                  <span class="pp__match-stat-val">{{ g.damage ? (g.damage / 1000).toFixed(1) + 'k' : '—' }}<span v-if="g.dmgShare != null" class="pp__match-stat-sub" :style="{ color: dmgColor(g.dmgShare) }"> ({{ g.dmgShare }}%)</span></span>
                 </div>
               </div>
 
-              <!-- Team comp -->
+              <!-- 5. Team comp: two vertical columns -->
               <div v-if="g.myTeam?.length" class="pp__match-teams">
-                <div class="pp__match-team">
+                <div class="pp__match-team-col">
                   <img v-for="c in g.myTeam" :key="c" :src="champIcon(c)" :alt="c"
                     class="pp__match-team-icon" :class="{ 'pp__match-team-icon--me': c === g.champion }"
                     @error="($event.target as HTMLImageElement).src='/logo.png'" />
                 </div>
-                <div class="pp__match-team">
+                <div class="pp__match-team-col">
                   <img v-for="c in g.enemyTeam" :key="c" :src="champIcon(c)" :alt="c"
                     class="pp__match-team-icon"
                     @error="($event.target as HTMLImageElement).src='/logo.png'" />
                 </div>
               </div>
 
-              <!-- Expand button -->
+              <!-- 6. Expand button -->
               <div class="pp__match-expand-wrap">
                 <button v-if="g.participants?.length"
                   class="pp__match-expand-btn" :class="{ 'pp__match-expand-btn--open': expanded.has(g.matchId) }"
@@ -589,7 +662,7 @@ onMounted(loadProfile)
 .pp__match {
   display: flex; flex-direction: column;
   background: #111520; border: 1px solid #1A1F2E; border-radius: 10px;
-  border-left: 4px solid transparent; overflow: hidden; transition: background .1s;
+  border-left: 4px solid transparent; overflow: hidden;
 }
 .pp__match:hover > .pp__match-main { background: #131828; }
 .pp__match--win  { border-left-color: #10B981; }
@@ -597,47 +670,61 @@ onMounted(loadProfile)
 
 .pp__match-main {
   display: grid;
-  grid-template-columns: 100px 78px 120px 165px 1fr 36px;
-  align-items: center; min-height: 88px;
+  grid-template-columns: 115px 185px 110px 145px 1fr 36px;
+  align-items: stretch; min-height: 90px;
 }
 
-/* Left zone */
-.pp__match-left {
-  display: flex; flex-direction: column; align-items: center; gap: 2px;
-  padding: 10px 6px; border-right: 1px solid rgba(255,255,255,.04);
-  justify-content: center; height: 100%;
+/* 1. Info zone */
+.pp__match-info {
+  display: flex; flex-direction: column; justify-content: space-between;
+  padding: 10px; border-right: 1px solid rgba(255,255,255,.04);
 }
-.pp__match-queue { font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 1px; text-align: center; line-height: 1.2; }
-.pp__match-date  { font-family: 'Inter', sans-serif; font-size: 9px; color: #2A3050; }
-.pp__match-portrait-wrap { position: relative; margin: 4px 0 2px; }
-.pp__match-portrait { width: 52px; height: 52px; border-radius: 8px; object-fit: cover; border: 2px solid rgba(255,255,255,.08); display: block; }
-.pp__match-role-badge {
-  position: absolute; bottom: -7px; left: 50%; transform: translateX(-50%);
-  font-family: 'Rajdhani', sans-serif; font-size: 8px; font-weight: 700; letter-spacing: 1px;
-  background: #0D1018; border: 1px solid #1A1F2E; color: #8892B0;
-  padding: 0 4px; border-radius: 3px; white-space: nowrap;
-}
-.pp__match-champ-name {
-  font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; color: #8892B0;
-  margin-top: 6px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 88px;
-}
-
-/* Result zone */
-.pp__match-result {
-  display: flex; flex-direction: column; align-items: center; gap: 5px;
-  padding: 12px 8px; border-right: 1px solid rgba(255,255,255,.04); height: 100%;
-  justify-content: center;
-}
-.pp__match-vd { font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: .5px; }
+.pp__match-info-top { display: flex; flex-direction: column; gap: 2px; }
+.pp__match-info-bot { display: flex; flex-direction: column; gap: 2px; }
+.pp__match-queue { font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1px; }
+.pp__match-date  { font-family: 'Inter', sans-serif; font-size: 9px; color: #3D4460; }
+.pp__match-vd    { font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: .5px; }
 .pp__match-vd--win  { color: #10B981; }
 .pp__match-vd--loss { color: #EF4444; }
-.pp__match-dur { font-family: 'Rajdhani', sans-serif; font-size: 11px; color: #3D4460; }
+.pp__match-dur   { font-family: 'Inter', sans-serif; font-size: 10px; color: #3D4460; }
 
-/* KDA zone */
+/* 2. Champion zone */
+.pp__match-champ-zone {
+  display: flex; flex-direction: column; justify-content: center; gap: 6px;
+  padding: 8px 10px; border-right: 1px solid rgba(255,255,255,.04);
+}
+.pp__match-champ-top    { display: flex; align-items: center; gap: 5px; }
+.pp__match-portrait-wrap { position: relative; flex-shrink: 0; }
+.pp__match-portrait { width: 58px; height: 58px; border-radius: 6px; object-fit: cover; border: 2px solid rgba(255,255,255,.1); display: block; }
+.pp__match-level {
+  position: absolute; bottom: -2px; left: -2px;
+  background: #0D1018; border: 1px solid #2A3050;
+  font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700;
+  color: #8892B0; padding: 0 3px; border-radius: 3px; line-height: 15px; z-index: 1;
+}
+.pp__match-spells-col { display: flex; flex-direction: column; gap: 3px; align-self: center; }
+.pp__match-spell {
+  width: 20px; height: 20px; border-radius: 4px; object-fit: cover;
+  border: 1px solid rgba(255,255,255,.1); display: block;
+}
+.pp__match-rune {
+  width: 20px; height: 20px; border-radius: 50%; object-fit: contain;
+  background: #0D1018; border: 1px solid rgba(255,255,255,.08); display: block;
+}
+.pp__slot-empty { background: #0D1018 !important; }
+.pp__slot-empty--round { border-radius: 50% !important; }
+.pp__match-items-row { display: flex; gap: 2px; align-items: center; }
+.pp__match-item-slot {
+  width: 20px; height: 20px; border-radius: 4px; overflow: hidden;
+  background: #0A0E18; border: 1px solid #1A1F2E; flex-shrink: 0;
+}
+.pp__match-item-slot--trinket { border-radius: 50%; margin-left: 3px; }
+.pp__match-item { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* 3. KDA zone */
 .pp__match-kda {
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-  padding: 12px 8px; border-right: 1px solid rgba(255,255,255,.04); height: 100%;
-  justify-content: center;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  padding: 10px 8px; border-right: 1px solid rgba(255,255,255,.04);
 }
 .pp__match-score { font-family: 'Rajdhani', sans-serif; font-size: 20px; font-weight: 700; line-height: 1; white-space: nowrap; }
 .pp__match-k, .pp__match-a { color: #EEF2FF; }
@@ -645,34 +732,35 @@ onMounted(loadProfile)
 .pp__match-sep { color: #3D4460; font-size: 16px; }
 .pp__match-ratio { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; }
 
-/* Stats zone */
+/* 4. Stats zone */
 .pp__match-stats {
-  display: flex; flex-direction: column; gap: 5px;
-  padding: 12px 14px; border-right: 1px solid rgba(255,255,255,.04); height: 100%;
-  justify-content: center;
+  display: flex; flex-direction: column; justify-content: center; gap: 6px;
+  padding: 10px 14px; border-right: 1px solid rgba(255,255,255,.04);
 }
-.pp__match-stat-row { display: flex; align-items: baseline; gap: 6px; }
-.pp__match-stat-lbl { font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 1px; color: #3D4460; min-width: 42px; }
-.pp__match-stat-val { font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700; color: #EEF2FF; }
-.pp__match-stat-sub { font-family: 'Inter', sans-serif; font-size: 9px; color: #3D4460; }
+.pp__match-stat-row  { display: flex; align-items: baseline; gap: 6px; }
+.pp__match-stat-lbl  { font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 1px; color: #3D4460; min-width: 40px; }
+.pp__match-stat-val  { font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700; color: #EEF2FF; }
+.pp__match-stat-sub  { font-family: 'Inter', sans-serif; font-size: 9px; color: #3D4460; }
+.pp__match-champ-name {
+  font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; color: #8892B0;
+  text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 88px;
+}
 
-/* Team comp zone */
+/* 5. Team comp: two vertical columns */
 .pp__match-teams {
-  display: flex; flex-direction: column; gap: 4px;
-  padding: 10px 10px; align-items: center; justify-content: center;
-  border-right: 1px solid rgba(255,255,255,.04); height: 100%;
+  display: flex; gap: 8px; align-items: center; justify-content: center;
+  padding: 8px 12px; border-right: 1px solid rgba(255,255,255,.04);
 }
-.pp__match-team { display: flex; gap: 2px; }
+.pp__match-team-col  { display: flex; flex-direction: column; gap: 2px; }
 .pp__match-team-icon {
   width: 22px; height: 22px; border-radius: 3px; object-fit: cover;
-  border: 1px solid rgba(255,255,255,.06); opacity: .75; transition: opacity .1s;
+  border: 1px solid rgba(255,255,255,.06); opacity: .7; display: block;
 }
 .pp__match-team-icon--me { border-color: var(--accent) !important; opacity: 1; }
-.pp__match-team-icon:hover { opacity: 1; }
 
-/* Expand button */
+/* 6. Expand */
 .pp__match-expand-wrap {
-  display: flex; align-items: center; justify-content: center; padding: 8px 6px; height: 100%;
+  display: flex; align-items: center; justify-content: center; padding: 8px 5px;
 }
 .pp__match-expand-btn {
   width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
@@ -686,17 +774,17 @@ onMounted(loadProfile)
 
 /* Scoreboard */
 .pp__match-scoreboard { border-top: 1px solid #1A1F2E; padding: 8px 36px; background: #0A0E18; }
-.pp__match-sb-grid { display: grid; grid-template-columns: 1fr 1px 1fr; }
+.pp__match-sb-grid    { display: grid; grid-template-columns: 1fr 1px 1fr; }
 .pp__match-sb-divider { background: #1A1F2E; margin: 2px 8px; }
-.pp__match-sb-col { display: flex; flex-direction: column; gap: 1px; padding: 0 8px; }
+.pp__match-sb-col     { display: flex; flex-direction: column; gap: 1px; padding: 0 8px; }
 .pp__match-sb-col:first-child { padding-left: 0; }
 .pp__match-sb-col:last-child  { padding-right: 0; }
 .pp__match-sb-row {
-  display: grid; grid-template-columns: 24px 1fr 48px 44px;
+  display: grid; grid-template-columns: 24px 1fr 50px 44px;
   align-items: center; gap: 6px; padding: 3px 5px; border-radius: 4px; transition: background .1s;
 }
 .pp__match-sb-row:hover { background: rgba(255,255,255,.03); }
-.pp__match-sb-row--me { background: color-mix(in srgb, var(--accent) 7%, transparent) !important; }
+.pp__match-sb-row--me  { background: color-mix(in srgb, var(--accent) 7%, transparent) !important; }
 .pp__match-sb-icon { width: 24px; height: 24px; border-radius: 4px; object-fit: cover; border: 1px solid rgba(255,255,255,.06); }
 .pp__match-sb-kda  { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; color: #3D4460; }
 .pp__match-sb-cs   { font-family: 'Rajdhani', sans-serif; font-size: 11px; color: #2A3050; text-align: right; }
@@ -723,21 +811,24 @@ html[data-theme="light"] .pp__champ-name { color: #0D1220; }
 html[data-theme="light"] .pp__champ-wr-bar { background: #E0E3EF; }
 html[data-theme="light"] .pp__match { background: #FFFFFF; border-color: #E0E3EF; }
 html[data-theme="light"] .pp__match:hover > .pp__match-main { background: #F7F8FC; }
-html[data-theme="light"] .pp__match-left { border-right-color: #E0E3EF; }
-html[data-theme="light"] .pp__match-result { border-right-color: #E0E3EF; }
-html[data-theme="light"] .pp__match-kda { border-right-color: #E0E3EF; }
-html[data-theme="light"] .pp__match-stats { border-right-color: #E0E3EF; }
-html[data-theme="light"] .pp__match-teams { border-right-color: #E0E3EF; }
-html[data-theme="light"] .pp__match-portrait { border-color: #E0E3EF; }
-html[data-theme="light"] .pp__match-role-badge { background: #FFFFFF; border-color: #E0E3EF; color: #8892B0; }
-html[data-theme="light"] .pp__match-k, html[data-theme="light"] .pp__match-a { color: #0D1220; }
+html[data-theme="light"] .pp__match-info     { border-right-color: #E0E3EF; }
+html[data-theme="light"] .pp__match-champ-zone { border-right-color: #E0E3EF; }
+html[data-theme="light"] .pp__match-kda      { border-right-color: #E0E3EF; }
+html[data-theme="light"] .pp__match-stats    { border-right-color: #E0E3EF; }
+html[data-theme="light"] .pp__match-teams    { border-right-color: #E0E3EF; }
+html[data-theme="light"] .pp__match-portrait { border-color: #C8CDDF; }
+html[data-theme="light"] .pp__match-spell    { border-color: #C8CDDF; }
+html[data-theme="light"] .pp__match-rune     { border-color: #C8CDDF; background: #F0F3FF; }
+html[data-theme="light"] .pp__match-item-slot { background: #F0F3FF; border-color: #E0E3EF; }
+html[data-theme="light"] .pp__match-score    { color: #0D1220; }
 html[data-theme="light"] .pp__match-stat-val { color: #0D1220; }
 html[data-theme="light"] .pp__match-stat-sub { color: #8892B0; }
-html[data-theme="light"] .pp__match-team-icon { border-color: #E0E3EF; }
+html[data-theme="light"] .pp__match-team-icon { border-color: #C8CDDF; opacity: .85; }
 html[data-theme="light"] .pp__match-expand-btn { background: #F7F8FC; border-color: #E0E3EF; color: #8892B0; }
 html[data-theme="light"] .pp__match-scoreboard { background: #F0F3FF; border-top-color: #E0E3EF; }
 html[data-theme="light"] .pp__match-sb-divider { background: #E0E3EF; }
 html[data-theme="light"] .pp__match-sb-row:hover { background: rgba(0,0,0,.03); }
+html[data-theme="light"] .pp__match-k, html[data-theme="light"] .pp__match-a { color: #0D1220; }
 html[data-theme="light"] .pp__summary-scores { color: #0D1220; }
 
 @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }

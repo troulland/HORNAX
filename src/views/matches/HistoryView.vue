@@ -44,6 +44,70 @@ function logoSrc(m: Match) {
 
 /* ── Riot game helpers ───────────────────────────── */
 const DD_VER = '15.6.1'
+const SUMMONER_KEY: Record<number, string> = {
+  1: 'SummonerBoost', 3: 'SummonerExhaust', 4: 'SummonerFlash',
+  6: 'SummonerHaste', 7: 'SummonerHeal', 11: 'SummonerSmite',
+  12: 'SummonerTeleport', 13: 'SummonerMana', 14: 'SummonerIgnite',
+  21: 'SummonerBarrier', 32: 'SummonerSnowball',
+}
+const RUNE_PATH: Record<number, string> = {
+  8005: 'precision/presstheattack/presstheattack',
+  8008: 'precision/lethaltempo/lethaltempoTemp',
+  8021: 'precision/fleetfootwork/fleetfootwork',
+  8010: 'precision/conqueror/conqueror',
+  8112: 'domination/electrocute/electrocute',
+  8124: 'domination/predator/predator',
+  8128: 'domination/darkharvest/darkharvest',
+  9923: 'domination/hailofblades/hailofblades',
+  8214: 'sorcery/summonaery/summonaery',
+  8229: 'sorcery/arcanecomet/arcanecomet',
+  8230: 'sorcery/phaserush/phaserush',
+  8437: 'resolve/graspoftheundying/graspoftheundying',
+  8439: 'resolve/veteranaftershock/aftershock',
+  8465: 'resolve/guardian/guardian',
+  8351: 'inspiration/glacialaugment/glacialaugment',
+  8360: 'inspiration/unsealedspellbook/unsealedspellbook',
+  8369: 'inspiration/firststrike/firststrike',
+}
+function itemIcon(id: number) {
+  if (!id) return ''
+  return `https://ddragon.leagueoflegends.com/cdn/${DD_VER}/img/item/${id}.png`
+}
+function spellIcon(id: number) {
+  const name = SUMMONER_KEY[id]; if (!name) return ''
+  return `https://ddragon.leagueoflegends.com/cdn/${DD_VER}/img/spell/${name}.png`
+}
+function runeIcon(id: number) {
+  const path = RUNE_PATH[id]; if (!path) return ''
+  return `https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/perk-images/styles/${path}.png`
+}
+function fmtDur(sec: number | undefined, minOnly: number) {
+  if (sec) return `${Math.floor(sec / 60)}m ${String(sec % 60).padStart(2, '0')}s`
+  return `${minOnly}m`
+}
+function pKillColor(v: number) { return v >= 70 ? '#10B981' : v >= 50 ? '#F0B429' : '#8892B0' }
+function dmgColor(v: number) { return v >= 30 ? '#F87171' : v >= 20 ? '#F0B429' : '#8892B0' }
+function teamPKill(m: any) {
+  const rd = getRiotData(m); const p = getPersonalParticipant(m)
+  if (!rd?.participants || !p) return null
+  const myId = p.teamId ?? 100
+  const teamKills = rd.participants.filter((x: any) => x.teamId === myId).reduce((s: number, x: any) => s + x.kills, 0)
+  return Math.round((p.kills + p.assists) / Math.max(teamKills, 1) * 100)
+}
+function teamDmgShare(m: any) {
+  const rd = getRiotData(m); const p = getPersonalParticipant(m)
+  if (!rd?.participants || !p) return null
+  const myId = p.teamId ?? 100
+  const teamDmg = rd.participants.filter((x: any) => x.teamId === myId).reduce((s: number, x: any) => s + (x.damage ?? 0), 0)
+  return Math.round((p.damage ?? 0) / Math.max(teamDmg, 1) * 100)
+}
+function fmtDateAgo(d: string) {
+  const diff = Math.floor((Date.now() - new Date(d).getTime()) / 3600000)
+  if (diff < 1) return "Récemment"
+  if (diff < 24) return `il y a ${diff}h`
+  const days = Math.floor(diff / 24)
+  return `il y a ${days}j`
+}
 const CHAMP_SPECIAL: Record<string, string> = {
   "Nunu & Willump": "Nunu", "Renata Glasc": "Renata",
   "K'Sante": "KSante", "Bel'Veth": "Belveth", "Wukong": "MonkeyKing",
@@ -55,10 +119,11 @@ function champIcon(name: string) {
 interface RiotParticipantBasic {
   champion: string; kills: number; deaths: number; assists: number
   damage: number; cs: number; vision: number; win: boolean; isUser: boolean
-  teamId?: number; role?: string
+  teamId?: number; role?: string; champLevel?: number
+  items?: number[]; trinket?: number; summoner1Id?: number; summoner2Id?: number; primaryRune?: number
 }
 interface RiotData {
-  matchId: string; duration: number; queueLabel: string
+  matchId: string; duration: number; durationSec?: number; queueLabel: string
   participants: RiotParticipantBasic[]
 }
 function getRiotData(m: Match): RiotData | null {
@@ -357,121 +422,148 @@ async function saveEdit() {
       </div>
       <template v-for="m in filtered" :key="m.id">
         <!-- ── Game card OP.GG style ── -->
-        <div
-          v-if="getPersonalParticipant(m)"
-          class="og-card"
-          :class="[getPersonalParticipant(m)!.win ? 'og-card--win' : 'og-card--loss', { 'og-card--selected': isSelected(m.id) }]"
-        >
-          <!-- Main row -->
-          <div class="og-card__main">
-            <!-- Checkbox -->
-            <div class="og-card__cb">
-              <button class="hist__cb" :class="{ 'hist__cb--checked': isSelected(m.id) }" @click.stop="toggleSelect(m.id)" />
-            </div>
+<div
+  v-if="getPersonalParticipant(m)"
+  class="og-card"
+  :class="[getPersonalParticipant(m)!.win ? 'og-card--win' : 'og-card--loss', { 'og-card--selected': isSelected(m.id) }]"
+>
+  <div class="og-card__main">
+    <!-- Checkbox -->
+    <div class="og-card__cb">
+      <button class="hist__cb" :class="{ 'hist__cb--checked': isSelected(m.id) }" @click.stop="toggleSelect(m.id)" />
+    </div>
 
-            <!-- Left: queue + date + portrait -->
-            <div class="og-card__left">
-              <span class="og-card__queue">{{ queueLabel(m) }}</span>
-              <span class="og-card__date">{{ fmtDate(m.date) }}</span>
-              <div class="og-card__portrait-wrap">
-                <img :src="champIcon(getPersonalParticipant(m)!.champion)"
-                  :alt="getPersonalParticipant(m)!.champion" class="og-card__portrait"
-                  @error="($event.target as HTMLImageElement).src='/logo.png'" />
-                <span v-if="getPersonalParticipant(m)!.role" class="og-card__role-badge">
-                  {{ ROLE_ABBR[getPersonalParticipant(m)!.role!] ?? getPersonalParticipant(m)!.role }}
-                </span>
-              </div>
-              <span class="og-card__champ-name">{{ getPersonalParticipant(m)!.champion }}</span>
-            </div>
+    <!-- 1. Info zone -->
+    <div class="og-card__info">
+      <div class="og-card__info-top">
+        <span class="og-card__queue">{{ queueLabel(m) }}</span>
+        <span class="og-card__date">{{ fmtDateAgo(m.date) }}</span>
+      </div>
+      <div class="og-card__info-bot">
+        <span class="og-card__vd" :class="getPersonalParticipant(m)!.win ? 'og-card__vd--win' : 'og-card__vd--loss'">
+          {{ getPersonalParticipant(m)!.win ? 'Victoire' : 'Défaite' }}
+        </span>
+        <span class="og-card__dur">{{ fmtDur(getRiotData(m)?.durationSec, getRiotData(m)?.duration ?? 0) }}</span>
+      </div>
+    </div>
 
-            <!-- Result + duration -->
-            <div class="og-card__result">
-              <span class="og-card__vd" :class="getPersonalParticipant(m)!.win ? 'og-card__vd--win' : 'og-card__vd--loss'">
-                {{ getPersonalParticipant(m)!.win ? 'Victoire' : 'Défaite' }}
-              </span>
-              <span class="og-card__dur">{{ getRiotData(m)?.duration ?? '?' }}m</span>
-            </div>
-
-            <!-- KDA -->
-            <div class="og-card__kda">
-              <span class="og-card__score">
-                {{ getPersonalParticipant(m)!.kills }}<span class="og-card__sep"> / </span><span class="og-card__deaths">{{ getPersonalParticipant(m)!.deaths }}</span><span class="og-card__sep"> / </span>{{ getPersonalParticipant(m)!.assists }}
-              </span>
-              <span class="og-card__ratio" :style="{ color: kdaColorHist(fmtKda(getPersonalParticipant(m)!)) }">
-                {{ fmtKda(getPersonalParticipant(m)!) }} KDA
-              </span>
-            </div>
-
-            <!-- Stats -->
-            <div class="og-card__stats">
-              <div class="og-card__stat-row">
-                <span class="og-card__stat-label">CS</span>
-                <span class="og-card__stat-val">{{ getPersonalParticipant(m)!.cs }}<span class="og-card__stat-sub"> ({{ getRiotData(m)?.duration ? (getPersonalParticipant(m)!.cs / Math.max(getRiotData(m)!.duration, 1)).toFixed(1) : '?' }}/m)</span></span>
-              </div>
-              <div class="og-card__stat-row">
-                <span class="og-card__stat-label">Dégâts</span>
-                <span class="og-card__stat-val">{{ (getPersonalParticipant(m)!.damage / 1000).toFixed(1) }}k</span>
-              </div>
-              <div class="og-card__stat-row">
-                <span class="og-card__stat-label">Vision</span>
-                <span class="og-card__stat-val">{{ getPersonalParticipant(m)!.vision }}</span>
-              </div>
-            </div>
-
-            <!-- Team comp -->
-            <div class="og-card__teams">
-              <div class="og-card__team">
-                <img v-for="c in getTeams(m).myTeam" :key="c" :src="champIcon(c)" :alt="c"
-                  class="og-card__team-icon" :class="{ 'og-card__team-icon--me': c === getPersonalParticipant(m)!.champion }"
-                  @error="($event.target as HTMLImageElement).src='/logo.png'" />
-              </div>
-              <div class="og-card__team">
-                <img v-for="c in getTeams(m).enemyTeam" :key="c" :src="champIcon(c)" :alt="c"
-                  class="og-card__team-icon"
-                  @error="($event.target as HTMLImageElement).src='/logo.png'" />
-              </div>
-            </div>
-
-            <!-- Actions: expand + delete -->
-            <div class="og-card__actions">
-              <button v-if="getRiotData(m)?.participants?.length"
-                class="og-card__expand-btn" :class="{ 'og-card__expand-btn--open': expanded.has(m.id) }"
-                @click.stop="toggleExpand(m.id)" title="Détails">
-                <span class="og-card__expand-arrow">▼</span>
-              </button>
-              <button class="hist__action-btn hist__action-btn--del" :disabled="deleting === m.id" @click="remove(m)" title="Supprimer"><Trash2 :size="12" /></button>
-            </div>
-          </div>
-
-          <!-- Scoreboard (expanded) -->
-          <div v-if="expanded.has(m.id)" class="og-card__scoreboard">
-            <div class="og-card__sb-grid">
-              <div class="og-card__sb-col">
-                <div v-for="p in getRiotData(m)!.participants.filter(x => (x.teamId ?? 100) === 100)"
-                  :key="p.champion" class="og-card__sb-row"
-                  :class="{ 'og-card__sb-row--me': p.isUser, 'og-card__sb-row--win': p.win }">
-                  <img :src="champIcon(p.champion)" :alt="p.champion" class="og-card__sb-icon"
-                    @error="($event.target as HTMLImageElement).src='/logo.png'" />
-                  <span class="og-card__sb-kda">{{ p.kills }}/{{ p.deaths }}/{{ p.assists }}</span>
-                  <span class="og-card__sb-cs">{{ p.cs }} cs</span>
-                  <span class="og-card__sb-dmg">{{ (p.damage / 1000).toFixed(1) }}k</span>
-                </div>
-              </div>
-              <div class="og-card__sb-divider" />
-              <div class="og-card__sb-col">
-                <div v-for="p in getRiotData(m)!.participants.filter(x => (x.teamId ?? 200) === 200)"
-                  :key="p.champion" class="og-card__sb-row"
-                  :class="{ 'og-card__sb-row--win': p.win }">
-                  <img :src="champIcon(p.champion)" :alt="p.champion" class="og-card__sb-icon"
-                    @error="($event.target as HTMLImageElement).src='/logo.png'" />
-                  <span class="og-card__sb-kda">{{ p.kills }}/{{ p.deaths }}/{{ p.assists }}</span>
-                  <span class="og-card__sb-cs">{{ p.cs }} cs</span>
-                  <span class="og-card__sb-dmg">{{ (p.damage / 1000).toFixed(1) }}k</span>
-                </div>
-              </div>
-            </div>
-          </div>
+    <!-- 2. Champion zone -->
+    <div class="og-card__champ-zone">
+      <div class="og-card__champ-top">
+        <div class="og-card__portrait-wrap">
+          <img :src="champIcon(getPersonalParticipant(m)!.champion)"
+            :alt="getPersonalParticipant(m)!.champion" class="og-card__portrait"
+            @error="($event.target as HTMLImageElement).src='/logo.png'" />
+          <span v-if="getPersonalParticipant(m)!.champLevel" class="og-card__level">{{ getPersonalParticipant(m)!.champLevel }}</span>
         </div>
+        <div class="og-card__spells-col">
+          <img v-if="spellIcon(getPersonalParticipant(m)!.summoner1Id ?? 0)" class="og-card__spell"
+            :src="spellIcon(getPersonalParticipant(m)!.summoner1Id ?? 0)"
+            @error="($event.target as HTMLImageElement).src='/logo.png'" />
+          <div v-else class="og-card__spell og-card__slot-empty" />
+          <img v-if="spellIcon(getPersonalParticipant(m)!.summoner2Id ?? 0)" class="og-card__spell"
+            :src="spellIcon(getPersonalParticipant(m)!.summoner2Id ?? 0)"
+            @error="($event.target as HTMLImageElement).src='/logo.png'" />
+          <div v-else class="og-card__spell og-card__slot-empty" />
+          <img v-if="runeIcon(getPersonalParticipant(m)!.primaryRune ?? 0)" class="og-card__rune"
+            :src="runeIcon(getPersonalParticipant(m)!.primaryRune ?? 0)"
+            @error="($event.target as HTMLImageElement).src='/logo.png'" />
+          <div v-else class="og-card__rune og-card__slot-empty og-card__slot-empty--round" />
+        </div>
+      </div>
+      <div class="og-card__items-row">
+        <div v-for="(itemId, i) in (getPersonalParticipant(m)!.items ?? [0,0,0,0,0,0])" :key="i" class="og-card__item-slot">
+          <img v-if="itemId" class="og-card__item" :src="itemIcon(itemId)"
+            @error="($event.target as HTMLImageElement).src='/logo.png'" />
+        </div>
+        <div class="og-card__item-slot og-card__item-slot--trinket">
+          <img v-if="getPersonalParticipant(m)!.trinket" class="og-card__item"
+            :src="itemIcon(getPersonalParticipant(m)!.trinket ?? 0)"
+            @error="($event.target as HTMLImageElement).src='/logo.png'" />
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. KDA zone -->
+    <div class="og-card__kda">
+      <span class="og-card__score">
+        {{ getPersonalParticipant(m)!.kills }}<span class="og-card__sep"> / </span><span class="og-card__deaths">{{ getPersonalParticipant(m)!.deaths }}</span><span class="og-card__sep"> / </span>{{ getPersonalParticipant(m)!.assists }}
+      </span>
+      <span class="og-card__ratio" :style="{ color: kdaColorHist(fmtKda(getPersonalParticipant(m)!)) }">
+        {{ fmtKda(getPersonalParticipant(m)!) }} KDA
+      </span>
+    </div>
+
+    <!-- 4. Stats zone -->
+    <div class="og-card__stats">
+      <div v-if="teamPKill(m) !== null" class="og-card__stat-row">
+        <span class="og-card__stat-label">P/Kill</span>
+        <span class="og-card__stat-val" :style="{ color: pKillColor(teamPKill(m)!) }">{{ teamPKill(m) }}%</span>
+      </div>
+      <div class="og-card__stat-row">
+        <span class="og-card__stat-label">CS</span>
+        <span class="og-card__stat-val">{{ getPersonalParticipant(m)!.cs }}<span class="og-card__stat-sub"> ({{ getRiotData(m)?.duration ? (getPersonalParticipant(m)!.cs / Math.max(getRiotData(m)!.duration, 1)).toFixed(1) : '?' }}/m)</span></span>
+      </div>
+      <div class="og-card__stat-row">
+        <span class="og-card__stat-label">Dégâts</span>
+        <span class="og-card__stat-val">{{ (getPersonalParticipant(m)!.damage / 1000).toFixed(1) }}k<span v-if="teamDmgShare(m) !== null" class="og-card__stat-sub" :style="{ color: dmgColor(teamDmgShare(m)!) }"> ({{ teamDmgShare(m) }}%)</span></span>
+      </div>
+    </div>
+
+    <!-- 5. Team comp: two vertical columns -->
+    <div class="og-card__teams">
+      <div class="og-card__team-col">
+        <img v-for="c in getTeams(m).myTeam" :key="c" :src="champIcon(c)" :alt="c"
+          class="og-card__team-icon" :class="{ 'og-card__team-icon--me': c === getPersonalParticipant(m)!.champion }"
+          @error="($event.target as HTMLImageElement).src='/logo.png'" />
+      </div>
+      <div class="og-card__team-col">
+        <img v-for="c in getTeams(m).enemyTeam" :key="c" :src="champIcon(c)" :alt="c"
+          class="og-card__team-icon"
+          @error="($event.target as HTMLImageElement).src='/logo.png'" />
+      </div>
+    </div>
+
+    <!-- 6. Actions -->
+    <div class="og-card__actions">
+      <button v-if="getRiotData(m)?.participants?.length"
+        class="og-card__expand-btn" :class="{ 'og-card__expand-btn--open': expanded.has(m.id) }"
+        @click.stop="toggleExpand(m.id)" title="Détails">
+        <span class="og-card__expand-arrow">▼</span>
+      </button>
+      <button class="hist__action-btn hist__action-btn--del" :disabled="deleting === m.id" @click="remove(m)" title="Supprimer"><Trash2 :size="12" /></button>
+    </div>
+  </div>
+
+  <!-- Scoreboard (expanded) -->
+  <div v-if="expanded.has(m.id)" class="og-card__scoreboard">
+    <div class="og-card__sb-grid">
+      <div class="og-card__sb-col">
+        <div v-for="p in getRiotData(m)!.participants.filter(x => (x.teamId ?? 100) === 100)"
+          :key="p.champion" class="og-card__sb-row"
+          :class="{ 'og-card__sb-row--me': p.isUser, 'og-card__sb-row--win': p.win }">
+          <img :src="champIcon(p.champion)" :alt="p.champion" class="og-card__sb-icon"
+            @error="($event.target as HTMLImageElement).src='/logo.png'" />
+          <span class="og-card__sb-kda">{{ p.kills }}/{{ p.deaths }}/{{ p.assists }}</span>
+          <span class="og-card__sb-cs">{{ p.cs }} cs</span>
+          <span class="og-card__sb-dmg">{{ (p.damage / 1000).toFixed(1) }}k</span>
+        </div>
+      </div>
+      <div class="og-card__sb-divider" />
+      <div class="og-card__sb-col">
+        <div v-for="p in getRiotData(m)!.participants.filter(x => (x.teamId ?? 200) === 200)"
+          :key="p.champion" class="og-card__sb-row"
+          :class="{ 'og-card__sb-row--win': p.win }">
+          <img :src="champIcon(p.champion)" :alt="p.champion" class="og-card__sb-icon"
+            @error="($event.target as HTMLImageElement).src='/logo.png'" />
+          <span class="og-card__sb-kda">{{ p.kills }}/{{ p.deaths }}/{{ p.assists }}</span>
+          <span class="og-card__sb-cs">{{ p.cs }} cs</span>
+          <span class="og-card__sb-dmg">{{ (p.damage / 1000).toFixed(1) }}k</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
         <!-- ── Regular row ── -->
         <div
@@ -860,7 +952,7 @@ async function saveEdit() {
 .og-card {
   display: flex; flex-direction: column;
   background: #111520; border: 1px solid #1A1F2E; border-left: 4px solid transparent;
-  border-radius: 8px; margin-bottom: 4px; overflow: hidden; transition: background .1s;
+  border-radius: 8px; margin-bottom: 4px; overflow: hidden;
 }
 .og-card:hover > .og-card__main { background: #131828; }
 .og-card--win  { border-left-color: #10B981; }
@@ -869,88 +961,101 @@ async function saveEdit() {
 
 .og-card__main {
   display: grid;
-  grid-template-columns: 32px 100px 78px 120px 165px 1fr 44px;
-  align-items: center; min-height: 88px;
+  grid-template-columns: 32px 115px 185px 110px 145px 1fr 40px;
+  align-items: stretch; min-height: 90px;
 }
 
+/* 0. Checkbox */
 .og-card__cb { display: flex; align-items: center; justify-content: center; padding: 0 4px; flex-shrink: 0; }
 
-/* Left zone: queue + date + portrait */
-.og-card__left {
-  display: flex; flex-direction: column; align-items: center; gap: 2px;
-  padding: 10px 6px; border-right: 1px solid rgba(255,255,255,.04);
-  justify-content: center; height: 100%;
+/* 1. Info zone */
+.og-card__info {
+  display: flex; flex-direction: column; justify-content: space-between;
+  padding: 10px 10px 10px 6px; border-right: 1px solid rgba(255,255,255,.04);
 }
-.og-card__queue { font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 1px; color: #3D4460; text-align: center; line-height: 1.2; }
-.og-card__date  { font-family: 'Inter', sans-serif; font-size: 9px; color: #2A3050; }
-.og-card__portrait-wrap { position: relative; margin: 4px 0 2px; }
-.og-card__portrait { width: 52px; height: 52px; border-radius: 8px; object-fit: cover; border: 2px solid rgba(255,255,255,.08); display: block; }
-.og-card__role-badge {
-  position: absolute; bottom: -7px; left: 50%; transform: translateX(-50%);
-  font-family: 'Rajdhani', sans-serif; font-size: 8px; font-weight: 700; letter-spacing: 1px;
-  background: #0D1018; border: 1px solid #1A1F2E; color: #8892B0;
-  padding: 0 4px; border-radius: 3px; white-space: nowrap;
-}
-.og-card__champ-name {
-  font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; color: #8892B0;
-  margin-top: 6px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 88px;
-}
-
-/* Result zone */
-.og-card__result {
-  display: flex; flex-direction: column; align-items: center; gap: 5px;
-  padding: 12px 8px; border-right: 1px solid rgba(255,255,255,.04); height: 100%;
-  justify-content: center;
-}
-.og-card__vd { font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: .5px; }
+.og-card__info-top { display: flex; flex-direction: column; gap: 2px; }
+.og-card__info-bot { display: flex; flex-direction: column; gap: 2px; }
+.og-card__queue { font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1px; color: #8892B0; }
+.og-card__date  { font-family: 'Inter', sans-serif; font-size: 9px; color: #3D4460; }
+.og-card__vd    { font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: .5px; }
 .og-card__vd--win  { color: #10B981; }
 .og-card__vd--loss { color: #EF4444; }
-.og-card__dur { font-family: 'Rajdhani', sans-serif; font-size: 11px; color: #3D4460; }
+.og-card__dur   { font-family: 'Inter', sans-serif; font-size: 10px; color: #3D4460; }
 
-/* KDA zone */
+/* 2. Champion zone */
+.og-card__champ-zone {
+  display: flex; flex-direction: column; justify-content: center; gap: 6px;
+  padding: 8px 10px; border-right: 1px solid rgba(255,255,255,.04);
+}
+.og-card__champ-top { display: flex; align-items: center; gap: 5px; }
+.og-card__portrait-wrap { position: relative; flex-shrink: 0; }
+.og-card__portrait { width: 58px; height: 58px; border-radius: 6px; object-fit: cover; border: 2px solid rgba(255,255,255,.1); display: block; }
+.og-card__level {
+  position: absolute; bottom: -2px; left: -2px;
+  background: #0D1018; border: 1px solid #2A3050;
+  font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700;
+  color: #8892B0; padding: 0 3px; border-radius: 3px; line-height: 15px; z-index: 1;
+}
+.og-card__spells-col { display: flex; flex-direction: column; gap: 3px; align-self: center; }
+.og-card__spell {
+  width: 20px; height: 20px; border-radius: 4px; object-fit: cover;
+  border: 1px solid rgba(255,255,255,.1); display: block;
+}
+.og-card__rune {
+  width: 20px; height: 20px; border-radius: 50%; object-fit: contain;
+  background: #0D1018; border: 1px solid rgba(255,255,255,.08); display: block;
+}
+.og-card__slot-empty { background: #0D1018 !important; }
+.og-card__slot-empty--round { border-radius: 50% !important; }
+.og-card__items-row { display: flex; gap: 2px; align-items: center; }
+.og-card__item-slot {
+  width: 20px; height: 20px; border-radius: 4px; overflow: hidden;
+  background: #0A0E18; border: 1px solid #1A1F2E; flex-shrink: 0;
+}
+.og-card__item-slot--trinket { border-radius: 50%; margin-left: 3px; }
+.og-card__item { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* 3. KDA zone */
 .og-card__kda {
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-  padding: 12px 8px; border-right: 1px solid rgba(255,255,255,.04); height: 100%;
-  justify-content: center;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  padding: 10px 8px; border-right: 1px solid rgba(255,255,255,.04);
 }
-.og-card__score { font-family: 'Rajdhani', sans-serif; font-size: 20px; font-weight: 700; line-height: 1; color: #EEF2FF; white-space: nowrap; }
-.og-card__sep   { color: #3D4460; font-size: 16px; }
+.og-card__score  { font-family: 'Rajdhani', sans-serif; font-size: 20px; font-weight: 700; line-height: 1; color: #EEF2FF; white-space: nowrap; }
+.og-card__sep    { color: #3D4460; font-size: 16px; }
 .og-card__deaths { color: #EF4444; }
-.og-card__ratio { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; }
+.og-card__ratio  { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; }
 
-/* Stats zone */
+/* 4. Stats zone */
 .og-card__stats {
-  display: flex; flex-direction: column; gap: 5px;
-  padding: 12px 14px; border-right: 1px solid rgba(255,255,255,.04); height: 100%;
-  justify-content: center;
+  display: flex; flex-direction: column; justify-content: center; gap: 6px;
+  padding: 10px 14px; border-right: 1px solid rgba(255,255,255,.04);
 }
-.og-card__stat-row { display: flex; align-items: baseline; gap: 6px; }
-.og-card__stat-label { font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 1px; color: #3D4460; min-width: 42px; }
-.og-card__stat-val { font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700; color: #EEF2FF; }
-.og-card__stat-sub { font-family: 'Inter', sans-serif; font-size: 9px; color: #3D4460; }
+.og-card__stat-row   { display: flex; align-items: baseline; gap: 6px; }
+.og-card__stat-label { font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 1px; color: #3D4460; min-width: 40px; }
+.og-card__stat-val   { font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700; color: #EEF2FF; }
+.og-card__stat-sub   { font-family: 'Inter', sans-serif; font-size: 9px; color: #3D4460; }
 
-/* Teams zone */
+/* 5. Team comp: two vertical columns */
 .og-card__teams {
-  display: flex; flex-direction: column; gap: 4px;
-  padding: 10px 10px; align-items: center; justify-content: center;
-  border-right: 1px solid rgba(255,255,255,.04); height: 100%;
+  display: flex; gap: 8px; align-items: center; justify-content: center;
+  padding: 8px 12px; border-right: 1px solid rgba(255,255,255,.04);
 }
-.og-card__team { display: flex; gap: 2px; }
+.og-card__team-col  { display: flex; flex-direction: column; gap: 2px; }
 .og-card__team-icon {
   width: 22px; height: 22px; border-radius: 3px; object-fit: cover;
-  border: 1px solid rgba(255,255,255,.06); opacity: .7;
+  border: 1px solid rgba(255,255,255,.06); opacity: .7; display: block;
 }
 .og-card__team-icon--me { border-color: var(--accent) !important; opacity: 1; }
 
-/* Actions zone */
+/* 6. Actions */
 .og-card__actions {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 6px; padding: 8px 6px; height: 100%;
+  gap: 6px; padding: 8px 6px;
 }
 .og-card__expand-btn {
   width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
   background: #0D1018; border: 1px solid #1A1F2E; border-radius: 4px;
-  color: #3D4460; cursor: pointer; font-size: 9px; transition: all .15s; flex-shrink: 0;
+  color: #3D4460; cursor: pointer; font-size: 9px; transition: all .15s;
 }
 .og-card__expand-btn:hover { border-color: var(--accent); color: var(--accent); }
 .og-card__expand-btn--open { border-color: color-mix(in srgb,var(--accent) 50%,transparent); color: var(--accent); }
@@ -958,23 +1063,18 @@ async function saveEdit() {
 .og-card__expand-btn--open .og-card__expand-arrow { transform: rotate(180deg); }
 
 /* Scoreboard */
-.og-card__scoreboard {
-  border-top: 1px solid #1A1F2E; padding: 8px 48px 8px 52px;
-  background: #0A0E18;
-}
-.og-card__sb-grid {
-  display: grid; grid-template-columns: 1fr 1px 1fr; gap: 0;
-}
+.og-card__scoreboard { border-top: 1px solid #1A1F2E; padding: 8px 52px; background: #0A0E18; }
+.og-card__sb-grid    { display: grid; grid-template-columns: 1fr 1px 1fr; }
 .og-card__sb-divider { background: #1A1F2E; margin: 2px 8px; }
-.og-card__sb-col { display: flex; flex-direction: column; gap: 1px; padding: 0 8px; }
+.og-card__sb-col     { display: flex; flex-direction: column; gap: 1px; padding: 0 8px; }
 .og-card__sb-col:first-child { padding-left: 0; }
 .og-card__sb-col:last-child  { padding-right: 0; }
 .og-card__sb-row {
-  display: grid; grid-template-columns: 24px 1fr 48px 44px;
+  display: grid; grid-template-columns: 24px 1fr 50px 44px;
   align-items: center; gap: 6px; padding: 3px 5px; border-radius: 4px; transition: background .1s;
 }
 .og-card__sb-row:hover { background: rgba(255,255,255,.03); }
-.og-card__sb-row--me { background: color-mix(in srgb, var(--accent) 7%, transparent) !important; }
+.og-card__sb-row--me  { background: color-mix(in srgb, var(--accent) 7%, transparent) !important; }
 .og-card__sb-icon { width: 24px; height: 24px; border-radius: 4px; object-fit: cover; border: 1px solid rgba(255,255,255,.06); }
 .og-card__sb-kda  { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; color: #3D4460; }
 .og-card__sb-cs   { font-family: 'Rajdhani', sans-serif; font-size: 11px; color: #2A3050; text-align: right; }
@@ -1092,12 +1192,18 @@ html[data-theme="light"] .hist__game-kda-score { color: #0D1220; }
 html[data-theme="light"] .hist__game-vs { color: #4A5280; }
 html[data-theme="light"] .og-card { background: #FFFFFF; border-color: #E0E3EF; }
 html[data-theme="light"] .og-card:hover > .og-card__main { background: #F7F8FC; }
-html[data-theme="light"] .og-card__score { color: #0D1220; }
+html[data-theme="light"] .og-card__info    { border-right-color: #E0E3EF; }
+html[data-theme="light"] .og-card__champ-zone { border-right-color: #E0E3EF; }
+html[data-theme="light"] .og-card__kda     { border-right-color: #E0E3EF; }
+html[data-theme="light"] .og-card__stats   { border-right-color: #E0E3EF; }
+html[data-theme="light"] .og-card__teams   { border-right-color: #E0E3EF; }
+html[data-theme="light"] .og-card__portrait { border-color: #C8CDDF; }
+html[data-theme="light"] .og-card__spell   { border-color: #C8CDDF; }
+html[data-theme="light"] .og-card__rune    { border-color: #C8CDDF; background: #F0F3FF; }
+html[data-theme="light"] .og-card__item-slot { background: #F0F3FF; border-color: #E0E3EF; }
+html[data-theme="light"] .og-card__score   { color: #0D1220; }
 html[data-theme="light"] .og-card__stat-val { color: #0D1220; }
-html[data-theme="light"] .og-card__stat-sub { color: #8892B0; }
-html[data-theme="light"] .og-card__portrait { border-color: #E0E3EF; }
-html[data-theme="light"] .og-card__team-icon { border-color: #E0E3EF; }
-html[data-theme="light"] .og-card__role-badge { background: #FFFFFF; border-color: #E0E3EF; color: #8892B0; }
+html[data-theme="light"] .og-card__team-icon { border-color: #C8CDDF; opacity: .85; }
 html[data-theme="light"] .og-card__expand-btn { background: #F7F8FC; border-color: #E0E3EF; color: #8892B0; }
 html[data-theme="light"] .og-card__scoreboard { background: #F0F3FF; border-top-color: #E0E3EF; }
 html[data-theme="light"] .og-card__sb-divider { background: #E0E3EF; }

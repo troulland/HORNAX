@@ -95,6 +95,12 @@ export async function fetchRiotMatches(req: Request, res: Response): Promise<voi
         wardsKilled:  x.wardsKilled  ?? 0,
         controlWards: x.visionWardsBoughtInGame ?? 0,
         turretKills:  x.turretKills  ?? 0,
+        champLevel: x.champLevel ?? 0,
+        items:  [x.item0, x.item1, x.item2, x.item3, x.item4, x.item5],
+        trinket: x.item6 ?? 0,
+        summoner1Id: x.summoner1Id ?? 0,
+        summoner2Id: x.summoner2Id ?? 0,
+        primaryRune: x.perks?.styles?.[0]?.selections?.[0]?.perk ?? 0,
       }))
 
       // Fetch timeline to get individual drake types
@@ -122,10 +128,16 @@ export async function fetchRiotMatches(req: Request, res: Response): Promise<voi
         }
       } catch { /* timeline fetch failed — gracefully omit drake types */ }
 
+      const myTeamId  = p.teamId
+      const myTeamParts = m.info.participants.filter((x: any) => x.teamId === myTeamId)
+      const teamKills = myTeamParts.reduce((s: number, x: any) => s + x.kills, 0)
+      const teamDmg   = myTeamParts.reduce((s: number, x: any) => s + x.totalDamageDealtToChampions, 0)
+
       matches.push({
         matchId:    m.metadata.matchId,
         date:       new Date(m.info.gameStartTimestamp).toISOString().split('T')[0],
         duration:   Math.round(duration),
+        durationSec: m.info.gameDuration,
         champion:   p.championName,
         kills:      p.kills,
         deaths:     p.deaths,
@@ -137,10 +149,18 @@ export async function fetchRiotMatches(req: Request, res: Response): Promise<voi
         role:       ROLE_LABEL[p.teamPosition] ?? (p.teamPosition || p.individualPosition || ''),
         queueId:    m.info.queueId,
         queueLabel,
+        champLevel: p.champLevel ?? 0,
+        items:      [p.item0, p.item1, p.item2, p.item3, p.item4, p.item5],
+        trinket:    p.item6 ?? 0,
+        summoners:  [p.summoner1Id ?? 0, p.summoner2Id ?? 0],
+        primaryRune: p.perks?.styles?.[0]?.selections?.[0]?.perk ?? 0,
+        pKill:      Math.round((p.kills + p.assists) / Math.max(teamKills, 1) * 100),
+        dmgShare:   Math.round(p.totalDamageDealtToChampions / Math.max(teamDmg, 1) * 100),
         participants,
         riotData: {
           matchId:    m.metadata.matchId,
           duration:   Math.round(duration),
+          durationSec: m.info.gameDuration,
           queueLabel,
           participants,
           teams: (m.info.teams as any[]).map((t: any) => ({

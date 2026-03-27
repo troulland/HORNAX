@@ -47,7 +47,7 @@ interface RiotMatch {
   }
 }
 
-const riotId    = ref(auth.user?.username ?? '')
+const riotId    = ref(auth.user?.riot_id ?? '')
 const region    = ref('euw')
 const count     = ref(10)
 const matchType = ref('')
@@ -58,6 +58,26 @@ const ddVersion = ref('15.6.1')
 const results   = ref<RiotMatch[]>([])
 const imported  = ref<Set<string>>(new Set())
 const importing = ref<string | null>(null)
+const riotSaved = ref(false)
+
+async function saveRiotId(id: string) {
+  if (!id.trim() || !auth.token) return
+  try {
+    const res = await fetch(`${API}/players/me/riot-id`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
+      body: JSON.stringify({ riot_id: id.trim() }),
+    })
+    if (res.ok) {
+      if (auth.user) {
+        auth.user = { ...auth.user, riot_id: id.trim() }
+        localStorage.setItem('hx_user', JSON.stringify(auth.user))
+      }
+      riotSaved.value = true
+      setTimeout(() => { riotSaved.value = false }, 2000)
+    }
+  } catch { /* silently ignore */ }
+}
 
 const REGIONS = [
   { value: 'euw',  label: 'EUW' },
@@ -92,6 +112,7 @@ async function search() {
   error.value = null
   results.value = []
   loading.value = true
+  await saveRiotId(riotId.value)
   try {
     const params = new URLSearchParams({
       riotId: riotId.value.trim(),
@@ -142,13 +163,16 @@ async function importAsMatch(m: RiotMatch) {
     <div class="import__card">
       <div class="import__head">
         <span class="import__head-title">IMPORT RIOT GAMES</span>
-        <span class="import__head-note">Clé dev expire toutes les 24h — developer.riotgames.com</span>
+        <span class="import__head-note">Application personnelle Riot Games</span>
       </div>
       <div class="import__body">
         <div class="import__form">
           <!-- Riot ID -->
           <div class="import__field import__field--wide">
-            <label class="hx-label">Riot ID</label>
+            <label class="hx-label">
+              Riot ID
+              <span v-if="riotSaved" class="import__saved-badge">✓ sauvegardé</span>
+            </label>
             <input
               v-model="riotId"
               class="hx-input"
@@ -293,6 +317,11 @@ async function importAsMatch(m: RiotMatch) {
 }
 .import__type-btn:hover { border-color: #2A2F40; color: #8892B0; }
 .import__type-btn--active { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb,var(--accent) 8%,transparent); }
+
+.import__saved-badge {
+  margin-left: 8px; font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 600;
+  color: #10B981; letter-spacing: 0;
+}
 
 .import__search-btn {
   display: flex; align-items: center; gap: 8px; align-self: flex-end;

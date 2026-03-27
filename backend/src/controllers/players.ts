@@ -1,6 +1,14 @@
 import { Request, Response } from 'express'
 import db from '../db'
 
+export async function updateRiotId(req: Request, res: Response): Promise<void> {
+  const userId = req.user!.userId
+  const { riot_id } = req.body
+  if (riot_id === undefined) { res.status(400).json({ error: 'riot_id requis' }); return }
+  db.prepare('UPDATE users SET riot_id = ? WHERE id = ?').run(riot_id || null, userId)
+  res.json({ riot_id: riot_id || null })
+}
+
 const ROUTING: Record<string, string> = {
   euw: 'europe', eune: 'europe', tr: 'europe', ru: 'europe',
   na: 'americas', br: 'americas', lan: 'americas', las: 'americas',
@@ -91,6 +99,9 @@ export async function getPlayerProfile(req: Request, res: Response): Promise<voi
       const allParts = m.info.participants as any[]
       const team1 = allParts.filter(x => x.teamId === 100).map(x => x.championName)
       const team2 = allParts.filter(x => x.teamId === 200).map(x => x.championName)
+      const myTeamParts = allParts.filter(x => x.teamId === myTeamId)
+      const teamKills = myTeamParts.reduce((s: number, x: any) => s + x.kills, 0)
+      const teamDmg   = myTeamParts.reduce((s: number, x: any) => s + x.totalDamageDealtToChampions, 0)
 
       recentGames.push({
         matchId: m.metadata.matchId,
@@ -105,8 +116,16 @@ export async function getPlayerProfile(req: Request, res: Response): Promise<voi
         vision: p.visionScore,
         role: p.teamPosition || p.individualPosition || '',
         duration: Math.round(duration),
+        durationSec: m.info.gameDuration,
         queueId: m.info.queueId,
         queueLabel: QUEUE_LABEL[m.info.queueId] ?? m.info.gameMode,
+        champLevel: p.champLevel ?? 0,
+        items: [p.item0, p.item1, p.item2, p.item3, p.item4, p.item5],
+        trinket: p.item6 ?? 0,
+        summoners: [p.summoner1Id ?? 0, p.summoner2Id ?? 0],
+        primaryRune: p.perks?.styles?.[0]?.selections?.[0]?.perk ?? 0,
+        pKill: Math.round((p.kills + p.assists) / Math.max(teamKills, 1) * 100),
+        dmgShare: Math.round(p.totalDamageDealtToChampions / Math.max(teamDmg, 1) * 100),
         myTeam:    myTeamId === 100 ? team1 : team2,
         enemyTeam: myTeamId === 100 ? team2 : team1,
         participants: allParts.map((x: any) => ({
@@ -116,6 +135,12 @@ export async function getPlayerProfile(req: Request, res: Response): Promise<voi
           damage: x.totalDamageDealtToChampions,
           teamId: x.teamId,
           isMe: x.puuid === account.puuid,
+          champLevel: x.champLevel ?? 0,
+          items: [x.item0, x.item1, x.item2, x.item3, x.item4, x.item5],
+          trinket: x.item6 ?? 0,
+          summoner1Id: x.summoner1Id ?? 0,
+          summoner2Id: x.summoner2Id ?? 0,
+          primaryRune: x.perks?.styles?.[0]?.selections?.[0]?.perk ?? 0,
         })),
       })
       if (!champCount[p.championName]) champCount[p.championName] = { games: 0, wins: 0, kills: 0, deaths: 0, assists: 0 }
