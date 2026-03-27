@@ -61,6 +61,13 @@ const summary = computed(() => {
   return { wins, losses: games.length - wins, wr: Math.round(wins / games.length * 100), kills: kills.toFixed(1), deaths: deaths.toFixed(1), assists: assists.toFixed(1), kda, csMin }
 })
 
+const expanded = ref<Set<string>>(new Set())
+function toggleExpand(id: string) {
+  const s = new Set(expanded.value)
+  if (s.has(id)) s.delete(id); else s.add(id)
+  expanded.value = s
+}
+
 async function loadProfile() {
   loading.value = true
   try {
@@ -276,67 +283,107 @@ onMounted(loadProfile)
           <div v-for="g in profile.riot_stats.recentGames" :key="g.matchId"
             class="pp__match" :class="g.win ? 'pp__match--win' : 'pp__match--loss'">
 
-            <!-- Zone gauche : résultat + queue + durée -->
-            <div class="pp__match-result">
-              <span class="pp__match-vd" :class="g.win ? 'pp__match-vd--win' : 'pp__match-vd--loss'">
-                {{ g.win ? 'Victoire' : 'Défaite' }}
-              </span>
-              <span class="pp__match-queue" :style="{ color: QUEUE_COLOR[g.queueLabel] ?? '#8892B0' }">
-                {{ g.queueLabel }}
-              </span>
-              <span class="pp__match-dur">{{ g.duration }}min</span>
-              <span class="pp__match-date">{{ fmtDate(g.date) }}</span>
+            <!-- Main row -->
+            <div class="pp__match-main">
+              <!-- Left: queue + date + portrait -->
+              <div class="pp__match-left">
+                <span class="pp__match-queue" :style="{ color: QUEUE_COLOR[g.queueLabel] ?? '#8892B0' }">
+                  {{ g.queueLabel }}
+                </span>
+                <span class="pp__match-date">{{ fmtDate(g.date) }}</span>
+                <div class="pp__match-portrait-wrap">
+                  <img :src="champIcon(g.champion)" :alt="g.champion" class="pp__match-portrait"
+                    @error="($event.target as HTMLImageElement).src='/logo.png'" />
+                  <span v-if="g.role" class="pp__match-role-badge">{{ ROLE_ICON[g.role] ?? g.role }}</span>
+                </div>
+                <span class="pp__match-champ-name">{{ g.champion }}</span>
+              </div>
+
+              <!-- Result + duration -->
+              <div class="pp__match-result">
+                <span class="pp__match-vd" :class="g.win ? 'pp__match-vd--win' : 'pp__match-vd--loss'">
+                  {{ g.win ? 'Victoire' : 'Défaite' }}
+                </span>
+                <span class="pp__match-dur">{{ g.duration }}m</span>
+              </div>
+
+              <!-- KDA -->
+              <div class="pp__match-kda">
+                <span class="pp__match-score">
+                  <span class="pp__match-k">{{ g.kills }}</span>
+                  <span class="pp__match-sep"> / </span>
+                  <span class="pp__match-d">{{ g.deaths }}</span>
+                  <span class="pp__match-sep"> / </span>
+                  <span class="pp__match-a">{{ g.assists }}</span>
+                </span>
+                <span class="pp__match-ratio" :style="{ color: kdaColor(g.kda) }">{{ g.kda }} KDA</span>
+              </div>
+
+              <!-- Stats -->
+              <div class="pp__match-stats">
+                <div class="pp__match-stat-row">
+                  <span class="pp__match-stat-lbl">CS</span>
+                  <span class="pp__match-stat-val">{{ g.cs }}<span class="pp__match-stat-sub"> ({{ g.csMin }}/m)</span></span>
+                </div>
+                <div class="pp__match-stat-row">
+                  <span class="pp__match-stat-lbl">Dégâts</span>
+                  <span class="pp__match-stat-val">{{ g.damage ? (g.damage / 1000).toFixed(1) + 'k' : '—' }}</span>
+                </div>
+                <div class="pp__match-stat-row">
+                  <span class="pp__match-stat-lbl">Vision</span>
+                  <span class="pp__match-stat-val">{{ g.vision ?? '—' }}</span>
+                </div>
+              </div>
+
+              <!-- Team comp -->
+              <div v-if="g.myTeam?.length" class="pp__match-teams">
+                <div class="pp__match-team">
+                  <img v-for="c in g.myTeam" :key="c" :src="champIcon(c)" :alt="c"
+                    class="pp__match-team-icon" :class="{ 'pp__match-team-icon--me': c === g.champion }"
+                    @error="($event.target as HTMLImageElement).src='/logo.png'" />
+                </div>
+                <div class="pp__match-team">
+                  <img v-for="c in g.enemyTeam" :key="c" :src="champIcon(c)" :alt="c"
+                    class="pp__match-team-icon"
+                    @error="($event.target as HTMLImageElement).src='/logo.png'" />
+                </div>
+              </div>
+
+              <!-- Expand button -->
+              <div class="pp__match-expand-wrap">
+                <button v-if="g.participants?.length"
+                  class="pp__match-expand-btn" :class="{ 'pp__match-expand-btn--open': expanded.has(g.matchId) }"
+                  @click="toggleExpand(g.matchId)" title="Détails">
+                  <span class="pp__match-expand-arrow">▼</span>
+                </button>
+              </div>
             </div>
 
-            <!-- Zone champion -->
-            <div class="pp__match-champ">
-              <div class="pp__match-champ-img-wrap">
-                <img :src="champIcon(g.champion)" :alt="g.champion" class="pp__match-champ-img"
-                  @error="($event.target as HTMLImageElement).src='/logo.png'" />
-                <span v-if="g.role" class="pp__match-role">{{ ROLE_ICON[g.role] ?? g.role }}</span>
-              </div>
-              <span class="pp__match-champ-name">{{ g.champion }}</span>
-            </div>
-
-            <!-- Zone KDA -->
-            <div class="pp__match-kda">
-              <span class="pp__match-score">
-                <span class="pp__match-k">{{ g.kills }}</span>
-                <span class="pp__match-sep"> / </span>
-                <span class="pp__match-d">{{ g.deaths }}</span>
-                <span class="pp__match-sep"> / </span>
-                <span class="pp__match-a">{{ g.assists }}</span>
-              </span>
-              <span class="pp__match-ratio" :style="{ color: kdaColor(g.kda) }">{{ g.kda }} KDA</span>
-            </div>
-
-            <!-- Zone stats -->
-            <div class="pp__match-stats">
-              <div class="pp__match-stat">
-                <span class="pp__match-stat-val">{{ g.cs }}</span>
-                <span class="pp__match-stat-lbl">CS ({{ g.csMin }}/m)</span>
-              </div>
-              <div class="pp__match-stat">
-                <span class="pp__match-stat-val">{{ g.damage ? (g.damage / 1000).toFixed(1) + 'k' : '—' }}</span>
-                <span class="pp__match-stat-lbl">Dégâts</span>
-              </div>
-              <div class="pp__match-stat">
-                <span class="pp__match-stat-val">{{ g.vision ?? '—' }}</span>
-                <span class="pp__match-stat-lbl">Vision</span>
-              </div>
-            </div>
-
-            <!-- Zone team comp -->
-            <div v-if="g.myTeam?.length" class="pp__match-teams">
-              <div class="pp__match-team">
-                <img v-for="c in g.myTeam" :key="c" :src="champIcon(c)" :alt="c"
-                  class="pp__match-team-icon" :class="{ 'pp__match-team-icon--me': c === g.champion }"
-                  @error="($event.target as HTMLImageElement).src='/logo.png'" />
-              </div>
-              <div class="pp__match-team">
-                <img v-for="c in g.enemyTeam" :key="c" :src="champIcon(c)" :alt="c"
-                  class="pp__match-team-icon"
-                  @error="($event.target as HTMLImageElement).src='/logo.png'" />
+            <!-- Scoreboard (expanded) -->
+            <div v-if="expanded.has(g.matchId) && g.participants?.length" class="pp__match-scoreboard">
+              <div class="pp__match-sb-grid">
+                <div class="pp__match-sb-col">
+                  <div v-for="p in g.participants.filter((x: any) => (x.teamId ?? 100) === 100)"
+                    :key="p.champion" class="pp__match-sb-row"
+                    :class="{ 'pp__match-sb-row--me': p.isMe }">
+                    <img :src="champIcon(p.champion)" :alt="p.champion" class="pp__match-sb-icon"
+                      @error="($event.target as HTMLImageElement).src='/logo.png'" />
+                    <span class="pp__match-sb-kda">{{ p.kills }}/{{ p.deaths }}/{{ p.assists }}</span>
+                    <span class="pp__match-sb-cs">{{ p.cs }} cs</span>
+                    <span class="pp__match-sb-dmg">{{ (p.damage / 1000).toFixed(1) }}k</span>
+                  </div>
+                </div>
+                <div class="pp__match-sb-divider" />
+                <div class="pp__match-sb-col">
+                  <div v-for="p in g.participants.filter((x: any) => (x.teamId ?? 200) === 200)"
+                    :key="p.champion" class="pp__match-sb-row">
+                    <img :src="champIcon(p.champion)" :alt="p.champion" class="pp__match-sb-icon"
+                      @error="($event.target as HTMLImageElement).src='/logo.png'" />
+                    <span class="pp__match-sb-kda">{{ p.kills }}/{{ p.deaths }}/{{ p.assists }}</span>
+                    <span class="pp__match-sb-cs">{{ p.cs }} cs</span>
+                    <span class="pp__match-sb-dmg">{{ (p.damage / 1000).toFixed(1) }}k</span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -540,56 +587,59 @@ onMounted(loadProfile)
 /* ── Match history ── */
 .pp__matches { display: flex; flex-direction: column; gap: 4px; }
 .pp__match {
-  display: grid; grid-template-columns: 120px 120px 130px 1fr 160px;
-  align-items: center; gap: 0;
+  display: flex; flex-direction: column;
   background: #111520; border: 1px solid #1A1F2E; border-radius: 10px;
-  border-left: 4px solid transparent; overflow: hidden;
-  transition: background .1s;
+  border-left: 4px solid transparent; overflow: hidden; transition: background .1s;
 }
-.pp__match:hover { background: #131828; }
+.pp__match:hover > .pp__match-main { background: #131828; }
 .pp__match--win  { border-left-color: #10B981; }
 .pp__match--loss { border-left-color: #EF4444; }
 
-/* Result zone */
-.pp__match-result {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 3px; padding: 14px 10px;
-  border-right: 1px solid rgba(255,255,255,.04);
+.pp__match-main {
+  display: grid;
+  grid-template-columns: 100px 78px 120px 165px 1fr 36px;
+  align-items: center; min-height: 88px;
 }
-.pp__match-vd { font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 1px; }
-.pp__match-vd--win  { color: #10B981; }
-.pp__match-vd--loss { color: #EF4444; }
-.pp__match-queue { font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1px; }
-.pp__match-dur  { font-family: 'Rajdhani', sans-serif; font-size: 11px; color: #8892B0; }
-.pp__match-date { font-family: 'Inter', sans-serif; font-size: 9px; color: #3D4460; }
 
-/* Champion zone */
-.pp__match-champ {
-  display: flex; flex-direction: column; align-items: center; gap: 5px;
-  padding: 12px 10px; border-right: 1px solid rgba(255,255,255,.04);
+/* Left zone */
+.pp__match-left {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 10px 6px; border-right: 1px solid rgba(255,255,255,.04);
+  justify-content: center; height: 100%;
 }
-.pp__match-champ-img-wrap { position: relative; }
-.pp__match-champ-img {
-  width: 52px; height: 52px; border-radius: 10px; object-fit: cover;
-  border: 2px solid rgba(255,255,255,.06); display: block;
-}
-.pp__match-role {
-  position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%);
-  font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 1px;
+.pp__match-queue { font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 1px; text-align: center; line-height: 1.2; }
+.pp__match-date  { font-family: 'Inter', sans-serif; font-size: 9px; color: #2A3050; }
+.pp__match-portrait-wrap { position: relative; margin: 4px 0 2px; }
+.pp__match-portrait { width: 52px; height: 52px; border-radius: 8px; object-fit: cover; border: 2px solid rgba(255,255,255,.08); display: block; }
+.pp__match-role-badge {
+  position: absolute; bottom: -7px; left: 50%; transform: translateX(-50%);
+  font-family: 'Rajdhani', sans-serif; font-size: 8px; font-weight: 700; letter-spacing: 1px;
   background: #0D1018; border: 1px solid #1A1F2E; color: #8892B0;
-  padding: 0 5px; border-radius: 3px; white-space: nowrap;
+  padding: 0 4px; border-radius: 3px; white-space: nowrap;
 }
 .pp__match-champ-name {
-  font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; color: #EEF2FF;
-  margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px; text-align: center;
+  font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; color: #8892B0;
+  margin-top: 6px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 88px;
 }
+
+/* Result zone */
+.pp__match-result {
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  padding: 12px 8px; border-right: 1px solid rgba(255,255,255,.04); height: 100%;
+  justify-content: center;
+}
+.pp__match-vd { font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: .5px; }
+.pp__match-vd--win  { color: #10B981; }
+.pp__match-vd--loss { color: #EF4444; }
+.pp__match-dur { font-family: 'Rajdhani', sans-serif; font-size: 11px; color: #3D4460; }
 
 /* KDA zone */
 .pp__match-kda {
   display: flex; flex-direction: column; align-items: center; gap: 4px;
-  padding: 12px 10px; border-right: 1px solid rgba(255,255,255,.04);
+  padding: 12px 8px; border-right: 1px solid rgba(255,255,255,.04); height: 100%;
+  justify-content: center;
 }
-.pp__match-score { font-family: 'Rajdhani', sans-serif; font-size: 20px; font-weight: 700; line-height: 1; }
+.pp__match-score { font-family: 'Rajdhani', sans-serif; font-size: 20px; font-weight: 700; line-height: 1; white-space: nowrap; }
 .pp__match-k, .pp__match-a { color: #EEF2FF; }
 .pp__match-d { color: #EF4444; }
 .pp__match-sep { color: #3D4460; font-size: 16px; }
@@ -597,25 +647,61 @@ onMounted(loadProfile)
 
 /* Stats zone */
 .pp__match-stats {
-  display: flex; flex-direction: column; gap: 6px;
-  padding: 12px 14px; border-right: 1px solid rgba(255,255,255,.04);
+  display: flex; flex-direction: column; gap: 5px;
+  padding: 12px 14px; border-right: 1px solid rgba(255,255,255,.04); height: 100%;
+  justify-content: center;
 }
-.pp__match-stat { display: flex; flex-direction: column; gap: 1px; }
+.pp__match-stat-row { display: flex; align-items: baseline; gap: 6px; }
+.pp__match-stat-lbl { font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 1px; color: #3D4460; min-width: 42px; }
 .pp__match-stat-val { font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700; color: #EEF2FF; }
-.pp__match-stat-lbl { font-family: 'Inter', sans-serif; font-size: 9px; color: #3D4460; }
+.pp__match-stat-sub { font-family: 'Inter', sans-serif; font-size: 9px; color: #3D4460; }
 
 /* Team comp zone */
 .pp__match-teams {
-  display: flex; flex-direction: column; gap: 5px;
-  padding: 10px 12px; align-items: center; justify-content: center;
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 10px 10px; align-items: center; justify-content: center;
+  border-right: 1px solid rgba(255,255,255,.04); height: 100%;
 }
-.pp__match-team { display: flex; gap: 3px; }
+.pp__match-team { display: flex; gap: 2px; }
 .pp__match-team-icon {
-  width: 24px; height: 24px; border-radius: 4px; object-fit: cover;
+  width: 22px; height: 22px; border-radius: 3px; object-fit: cover;
   border: 1px solid rgba(255,255,255,.06); opacity: .75; transition: opacity .1s;
 }
 .pp__match-team-icon--me { border-color: var(--accent) !important; opacity: 1; }
 .pp__match-team-icon:hover { opacity: 1; }
+
+/* Expand button */
+.pp__match-expand-wrap {
+  display: flex; align-items: center; justify-content: center; padding: 8px 6px; height: 100%;
+}
+.pp__match-expand-btn {
+  width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+  background: #0D1018; border: 1px solid #1A1F2E; border-radius: 4px;
+  color: #3D4460; cursor: pointer; font-size: 9px; transition: all .15s;
+}
+.pp__match-expand-btn:hover { border-color: var(--accent); color: var(--accent); }
+.pp__match-expand-btn--open { border-color: color-mix(in srgb,var(--accent) 50%,transparent); color: var(--accent); }
+.pp__match-expand-arrow { display: inline-block; transition: transform .2s ease; line-height: 1; }
+.pp__match-expand-btn--open .pp__match-expand-arrow { transform: rotate(180deg); }
+
+/* Scoreboard */
+.pp__match-scoreboard { border-top: 1px solid #1A1F2E; padding: 8px 36px; background: #0A0E18; }
+.pp__match-sb-grid { display: grid; grid-template-columns: 1fr 1px 1fr; }
+.pp__match-sb-divider { background: #1A1F2E; margin: 2px 8px; }
+.pp__match-sb-col { display: flex; flex-direction: column; gap: 1px; padding: 0 8px; }
+.pp__match-sb-col:first-child { padding-left: 0; }
+.pp__match-sb-col:last-child  { padding-right: 0; }
+.pp__match-sb-row {
+  display: grid; grid-template-columns: 24px 1fr 48px 44px;
+  align-items: center; gap: 6px; padding: 3px 5px; border-radius: 4px; transition: background .1s;
+}
+.pp__match-sb-row:hover { background: rgba(255,255,255,.03); }
+.pp__match-sb-row--me { background: color-mix(in srgb, var(--accent) 7%, transparent) !important; }
+.pp__match-sb-icon { width: 24px; height: 24px; border-radius: 4px; object-fit: cover; border: 1px solid rgba(255,255,255,.06); }
+.pp__match-sb-kda  { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; color: #3D4460; }
+.pp__match-sb-cs   { font-family: 'Rajdhani', sans-serif; font-size: 11px; color: #2A3050; text-align: right; }
+.pp__match-sb-dmg  { font-family: 'Rajdhani', sans-serif; font-size: 11px; color: #2A3050; text-align: right; }
+.pp__match-sb-row--me .pp__match-sb-kda { color: var(--accent); }
 
 /* ── Light theme ── */
 html[data-theme="light"] .pp__header { background: linear-gradient(180deg, #F7F8FC 0%, #FFFFFF 100%); border-color: #E0E3EF; }
@@ -636,16 +722,22 @@ html[data-theme="light"] .pp__champ-portrait { border-color: #E0E3EF; }
 html[data-theme="light"] .pp__champ-name { color: #0D1220; }
 html[data-theme="light"] .pp__champ-wr-bar { background: #E0E3EF; }
 html[data-theme="light"] .pp__match { background: #FFFFFF; border-color: #E0E3EF; }
-html[data-theme="light"] .pp__match:hover { background: #F7F8FC; }
+html[data-theme="light"] .pp__match:hover > .pp__match-main { background: #F7F8FC; }
+html[data-theme="light"] .pp__match-left { border-right-color: #E0E3EF; }
 html[data-theme="light"] .pp__match-result { border-right-color: #E0E3EF; }
-html[data-theme="light"] .pp__match-champ { border-right-color: #E0E3EF; }
 html[data-theme="light"] .pp__match-kda { border-right-color: #E0E3EF; }
 html[data-theme="light"] .pp__match-stats { border-right-color: #E0E3EF; }
-html[data-theme="light"] .pp__match-champ-img { border-color: #E0E3EF; }
-html[data-theme="light"] .pp__match-role { background: #FFFFFF; border-color: #E0E3EF; }
+html[data-theme="light"] .pp__match-teams { border-right-color: #E0E3EF; }
+html[data-theme="light"] .pp__match-portrait { border-color: #E0E3EF; }
+html[data-theme="light"] .pp__match-role-badge { background: #FFFFFF; border-color: #E0E3EF; color: #8892B0; }
 html[data-theme="light"] .pp__match-k, html[data-theme="light"] .pp__match-a { color: #0D1220; }
 html[data-theme="light"] .pp__match-stat-val { color: #0D1220; }
+html[data-theme="light"] .pp__match-stat-sub { color: #8892B0; }
 html[data-theme="light"] .pp__match-team-icon { border-color: #E0E3EF; }
+html[data-theme="light"] .pp__match-expand-btn { background: #F7F8FC; border-color: #E0E3EF; color: #8892B0; }
+html[data-theme="light"] .pp__match-scoreboard { background: #F0F3FF; border-top-color: #E0E3EF; }
+html[data-theme="light"] .pp__match-sb-divider { background: #E0E3EF; }
+html[data-theme="light"] .pp__match-sb-row:hover { background: rgba(0,0,0,.03); }
 html[data-theme="light"] .pp__summary-scores { color: #0D1220; }
 
 @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }

@@ -109,6 +109,14 @@ export async function getPlayerProfile(req: Request, res: Response): Promise<voi
         queueLabel: QUEUE_LABEL[m.info.queueId] ?? m.info.gameMode,
         myTeam:    myTeamId === 100 ? team1 : team2,
         enemyTeam: myTeamId === 100 ? team2 : team1,
+        participants: allParts.map((x: any) => ({
+          champion: x.championName,
+          kills: x.kills, deaths: x.deaths, assists: x.assists,
+          cs: x.totalMinionsKilled + x.neutralMinionsKilled,
+          damage: x.totalDamageDealtToChampions,
+          teamId: x.teamId,
+          isMe: x.puuid === account.puuid,
+        })),
       })
       if (!champCount[p.championName]) champCount[p.championName] = { games: 0, wins: 0, kills: 0, deaths: 0, assists: 0 }
       champCount[p.championName].games++
