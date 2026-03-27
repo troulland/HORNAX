@@ -185,4 +185,9 @@ html[data-theme="light"] .add__played { background: #F7F8FC; border-color: #E0E3
 .msg-enter-active, .msg-leave-active { transition: all .25s ease; }
 .msg-enter-from, .msg-leave-to { opacity: 0; transform: translateY(-4px); }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 768px) {
+  .add__body { padding: 16px; }
+  .add__row2 { grid-template-columns: 1fr !important; }
+}
 </style>

@@ -51,4 +51,9 @@ import AppHeader from './AppHeader.vue'
   overflow-x: hidden;
   padding: 24px 28px;
 }
+
+@media (max-width: 768px) {
+  .app-layout { flex-direction: column; }
+  .app-layout__content { padding: 16px 16px 80px; }
+}
 </style>

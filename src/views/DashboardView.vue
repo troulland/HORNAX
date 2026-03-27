@@ -1349,4 +1349,35 @@ html[data-theme="light"] .uc-card__name { color: var(--t-primary); }
 html[data-theme="light"] .uc-card__vs { color: var(--t-muted); }
 html[data-theme="light"] .uc-card__logo-wrap { background: var(--bg-hover); }
 html[data-theme="light"] .uc-card__status { color: var(--t-muted); }
+
+@media (max-width: 768px) {
+  /* Roster carousel */
+  .roster-grid {
+    display: flex !important;
+    overflow-x: scroll;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 12px;
+    padding: 0 4px 8px;
+    margin: 0 -4px;
+  }
+  .roster-grid::-webkit-scrollbar { display: none; }
+  .roster-card {
+    flex: 0 0 180px !important;
+    scroll-snap-align: start;
+  }
+
+  /* Général */
+  .dashboard { gap: 16px; }
+
+  /* Stats row → 2 colonnes */
+  .stats-row, .kpi-row {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px;
+  }
+
+  /* Recent matches section */
+  .section-grid { grid-template-columns: 1fr !important; }
+}
 </style>

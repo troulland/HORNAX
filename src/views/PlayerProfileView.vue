@@ -832,4 +832,44 @@ html[data-theme="light"] .pp__match-k, html[data-theme="light"] .pp__match-a { c
 html[data-theme="light"] .pp__summary-scores { color: #0D1220; }
 
 @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (max-width: 768px) {
+  .pp { gap: 14px; }
+
+  /* Header profil */
+  .pp__hdr { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .pp__hdr-right { width: 100%; }
+
+  /* Rank cards : scroll horizontal */
+  .pp__ranks-row {
+    display: flex;
+    overflow-x: scroll;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 10px;
+  }
+  .pp__ranks-row::-webkit-scrollbar { display: none; }
+  .pp__rank-card { flex: 0 0 160px; scroll-snap-align: start; }
+
+  /* Summary tiles : 3 colonnes */
+  .pp__summary { grid-template-columns: repeat(3, 1fr) !important; gap: 8px; }
+  .pp__tile { padding: 10px 6px; }
+  .pp__tile-v { font-size: 18px; }
+
+  /* Champ pool : 2 colonnes */
+  .pp__pool-grid { grid-template-columns: 1fr 1fr !important; }
+
+  /* Recent games */
+  .pp__match-main {
+    grid-template-columns: 90px 1fr 90px 32px !important;
+    min-height: 78px;
+  }
+  .pp__match-teams { display: none !important; }
+  .pp__match-stats { display: none !important; }
+  .pp__match-champ-zone { padding: 6px; gap: 4px; }
+  .pp__match-portrait { width: 44px; height: 44px; }
+  .pp__match-spells-col { display: none; }
+  .pp__match-item-slot { width: 17px; height: 17px; }
+}
 </style>

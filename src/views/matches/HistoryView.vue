@@ -869,7 +869,7 @@ async function saveEdit() {
 }
 .hist__empty-icon { color: #1A1F2E; }
 
-.hist__table { background: #111520; border: 1px solid #1A1F2E; border-radius: 10px; overflow: hidden; }
+.hist__table { background: #0A0D16; border: 1px solid #1A1F2E; border-radius: 10px; overflow: hidden; padding: 6px 8px 2px; }
 .hist__head {
   display: grid; grid-template-columns: 36px 52px 110px 1fr 130px 100px 72px;
   padding: 10px 20px; border-bottom: 1px solid #1A1F2E; gap: 0 8px;
@@ -959,18 +959,18 @@ async function saveEdit() {
 /* ── OP.GG style game cards ── */
 .og-card {
   display: flex; flex-direction: column;
-  background: #111520; border: 1px solid #1A1F2E; border-left: 4px solid transparent;
-  border-radius: 8px; margin-bottom: 6px; overflow: hidden;
+  background: #111520; border: 1px solid rgba(255,255,255,.06); border-left: 3px solid transparent;
+  border-radius: 6px; margin-bottom: 4px; overflow: hidden;
 }
-.og-card:hover > .og-card__main { background: #131828; }
-.og-card--win  { border-left-color: #10B981; }
-.og-card--loss { border-left-color: #EF4444; }
+.og-card:hover > .og-card__main { background: #141929; }
+.og-card--win  { border-left-color: #10B981; background: linear-gradient(90deg, rgba(16,185,129,.04) 0%, #111520 80%); }
+.og-card--loss { border-left-color: #EF4444; background: linear-gradient(90deg, rgba(239,68,68,.04) 0%, #111520 80%); }
 .og-card--selected { outline: 1px solid color-mix(in srgb,var(--accent) 50%,transparent); }
 
 .og-card__main {
   display: grid;
-  grid-template-columns: 32px 115px 185px 110px 145px 1fr 40px;
-  align-items: stretch; min-height: 90px;
+  grid-template-columns: 28px 105px 168px 100px 130px 1fr 36px;
+  align-items: stretch; min-height: 74px;
 }
 
 /* 0. Checkbox */
@@ -978,26 +978,26 @@ async function saveEdit() {
 
 /* 1. Info zone */
 .og-card__info {
-  display: flex; flex-direction: column; justify-content: space-between;
-  padding: 10px 10px 10px 6px; border-right: 1px solid rgba(255,255,255,.04);
+  display: flex; flex-direction: column; justify-content: center; gap: 6px;
+  padding: 8px 8px 8px 4px; border-right: 1px solid rgba(255,255,255,.04);
 }
-.og-card__info-top { display: flex; flex-direction: column; gap: 2px; }
-.og-card__info-bot { display: flex; flex-direction: column; gap: 2px; }
-.og-card__queue { font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1px; color: #8892B0; }
-.og-card__date  { font-family: 'Inter', sans-serif; font-size: 9px; color: #3D4460; }
-.og-card__vd    { font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: .5px; }
+.og-card__info-top { display: flex; flex-direction: column; gap: 1px; }
+.og-card__info-bot { display: flex; flex-direction: column; gap: 1px; }
+.og-card__queue { font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 1px; color: #3D4460; text-transform: uppercase; }
+.og-card__date  { font-family: 'Inter', sans-serif; font-size: 9px; color: #2A3050; }
+.og-card__vd    { font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: .5px; }
 .og-card__vd--win  { color: #10B981; }
 .og-card__vd--loss { color: #EF4444; }
-.og-card__dur   { font-family: 'Inter', sans-serif; font-size: 10px; color: #3D4460; }
+.og-card__dur   { font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 600; color: #3D4460; letter-spacing: .5px; }
 
 /* 2. Champion zone */
 .og-card__champ-zone {
-  display: flex; flex-direction: column; justify-content: center; gap: 6px;
-  padding: 8px 10px; border-right: 1px solid rgba(255,255,255,.04);
+  display: flex; flex-direction: column; justify-content: center; gap: 5px;
+  padding: 6px 8px; border-right: 1px solid rgba(255,255,255,.04);
 }
-.og-card__champ-top { display: flex; align-items: center; gap: 5px; }
+.og-card__champ-top { display: flex; align-items: center; gap: 4px; }
 .og-card__portrait-wrap { position: relative; flex-shrink: 0; }
-.og-card__portrait { width: 58px; height: 58px; border-radius: 6px; object-fit: cover; border: 2px solid rgba(255,255,255,.1); display: block; }
+.og-card__portrait { width: 48px; height: 48px; border-radius: 5px; object-fit: cover; border: 2px solid rgba(255,255,255,.08); display: block; }
 .og-card__level {
   position: absolute; bottom: -2px; left: -2px;
   background: #0D1018; border: 1px solid #2A3050;
@@ -1025,18 +1025,18 @@ async function saveEdit() {
 
 /* 3. KDA zone */
 .og-card__kda {
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
-  padding: 10px 8px; border-right: 1px solid rgba(255,255,255,.04);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  padding: 8px 6px; border-right: 1px solid rgba(255,255,255,.04);
 }
-.og-card__score  { font-family: 'Rajdhani', sans-serif; font-size: 20px; font-weight: 700; line-height: 1; color: #EEF2FF; white-space: nowrap; }
-.og-card__sep    { color: #3D4460; font-size: 16px; }
+.og-card__score  { font-family: 'Rajdhani', sans-serif; font-size: 17px; font-weight: 700; line-height: 1; color: #EEF2FF; white-space: nowrap; }
+.og-card__sep    { color: #3D4460; font-size: 14px; }
 .og-card__deaths { color: #EF4444; }
 .og-card__ratio  { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; }
 
 /* 4. Stats zone */
 .og-card__stats {
-  display: flex; flex-direction: column; justify-content: center; gap: 6px;
-  padding: 10px 14px; border-right: 1px solid rgba(255,255,255,.04);
+  display: flex; flex-direction: column; justify-content: center; gap: 4px;
+  padding: 8px 10px; border-right: 1px solid rgba(255,255,255,.04);
 }
 .og-card__stat-row   { display: flex; align-items: baseline; gap: 6px; }
 .og-card__stat-label { font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 1px; color: #3D4460; min-width: 40px; }
@@ -1228,7 +1228,9 @@ html[data-theme="light"] .og-card__scoreboard { background: #F0F3FF; border-top-
 html[data-theme="light"] .og-card__sb-divider { background: #E0E3EF; }
 html[data-theme="light"] .og-card__sb-row:hover { background: rgba(0,0,0,.03); }
 html[data-theme="light"] .og-card__sb-row--win .og-card__sb-kda { color: #4A5280; }
-html[data-theme="light"] .hist__table { background: #FFFFFF; border-color: #E0E3EF; }
+html[data-theme="light"] .hist__table { background: #F0F3FF; border-color: #E0E3EF; }
+html[data-theme="light"] .og-card--win  { background: linear-gradient(90deg, rgba(16,185,129,.05) 0%, #FFFFFF 80%); }
+html[data-theme="light"] .og-card--loss { background: linear-gradient(90deg, rgba(239,68,68,.05) 0%, #FFFFFF 80%); }
 html[data-theme="light"] .hist__head { border-bottom-color: #E0E3EF; }
 html[data-theme="light"] .hist__row { border-bottom-color: #E0E3EF; }
 html[data-theme="light"] .hist__row:hover { background: color-mix(in srgb,var(--accent) 3%,transparent); }
@@ -1272,4 +1274,44 @@ html[data-theme="light"] .hist__actbar-clear:hover { border-color: #4A5280; colo
 .modal-enter-from, .modal-leave-to { opacity: 0; }
 .modal-enter-from .modal, .modal-leave-to .modal { transform: scale(.97) translateY(6px); }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── MOBILE ── */
+@media (max-width: 768px) {
+  /* og-card mobile : layout simplifié */
+  .og-card__main {
+    grid-template-columns: 24px 80px 1fr 84px 32px !important;
+    min-height: 66px;
+  }
+  /* Cacher teams et stats sur mobile */
+  .og-card__teams  { display: none !important; }
+  .og-card__stats  { display: none !important; }
+  /* KDA plus compact */
+  .og-card__kda { padding: 6px 4px; }
+  .og-card__score { font-size: 15px; }
+  /* Info zone */
+  .og-card__info { padding: 6px 6px 6px 4px; }
+  .og-card__queue { font-size: 9px; }
+  /* Champ zone : portrait + items seulement */
+  .og-card__champ-zone { padding: 6px 6px; gap: 4px; }
+  .og-card__portrait { width: 44px; height: 44px; }
+  .og-card__spells-col { display: none; }
+  /* Items plus petits */
+  .og-card__item-slot { width: 17px; height: 17px; }
+  .og-card__item-slot--trinket { margin-left: 2px; }
+  /* Hist table regular row */
+  .hist__head { display: none !important; }
+  .hist__row {
+    grid-template-columns: 36px 44px 1fr 80px 36px !important;
+    padding: 10px 12px;
+    min-height: 48px;
+  }
+  .hist__series { display: none !important; }
+  /* Filters wrap */
+  .hist__filters { gap: 6px; }
+  .hist__filter { padding: 5px 10px; font-size: 10px; }
+  /* Scoreboard simplifié */
+  .og-card__scoreboard { padding: 8px 16px; }
+  .og-card__sb-row { grid-template-columns: 24px 1fr 44px !important; }
+  .og-card__sb-cs { display: none; }
+}
 </style>

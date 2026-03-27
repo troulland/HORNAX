@@ -433,4 +433,13 @@ html[data-theme="light"] .match-row__kda { color: #0D1220; }
 
 .spin { animation: spin .6s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 768px) {
+  .import__form { flex-direction: column; }
+  .import__field--wide { min-width: unset; width: 100%; }
+  .import__field { width: 100%; }
+  .import__search-btn { width: 100%; justify-content: center; }
+  .match-row { flex-wrap: wrap; gap: 8px; padding: 10px 12px; }
+  .match-row__meta { width: 100%; flex-direction: row; justify-content: space-between; }
+}
 </style>

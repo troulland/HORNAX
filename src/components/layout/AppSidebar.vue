@@ -97,6 +97,31 @@ function logout() { auth.logout(); router.push('/login') }
       </button>
     </div>
   </aside>
+
+  <Teleport to="body">
+    <nav class="mobile-nav">
+      <RouterLink to="/dashboard" class="mobile-nav__item" :class="{ 'mobile-nav__item--active': route.path === '/dashboard' }">
+        <LayoutDashboard :size="20" />
+        <span>Dashboard</span>
+      </RouterLink>
+      <RouterLink to="/matches" class="mobile-nav__item" :class="{ 'mobile-nav__item--active': route.path.startsWith('/matches') }">
+        <Swords :size="20" />
+        <span>Parties</span>
+      </RouterLink>
+      <RouterLink to="/analytics" class="mobile-nav__item" :class="{ 'mobile-nav__item--active': route.path === '/analytics' }">
+        <BarChart3 :size="20" />
+        <span>Analytics</span>
+      </RouterLink>
+      <RouterLink to="/calendar/availability" class="mobile-nav__item" :class="{ 'mobile-nav__item--active': route.path.startsWith('/calendar') }">
+        <Calendar :size="20" />
+        <span>Calendrier</span>
+      </RouterLink>
+      <RouterLink to="/profile" class="mobile-nav__item" :class="{ 'mobile-nav__item--active': route.path === '/profile' }">
+        <User :size="20" />
+        <span>Profil</span>
+      </RouterLink>
+    </nav>
+  </Teleport>
 </template>
 
 <style scoped>
@@ -133,4 +158,38 @@ function logout() { auth.logout(); router.push('/login') }
 .sub-enter-from, .sub-leave-to { opacity: 0; transform: translateY(-6px); }
 
 .sidebar__bottom { padding: 10px 10px 16px; display: flex; flex-direction: column; gap: 2px; }
+
+/* Hide sidebar on mobile */
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+}
+
+/* Mobile bottom nav */
+.mobile-nav {
+  display: none;
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+  height: 64px;
+  background: #0D1018;
+  border-top: 1px solid #1A1F2E;
+  flex-direction: row;
+  align-items: stretch;
+  padding: 0 4px;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.mobile-nav__item {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; text-decoration: none; color: #3D4460;
+  font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 1px;
+  transition: color .15s; border-radius: 8px; margin: 4px 2px;
+}
+.mobile-nav__item:hover,
+.mobile-nav__item--active { color: var(--accent); }
+.mobile-nav__item--active { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+
+@media (max-width: 768px) {
+  .mobile-nav { display: flex; }
+}
+
+html[data-theme="light"] .mobile-nav { background: #FFFFFF; border-top-color: #E0E3EF; }
+html[data-theme="light"] .mobile-nav__item--active { background: color-mix(in srgb, var(--accent) 8%, transparent); }
 </style>

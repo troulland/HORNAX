@@ -276,4 +276,42 @@ const losses = computed(() => team.teamStats.totalGames - wins.value)
 @keyframes pageIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes cardIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes scan { 0% { transform: translateY(-100%); } 100% { transform: translateY(300%); } }
+
+@media (max-width: 768px) {
+  .roster { gap: 16px; padding: 0; }
+  .roster__hdr { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .roster__record { width: 100%; justify-content: space-around; }
+
+  /* Carousel swiper pour lineup */
+  .lineup {
+    height: auto;
+    overflow-x: scroll;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 12px;
+    padding: 0 16px 8px;
+    margin: 0 -16px;
+  }
+  .lineup::-webkit-scrollbar { display: none; }
+  .lcard {
+    flex: 0 0 260px;
+    height: 300px;
+    scroll-snap-align: start;
+  }
+
+  /* Subs : scroll horizontal */
+  .subs__list {
+    overflow-x: scroll;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+  }
+  .subs__list::-webkit-scrollbar { display: none; }
+  .scard {
+    flex: 0 0 220px;
+    scroll-snap-align: start;
+  }
+}
 </style>

@@ -312,4 +312,12 @@ html[data-theme="light"] .theme-option--active { border-color: var(--accent); ba
 @keyframes spin    { to { transform: rotate(360deg); } }
 .msg-enter-active, .msg-leave-active { transition: all .25s ease; }
 .msg-enter-from, .msg-leave-to { opacity: 0; transform: translateY(-4px); }
+
+@media (max-width: 768px) {
+  .profile__grid { grid-template-columns: 1fr !important; }
+  .profile__hdr { flex-wrap: wrap; }
+  .profile__theme-toggle { width: 100%; justify-content: center; margin-left: 0; margin-top: 8px; }
+  .pcard__body--row { flex-direction: column; }
+  .theme-option { flex-direction: row; padding: 14px 16px; gap: 12px; }
+}
 </style>

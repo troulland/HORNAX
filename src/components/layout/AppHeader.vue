@@ -110,4 +110,13 @@ const nextEventDate = computed(() => {
   0%,100% { opacity: 1; box-shadow: 0 0 6px color-mix(in srgb,var(--accent) 80%,transparent); }
   50% { opacity: .7; box-shadow: 0 0 12px color-mix(in srgb,var(--accent) 100%,transparent); }
 }
+
+@media (max-width: 768px) {
+  .header { padding: 0 16px; height: 54px; }
+  .header__date { display: none; }
+  .header__next { display: none; }
+  .header__icon-btn:not(.header__theme-btn) { display: none; }
+  .header__user-info { display: none; }
+  .header__user { padding: 4px; border: none; background: transparent; }
+}
 </style>
