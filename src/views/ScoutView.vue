@@ -55,9 +55,42 @@ const inputId  = ref('')
 const inputReg = ref('euw')
 const scouts   = ref<ScoutResult[]>([])
 
+function parseOpGGUrl(url: string): { summoners: string[]; region: string } | null {
+  try {
+    const u = new URL(url)
+    if (!u.hostname.includes('op.gg')) return null
+    // Extract region from path e.g. /fr/lol/multisearch/euw
+    const pathMatch = u.pathname.match(/multisearch\/([a-z0-9]+)/i)
+    const region = pathMatch ? pathMatch[1].toLowerCase() : 'euw'
+    const raw = u.searchParams.get('summoners')
+    if (!raw) return null
+    // Decode + split by comma
+    const summoners = raw.split(',').map(s => s.trim().replace(/\+/g, ' ')).filter(s => s.includes('#'))
+    return summoners.length ? { summoners, region } : null
+  } catch { return null }
+}
+
 async function addScout() {
   const id = inputId.value.trim()
-  if (!id || !id.includes('#')) return
+  if (!id) return
+
+  // Check if it's an op.gg multisearch URL
+  const parsed = parseOpGGUrl(id)
+  if (parsed) {
+    inputId.value = ''
+    inputReg.value = parsed.region
+    for (const summoner of parsed.summoners) {
+      if (scouts.value.length >= 5) break
+      const key = `${summoner}__${parsed.region}`
+      if (scouts.value.some(s => s.id === key)) continue
+      const entry: ScoutResult = { id: key, riotId: summoner, region: parsed.region, state: 'loading' }
+      scouts.value.push(entry)
+      fetchScout(entry)
+    }
+    return
+  }
+
+  if (!id.includes('#')) return
   const key = `${id}__${inputReg.value}`
   if (scouts.value.some(s => s.id === key)) return
 
@@ -110,7 +143,7 @@ function removeScout(id: string) {
           <input
             v-model="inputId"
             class="hx-input"
-            placeholder="Faker#KR1"
+            placeholder="Faker#KR1 ou lien op.gg multisearch"
             @keyup.enter="addScout"
           />
         </div>
@@ -120,14 +153,14 @@ function removeScout(id: string) {
             <option v-for="r in REGIONS" :key="r.value" :value="r.value">{{ r.label }}</option>
           </select>
         </div>
-        <button class="scout__add-btn" @click="addScout" :disabled="!inputId.trim().includes('#')">
+        <button class="scout__add-btn" @click="addScout" :disabled="!inputId.trim().includes('#') && !inputId.trim().includes('op.gg')">
           <Search :size="15" />
           ANALYSER
         </button>
       </div>
       <p class="scout__hint">
         <Crosshair :size="11" style="display:inline;vertical-align:middle;margin-right:4px"/>
-        Ajoute jusqu'à 5 joueurs adverses pour comparer leur rank et champion pool avant un scrim.
+        Ajoute jusqu'à 5 joueurs (Riot ID ou colle directement un lien op.gg multisearch pour importer les 5 d'un coup).
       </p>
     </div>
 
@@ -139,7 +172,7 @@ function removeScout(id: string) {
     </div>
 
     <!-- Scout cards -->
-    <div class="scout__grid">
+    <div class="scout__grid" :class="`scout__grid--${scouts.length}`">
       <div
         v-for="s in scouts" :key="s.id"
         class="scout__card"
@@ -214,7 +247,6 @@ function removeScout(id: string) {
               <div
                 v-for="c in s.champPool" :key="c.name"
                 class="scout__champ"
-                :title="`${c.name} — ${c.games}G · ${c.winRate}% WR · ${c.kda} KDA`"
               >
                 <img
                   :src="champIcon(c.name, s.ddVersion ?? '15.6.1')"
@@ -222,7 +254,10 @@ function removeScout(id: string) {
                   class="scout__champ-img"
                   @error="($event.target as HTMLImageElement).src='/logo.png'"
                 />
-                <span class="scout__champ-name">{{ c.name }}</span>
+                <div class="scout__champ-body">
+                  <span class="scout__champ-name">{{ c.name }}</span>
+                  <span class="scout__champ-games">{{ c.games }} partie{{ c.games > 1 ? 's' : '' }}</span>
+                </div>
                 <span class="scout__champ-wr" :style="{ color: wrColor(c.winRate) }">{{ c.winRate }}%</span>
                 <span class="scout__champ-kda" :style="{ color: kdaColor(c.kda) }">{{ c.kda }}</span>
               </div>
@@ -264,8 +299,9 @@ function removeScout(id: string) {
 .scout__empty-title { font-family: 'Rajdhani', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: 2px; color: #3D4460; }
 .scout__empty-sub { font-family: 'Inter', sans-serif; font-size: 12px; color: #2A3050; }
 
-/* Grid */
-.scout__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+/* Grid — always a single row, cards share the full width equally */
+.scout__grid { display: flex; gap: 12px; }
+.scout__grid .scout__card { flex: 1; min-width: 0; }
 
 /* Card */
 .scout__card {
@@ -330,8 +366,10 @@ function removeScout(id: string) {
   align-items: center; gap: 8px; padding: 5px 6px; border-radius: 6px;
   background: #0D1018; border: 1px solid rgba(255,255,255,.03);
 }
-.scout__champ-img  { width: 32px; height: 32px; border-radius: 5px; object-fit: cover; border: 1px solid #1A1F2E; }
+.scout__champ-img  { width: 32px; height: 32px; border-radius: 5px; object-fit: cover; border: 1px solid #1A1F2E; flex-shrink: 0; }
+.scout__champ-body { display: flex; flex-direction: column; gap: 1px; min-width: 0; overflow: hidden; }
 .scout__champ-name { font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700; color: #EEF2FF; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.scout__champ-games { font-family: 'Inter', sans-serif; font-size: 10px; color: #8892B0; white-space: nowrap; }
 .scout__champ-wr   { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; white-space: nowrap; }
 .scout__champ-kda  { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; white-space: nowrap; min-width: 52px; text-align: right; }
 

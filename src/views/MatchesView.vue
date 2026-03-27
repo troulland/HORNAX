@@ -2,7 +2,7 @@
 import { useRoute } from 'vue-router'
 const route = useRoute()
 const tabs = [
-  { label: 'Historique',  path: '/matches/history' },
+  { label: 'Parties',  path: '/matches/history' },
   { label: 'Import Riot', path: '/matches/import' },
 ]
 </script>
@@ -11,7 +11,7 @@ const tabs = [
   <div class="matches-layout">
     <div>
       <span class="matches-eye">COMPÉTITION · RÉSULTATS</span>
-      <h1 class="matches-title">PARTIES</h1>
+      <h1 class="matches-title">DONNÉES</h1>
     </div>
     <div class="matches-tabs">
       <RouterLink

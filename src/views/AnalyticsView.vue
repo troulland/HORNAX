@@ -260,20 +260,24 @@ interface MetaChamp { name: string; games: number; wins: number; kills: number; 
 
 const metaChamps = computed(() => {
   const map = new Map<string, MetaChamp>()
-  for (const m of matchStore.history) {
+  for (const m of matchStore.history.filter(m => m.context === 'team')) {
     if (!m.riot_data) continue
     try {
       const rd = JSON.parse(m.riot_data)
-      const player = rd.participants?.find((p: any) => p.isUser)
-      if (!player?.champion) continue
-      const name = player.champion
-      if (!map.has(name)) map.set(name, { name, games: 0, wins: 0, kills: 0, deaths: 0, assists: 0 })
-      const s = map.get(name)!
-      s.games++
-      if (player.win) s.wins++
-      s.kills   += player.kills   ?? 0
-      s.deaths  += player.deaths  ?? 0
-      s.assists += player.assists ?? 0
+      const userP = rd.participants?.find((p: any) => p.isUser)
+      if (!userP) continue
+      const myTeamId = userP.teamId ?? 100
+      const teamMembers = (rd.participants as any[]).filter((p: any) => p.teamId === myTeamId)
+      for (const p of teamMembers) {
+        if (!p.champion) continue
+        if (!map.has(p.champion)) map.set(p.champion, { name: p.champion, games: 0, wins: 0, kills: 0, deaths: 0, assists: 0 })
+        const s = map.get(p.champion)!
+        s.games++
+        if (p.win) s.wins++
+        s.kills   += p.kills   ?? 0
+        s.deaths  += p.deaths  ?? 0
+        s.assists += p.assists ?? 0
+      }
     } catch { /* skip */ }
   }
   return [...map.values()]
@@ -288,7 +292,7 @@ const metaChamps = computed(() => {
     }))
 })
 
-const metaTotalGames = computed(() => matchStore.history.filter(m => m.riot_data).length)
+const metaTotalGames = computed(() => matchStore.history.filter(m => m.context === 'team' && m.riot_data).length)
 const metaUniqueChamps = computed(() => metaChamps.value.length)
 const metaAvgWr = computed(() => {
   if (!metaChamps.value.length) return 0
@@ -345,8 +349,8 @@ const doughnutOptions = {
     <!-- Page header -->
     <div class="analytics__header">
       <div>
-        <span class="analytics__eye">PERFORMANCE · DONNÉES</span>
-        <h1 class="analytics__title">ANALYTICS</h1>
+        <span class="analytics__eye">PERFORMANCE · STATISTIQUES</span>
+        <h1 class="analytics__title">HISTORIQUE</h1>
       </div>
 
       <!-- Tab switcher -->

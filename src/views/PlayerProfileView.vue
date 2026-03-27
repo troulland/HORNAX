@@ -34,7 +34,7 @@ const QUEUE_COLOR: Record<string, string> = {
 const SUMMONER_KEY: Record<number, string> = {
   1: 'SummonerBoost', 3: 'SummonerExhaust', 4: 'SummonerFlash',
   6: 'SummonerHaste', 7: 'SummonerHeal', 11: 'SummonerSmite',
-  12: 'SummonerTeleport', 13: 'SummonerMana', 14: 'SummonerIgnite',
+  12: 'SummonerTeleport', 13: 'SummonerMana', 14: 'SummonerDot',
   21: 'SummonerBarrier', 32: 'SummonerSnowball',
 }
 const RUNE_PATH: Record<number, string> = {
