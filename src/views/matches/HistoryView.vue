@@ -415,8 +415,8 @@ async function saveEdit() {
         </span>
         <span>RÉS.</span>
         <span>DATE</span>
-        <span>KDA</span>
-        <span>CS</span>
+        <span>ADVERSAIRE</span>
+        <span>SÉRIE</span>
         <span>TYPE</span>
         <span></span>
       </div>
@@ -512,15 +512,22 @@ async function saveEdit() {
 
     <!-- 5. Team comp: two vertical columns -->
     <div class="og-card__teams">
-      <div class="og-card__team-col">
-        <img v-for="c in getTeams(m).myTeam" :key="c" :src="champIcon(c)" :alt="c"
-          class="og-card__team-icon" :class="{ 'og-card__team-icon--me': c === getPersonalParticipant(m)!.champion }"
-          @error="($event.target as HTMLImageElement).src='/logo.png'" />
+      <div class="og-card__team-side">
+        <span class="og-card__team-label og-card__team-label--ally">ALLIÉS</span>
+        <div class="og-card__team-col">
+          <img v-for="c in getTeams(m).myTeam" :key="c" :src="champIcon(c)" :alt="c"
+            class="og-card__team-icon" :class="{ 'og-card__team-icon--me': c === getPersonalParticipant(m)!.champion }"
+            @error="($event.target as HTMLImageElement).src='/logo.png'" />
+        </div>
       </div>
-      <div class="og-card__team-col">
-        <img v-for="c in getTeams(m).enemyTeam" :key="c" :src="champIcon(c)" :alt="c"
-          class="og-card__team-icon"
-          @error="($event.target as HTMLImageElement).src='/logo.png'" />
+      <div class="og-card__team-vs">VS</div>
+      <div class="og-card__team-side">
+        <span class="og-card__team-label og-card__team-label--enemy">ENNEMIS</span>
+        <div class="og-card__team-col">
+          <img v-for="c in getTeams(m).enemyTeam" :key="c" :src="champIcon(c)" :alt="c"
+            class="og-card__team-icon"
+            @error="($event.target as HTMLImageElement).src='/logo.png'" />
+        </div>
       </div>
     </div>
 
@@ -865,15 +872,16 @@ async function saveEdit() {
 .hist__table { background: #111520; border: 1px solid #1A1F2E; border-radius: 10px; overflow: hidden; }
 .hist__head {
   display: grid; grid-template-columns: 36px 52px 110px 1fr 130px 100px 72px;
-  padding: 10px 16px; border-bottom: 1px solid #1A1F2E;
+  padding: 10px 20px; border-bottom: 1px solid #1A1F2E; gap: 0 8px;
   font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 2px; color: #3D4460;
 }
 .hist__row {
   display: grid; grid-template-columns: 36px 52px 110px 1fr 130px 100px 72px;
-  padding: 10px 16px; border-bottom: 1px solid #1A1F2E; align-items: center; transition: background .12s;
+  padding: 12px 20px; border-bottom: 1px solid #1A1F2E; align-items: center;
+  gap: 0 8px; transition: background .12s; min-height: 56px;
 }
 .hist__row:last-child { border-bottom: none; }
-.hist__row:hover { background: rgba(255,255,255,.02); }
+.hist__row:hover { background: rgba(255,255,255,.03); }
 .hist__row--selected { background: color-mix(in srgb, var(--accent) 5%, transparent) !important; }
 
 .hist__badge {
@@ -952,7 +960,7 @@ async function saveEdit() {
 .og-card {
   display: flex; flex-direction: column;
   background: #111520; border: 1px solid #1A1F2E; border-left: 4px solid transparent;
-  border-radius: 8px; margin-bottom: 4px; overflow: hidden;
+  border-radius: 8px; margin-bottom: 6px; overflow: hidden;
 }
 .og-card:hover > .og-card__main { background: #131828; }
 .og-card--win  { border-left-color: #10B981; }
@@ -1037,8 +1045,18 @@ async function saveEdit() {
 
 /* 5. Team comp: two vertical columns */
 .og-card__teams {
-  display: flex; gap: 8px; align-items: center; justify-content: center;
-  padding: 8px 12px; border-right: 1px solid rgba(255,255,255,.04);
+  display: flex; gap: 6px; align-items: center; justify-content: center;
+  padding: 8px 10px; border-right: 1px solid rgba(255,255,255,.04);
+}
+.og-card__team-side  { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.og-card__team-label {
+  font-family: 'Rajdhani', sans-serif; font-size: 8px; font-weight: 700; letter-spacing: 1px;
+}
+.og-card__team-label--ally  { color: #10B981; }
+.og-card__team-label--enemy { color: #EF4444; }
+.og-card__team-vs {
+  font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 1px;
+  color: #2A3050; align-self: center; margin-top: 12px;
 }
 .og-card__team-col  { display: flex; flex-direction: column; gap: 2px; }
 .og-card__team-icon {
@@ -1204,6 +1222,7 @@ html[data-theme="light"] .og-card__item-slot { background: #F0F3FF; border-color
 html[data-theme="light"] .og-card__score   { color: #0D1220; }
 html[data-theme="light"] .og-card__stat-val { color: #0D1220; }
 html[data-theme="light"] .og-card__team-icon { border-color: #C8CDDF; opacity: .85; }
+html[data-theme="light"] .og-card__team-vs { color: #C8CDDF; }
 html[data-theme="light"] .og-card__expand-btn { background: #F7F8FC; border-color: #E0E3EF; color: #8892B0; }
 html[data-theme="light"] .og-card__scoreboard { background: #F0F3FF; border-top-color: #E0E3EF; }
 html[data-theme="light"] .og-card__sb-divider { background: #E0E3EF; }

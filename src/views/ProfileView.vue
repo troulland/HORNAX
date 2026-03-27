@@ -9,9 +9,8 @@ const auth  = useAuthStore()
 const theme = useThemeStore()
 
 /* ── Infos ──────────────────────────────────────── */
-const infoUser   = ref(auth.user?.username ?? '')
-const infoEmail  = ref(auth.user?.email ?? '')
-const infoRiotId = ref(auth.user?.riot_id ?? '')
+const infoUser  = ref(auth.user?.username ?? '')
+const infoEmail = ref(auth.user?.email ?? '')
 const infoMsg   = ref<{ text: string; ok: boolean } | null>(null)
 const infoLoad  = ref(false)
 
@@ -22,12 +21,12 @@ async function saveInfo() {
     const res  = await fetch(`${API}/auth/profile`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
-      body: JSON.stringify({ username: infoUser.value.trim(), email: infoEmail.value.trim(), riot_id: infoRiotId.value.trim() || null }),
+      body: JSON.stringify({ username: infoUser.value.trim(), email: infoEmail.value.trim() }),
     })
     const data = await res.json()
     if (!res.ok) { infoMsg.value = { text: data.error, ok: false } }
     else {
-      auth.user = { ...auth.user!, ...data } as AuthUser
+      auth.user = { ...auth.user!, username: data.username, email: data.email } as AuthUser
       localStorage.setItem('hx_user', JSON.stringify(auth.user))
       infoMsg.value = { text: 'Informations mises à jour.', ok: true }
     }
@@ -118,11 +117,6 @@ const roleColor = computed(() => ROLE_COLOR[auth.user?.game_role ?? ''] ?? '#889
             <label class="hx-label">Email</label>
             <input v-model="infoEmail" class="hx-input" type="email" placeholder="ton@email.com" autocomplete="email" />
           </div>
-          <div class="pcard__field">
-            <label class="hx-label">Riot ID <span class="pcard__field-hint">utilisé pour les stats sur le roster</span></label>
-            <input v-model="infoRiotId" class="hx-input" placeholder="Kaishi#EUW" autocomplete="off" />
-          </div>
-
           <Transition name="msg">
             <div v-if="infoMsg" class="pcard__msg" :class="infoMsg.ok ? 'pcard__msg--ok' : 'pcard__msg--err'">
               <CheckCircle v-if="infoMsg.ok" :size="13" />
