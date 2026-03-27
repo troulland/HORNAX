@@ -62,6 +62,7 @@ const riotSaved = ref(false)
 
 async function saveRiotId(id: string) {
   if (!id.trim() || !auth.token) return
+  if (id.trim() === (auth.user?.riot_id ?? '')) return
   try {
     const res = await fetch(`${API}/players/me/riot-id`, {
       method: 'PATCH',

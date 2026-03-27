@@ -74,11 +74,8 @@ export async function getPlayerProfile(req: Request, res: Response): Promise<voi
     const account = await riotFetch(
       `https://${routing}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}`
     )
-    const summoner = await riotFetch(
-      `https://${platform}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${account.puuid}`
-    )
     const ranked: any[] = await riotFetch(
-      `https://${platform}.api.riotgames.com/lol/league/v4/entries/by-summoner/${summoner.id}`
+      `https://${platform}.api.riotgames.com/lol/league/v4/entries/by-puuid/${account.puuid}`
     )
     const ddVersion: string = await fetch('https://ddragon.leagueoflegends.com/api/versions.json')
       .then(r => r.json()).then((v: unknown) => (v as string[])[0])
@@ -170,7 +167,6 @@ export async function getPlayerProfile(req: Request, res: Response): Promise<voi
 
     profile.riot_stats = {
       gameName, tagLine, ddVersion,
-      summonerLevel: summoner.summonerLevel,
       soloQ: rankEntry(soloQ),
       flexQ: rankEntry(flexQ),
       recentGames,
