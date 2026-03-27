@@ -87,6 +87,11 @@ function kdaColor(v: string | number) {
 }
 function wrColor(v: number) { return v >= 60 ? '#00C896' : v >= 50 ? '#F0B429' : '#EF4444' }
 function rankNoDiv(tier: string) { return ['MASTER','GRANDMASTER','CHALLENGER'].includes(tier) }
+function rankImg(tier: string): string | null {
+  const t = tier.charAt(0).toUpperCase() + tier.slice(1).toLowerCase()
+  const imgs = ['Iron','Bronze','Silver','Gold','Platinum','Emerald','Diamond','Master']
+  return imgs.includes(t) ? `/ranks lol/Season_2023_-_${t}.webp` : null
+}
 function fmtDate(d: string) {
   const diff = Math.floor((Date.now() - new Date(d).getTime()) / 3600000)
   if (diff < 1) return "Récemment"
@@ -160,12 +165,9 @@ onMounted(loadProfile)
       <!-- ══ HEADER ══ -->
       <div class="pp__header">
         <div class="pp__header-inner">
-          <!-- Avatar placeholder -->
           <div class="pp__avatar">
             <span class="pp__avatar-letter">{{ profile.username.charAt(0).toUpperCase() }}</span>
-            <span class="pp__avatar-level">{{ profile.riot_stats.summonerLevel }}</span>
           </div>
-          <!-- Identity -->
           <div class="pp__identity">
             <div class="pp__name-row">
               <h1 class="pp__name">{{ profile.riot_stats.gameName }}</h1>
@@ -179,151 +181,154 @@ onMounted(loadProfile)
               <span class="pp__team-name">{{ profile.team_name }}</span>
             </div>
           </div>
-          <!-- Refresh -->
           <button class="pp__refresh-btn pp__refresh-btn--top" @click="loadProfile" title="Actualiser">
             <RefreshCw :size="13" />
           </button>
         </div>
       </div>
 
-      <!-- ══ RANKS ══ -->
-      <div class="pp__ranks-row">
-        <!-- Solo/Duo -->
-        <div class="pp__rank-card"
-          :style="profile.riot_stats.soloQ ? { '--tc': TIER_COLOR[profile.riot_stats.soloQ.tier] } : { '--tc': '#3D4460' }">
-          <div class="pp__rank-card-head">RANKED SOLO / DUO</div>
-          <div v-if="profile.riot_stats.soloQ" class="pp__rank-card-body">
-            <div class="pp__rank-emblem">
-              <span class="pp__rank-tier-letter" :style="{ color: TIER_COLOR[profile.riot_stats.soloQ.tier] }">
-                {{ profile.riot_stats.soloQ.tier.charAt(0) }}
-              </span>
-            </div>
-            <div class="pp__rank-info">
-              <span class="pp__rank-tier-label" :style="{ color: TIER_COLOR[profile.riot_stats.soloQ.tier] }">
-                {{ profile.riot_stats.soloQ.tier }}{{ rankNoDiv(profile.riot_stats.soloQ.tier) ? '' : ' ' + profile.riot_stats.soloQ.rank }}
-              </span>
-              <span class="pp__rank-lp">{{ profile.riot_stats.soloQ.lp }} LP</span>
-              <!-- LP progress bar -->
-              <div class="pp__lp-bar">
-                <div class="pp__lp-fill" :style="{ width: `${Math.min(profile.riot_stats.soloQ.lp, 100)}%`, background: TIER_COLOR[profile.riot_stats.soloQ.tier] }" />
-              </div>
-              <div class="pp__rank-record">
-                <span style="color:#10B981">{{ profile.riot_stats.soloQ.wins }}V</span>
-                <span style="color:#8892B0">{{ profile.riot_stats.soloQ.losses }}D</span>
-                <span class="pp__rank-wr" :style="{ color: wrColor(profile.riot_stats.soloQ.winRate) }">
-                  {{ profile.riot_stats.soloQ.winRate }}% WR
-                </span>
-              </div>
-              <div class="pp__wr-bar">
-                <div class="pp__wr-win" :style="{ width: `${profile.riot_stats.soloQ.winRate}%` }" />
-                <div class="pp__wr-loss" :style="{ width: `${100 - profile.riot_stats.soloQ.winRate}%` }" />
-              </div>
-            </div>
-          </div>
-          <div v-else class="pp__rank-card-body pp__rank-card-body--unranked">
-            <span class="pp__unranked">Unranked</span>
-          </div>
-        </div>
+      <!-- ══ BODY 30/70 ══ -->
+      <div class="pp__body">
 
-        <!-- Flex -->
-        <div class="pp__rank-card"
-          :style="profile.riot_stats.flexQ ? { '--tc': TIER_COLOR[profile.riot_stats.flexQ.tier] } : { '--tc': '#3D4460' }">
-          <div class="pp__rank-card-head">RANKED FLEX</div>
-          <div v-if="profile.riot_stats.flexQ" class="pp__rank-card-body">
-            <div class="pp__rank-emblem">
-              <span class="pp__rank-tier-letter" :style="{ color: TIER_COLOR[profile.riot_stats.flexQ.tier] }">
-                {{ profile.riot_stats.flexQ.tier.charAt(0) }}
-              </span>
-            </div>
-            <div class="pp__rank-info">
-              <span class="pp__rank-tier-label" :style="{ color: TIER_COLOR[profile.riot_stats.flexQ.tier] }">
-                {{ profile.riot_stats.flexQ.tier }}{{ rankNoDiv(profile.riot_stats.flexQ.tier) ? '' : ' ' + profile.riot_stats.flexQ.rank }}
-              </span>
-              <span class="pp__rank-lp">{{ profile.riot_stats.flexQ.lp }} LP</span>
-              <div class="pp__lp-bar">
-                <div class="pp__lp-fill" :style="{ width: `${Math.min(profile.riot_stats.flexQ.lp, 100)}%`, background: TIER_COLOR[profile.riot_stats.flexQ.tier] }" />
-              </div>
-              <div class="pp__rank-record">
-                <span style="color:#10B981">{{ profile.riot_stats.flexQ.wins }}V</span>
-                <span style="color:#8892B0">{{ profile.riot_stats.flexQ.losses }}D</span>
-                <span class="pp__rank-wr" :style="{ color: wrColor(profile.riot_stats.flexQ.winRate) }">
-                  {{ profile.riot_stats.flexQ.winRate }}% WR
-                </span>
-              </div>
-              <div class="pp__wr-bar">
-                <div class="pp__wr-win" :style="{ width: `${profile.riot_stats.flexQ.winRate}%` }" />
-                <div class="pp__wr-loss" :style="{ width: `${100 - profile.riot_stats.flexQ.winRate}%` }" />
-              </div>
-            </div>
-          </div>
-          <div v-else class="pp__rank-card-body pp__rank-card-body--unranked">
-            <span class="pp__unranked">Unranked</span>
-          </div>
-        </div>
+        <!-- LEFT 30% : ranks + champ pool -->
+        <div class="pp__left">
 
-        <!-- Summary (10 games) -->
-        <div v-if="summary" class="pp__rank-card pp__summary-card">
-          <div class="pp__rank-card-head">10 DERNIÈRES PARTIES</div>
-          <div class="pp__summary-body">
-            <!-- WR donut-like -->
-            <div class="pp__summary-wr">
-              <svg viewBox="0 0 36 36" class="pp__donut">
-                <circle cx="18" cy="18" r="15.9" fill="none" stroke="#1A1F2E" stroke-width="3.2"/>
-                <circle cx="18" cy="18" r="15.9" fill="none"
-                  :stroke="wrColor(summary.wr)"
-                  stroke-width="3.2"
-                  stroke-dasharray="`${summary.wr} ${100 - summary.wr}`"
-                  :style="{ strokeDasharray: `${summary.wr} ${100 - summary.wr}`, strokeLinecap: 'round' }"
-                  transform="rotate(-90 18 18)"/>
-              </svg>
-              <div class="pp__donut-text">
-                <span class="pp__donut-wr" :style="{ color: wrColor(summary.wr) }">{{ summary.wr }}%</span>
-                <span class="pp__donut-sub">{{ summary.wins }}V {{ summary.losses }}D</span>
-              </div>
-            </div>
-            <!-- KDA -->
-            <div class="pp__summary-kda">
-              <span class="pp__summary-scores">{{ summary.kills }} / <span style="color:#EF4444">{{ summary.deaths }}</span> / {{ summary.assists }}</span>
-              <span class="pp__summary-ratio" :style="{ color: kdaColor(summary.kda) }">{{ summary.kda }} KDA</span>
-              <span class="pp__summary-cs">{{ summary.csMin }} CS/min</span>
-            </div>
-          </div>
-        </div>
-      </div>
+          <!-- Ranks stacked -->
+          <div class="pp__ranks-col">
 
-      <!-- ══ CHAMPION POOL ══ -->
-      <div v-if="profile.riot_stats.champPool.length" class="pp__section">
-        <div class="pp__section-title">CHAMPION POOL</div>
-        <div class="pp__champ-table">
-          <div class="pp__champ-table-head">
-            <span>Champion</span>
-            <span>Parties</span>
-            <span>Win Rate</span>
-            <span>KDA</span>
-          </div>
-          <div v-for="(c, i) in profile.riot_stats.champPool" :key="c.name" class="pp__champ-row">
-            <div class="pp__champ-row-left">
-              <span class="pp__champ-idx">{{ i + 1 }}</span>
-              <div class="pp__champ-portrait">
-                <img :src="champIcon(c.name)" :alt="c.name"
-                  @error="($event.target as HTMLImageElement).src='/logo.png'" />
+            <!-- Solo/Duo -->
+            <div class="pp__rank-card"
+              :style="profile.riot_stats.soloQ ? { '--tc': TIER_COLOR[profile.riot_stats.soloQ.tier] } : { '--tc': '#3D4460' }">
+              <div class="pp__rank-card-head">RANKED SOLO / DUO</div>
+              <div v-if="profile.riot_stats.soloQ" class="pp__rank-card-body">
+                <div class="pp__rank-emblem">
+                  <img v-if="rankImg(profile.riot_stats.soloQ.tier)"
+                    :src="rankImg(profile.riot_stats.soloQ.tier)!"
+                    :alt="profile.riot_stats.soloQ.tier"
+                    class="pp__rank-img"
+                    @error="($event.target as HTMLImageElement).style.display='none'" />
+                  <span v-else class="pp__rank-tier-letter" :style="{ color: TIER_COLOR[profile.riot_stats.soloQ.tier] }">
+                    {{ profile.riot_stats.soloQ.tier.charAt(0) }}
+                  </span>
+                </div>
+                <div class="pp__rank-info">
+                  <span class="pp__rank-tier-label" :style="{ color: TIER_COLOR[profile.riot_stats.soloQ.tier] }">
+                    {{ profile.riot_stats.soloQ.tier }}{{ rankNoDiv(profile.riot_stats.soloQ.tier) ? '' : ' ' + profile.riot_stats.soloQ.rank }}
+                  </span>
+                  <span class="pp__rank-lp">{{ profile.riot_stats.soloQ.lp }} LP</span>
+                  <span class="pp__rank-wr" :style="{ color: wrColor(profile.riot_stats.soloQ.winRate) }">
+                    {{ profile.riot_stats.soloQ.winRate }}% WR
+                  </span>
+                  <div class="pp__wr-bar">
+                    <div class="pp__wr-win" :style="{ width: `${profile.riot_stats.soloQ.winRate}%` }" />
+                    <div class="pp__wr-loss" :style="{ width: `${100 - profile.riot_stats.soloQ.winRate}%` }" />
+                  </div>
+                </div>
               </div>
-              <span class="pp__champ-name">{{ c.name }}</span>
-            </div>
-            <span class="pp__champ-games">{{ c.games }}G</span>
-            <div class="pp__champ-wr-col">
-              <span class="pp__champ-wr-pct" :style="{ color: wrColor(c.winRate) }">{{ c.winRate }}%</span>
-              <div class="pp__champ-wr-bar">
-                <div :style="{ width: `${c.winRate}%`, background: wrColor(c.winRate) }" />
+              <div v-else class="pp__rank-card-body pp__rank-card-body--unranked">
+                <span class="pp__unranked">Unranked</span>
               </div>
             </div>
-            <span class="pp__champ-kda" :style="{ color: kdaColor(c.kda) }">{{ c.kda }}</span>
-          </div>
-        </div>
-      </div>
 
-      <!-- ══ MATCH HISTORY ══ -->
-      <div v-if="profile.riot_stats.recentGames.length" class="pp__section">
+            <!-- Flex -->
+            <div class="pp__rank-card"
+              :style="profile.riot_stats.flexQ ? { '--tc': TIER_COLOR[profile.riot_stats.flexQ.tier] } : { '--tc': '#3D4460' }">
+              <div class="pp__rank-card-head">RANKED FLEX</div>
+              <div v-if="profile.riot_stats.flexQ" class="pp__rank-card-body">
+                <div class="pp__rank-emblem">
+                  <img v-if="rankImg(profile.riot_stats.flexQ.tier)"
+                    :src="rankImg(profile.riot_stats.flexQ.tier)!"
+                    :alt="profile.riot_stats.flexQ.tier"
+                    class="pp__rank-img"
+                    @error="($event.target as HTMLImageElement).style.display='none'" />
+                  <span v-else class="pp__rank-tier-letter" :style="{ color: TIER_COLOR[profile.riot_stats.flexQ.tier] }">
+                    {{ profile.riot_stats.flexQ.tier.charAt(0) }}
+                  </span>
+                </div>
+                <div class="pp__rank-info">
+                  <span class="pp__rank-tier-label" :style="{ color: TIER_COLOR[profile.riot_stats.flexQ.tier] }">
+                    {{ profile.riot_stats.flexQ.tier }}{{ rankNoDiv(profile.riot_stats.flexQ.tier) ? '' : ' ' + profile.riot_stats.flexQ.rank }}
+                  </span>
+                  <span class="pp__rank-lp">{{ profile.riot_stats.flexQ.lp }} LP</span>
+                  <span class="pp__rank-wr" :style="{ color: wrColor(profile.riot_stats.flexQ.winRate) }">
+                    {{ profile.riot_stats.flexQ.winRate }}% WR
+                  </span>
+                  <div class="pp__wr-bar">
+                    <div class="pp__wr-win" :style="{ width: `${profile.riot_stats.flexQ.winRate}%` }" />
+                    <div class="pp__wr-loss" :style="{ width: `${100 - profile.riot_stats.flexQ.winRate}%` }" />
+                  </div>
+                </div>
+              </div>
+              <div v-else class="pp__rank-card-body pp__rank-card-body--unranked">
+                <span class="pp__unranked">Unranked</span>
+              </div>
+            </div>
+          </div><!-- /pp__ranks-col -->
+
+          <!-- Champion Pool -->
+          <div v-if="profile.riot_stats.champPool.length" class="pp__section">
+            <div class="pp__section-title">CHAMPION POOL</div>
+            <div class="pp__champ-table">
+              <div class="pp__champ-table-head">
+                <span>Champion</span>
+                <span>G</span>
+                <span>Win Rate</span>
+                <span>KDA</span>
+              </div>
+              <div v-for="(c, i) in profile.riot_stats.champPool" :key="c.name" class="pp__champ-row">
+                <div class="pp__champ-row-left">
+                  <span class="pp__champ-idx">{{ i + 1 }}</span>
+                  <div class="pp__champ-portrait">
+                    <img :src="champIcon(c.name)" :alt="c.name"
+                      @error="($event.target as HTMLImageElement).src='/logo.png'" />
+                  </div>
+                  <span class="pp__champ-name">{{ c.name }}</span>
+                </div>
+                <span class="pp__champ-games">{{ c.games }}</span>
+                <div class="pp__champ-wr-col">
+                  <span class="pp__champ-wr-pct" :style="{ color: wrColor(c.winRate) }">{{ c.winRate }}%</span>
+                  <div class="pp__champ-wr-bar">
+                    <div :style="{ width: `${c.winRate}%`, background: wrColor(c.winRate) }" />
+                  </div>
+                </div>
+                <span class="pp__champ-kda" :style="{ color: kdaColor(c.kda) }">{{ c.kda }}</span>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /pp__left -->
+
+        <!-- RIGHT 70% : summary widget + match history -->
+        <div class="pp__right">
+
+          <!-- Summary 10 dernières -->
+          <div v-if="summary" class="pp__rank-card pp__summary-card">
+            <div class="pp__rank-card-head">10 DERNIÈRES PARTIES</div>
+            <div class="pp__summary-body">
+              <div class="pp__summary-wr">
+                <svg viewBox="0 0 36 36" class="pp__donut">
+                  <circle cx="18" cy="18" r="15.9" fill="none" stroke="#1A1F2E" stroke-width="3.2"/>
+                  <circle cx="18" cy="18" r="15.9" fill="none"
+                    :stroke="wrColor(summary.wr)"
+                    stroke-width="3.2"
+                    :style="{ strokeDasharray: `${summary.wr} ${100 - summary.wr}`, strokeLinecap: 'round' }"
+                    transform="rotate(-90 18 18)"/>
+                </svg>
+                <div class="pp__donut-text">
+                  <span class="pp__donut-wr" :style="{ color: wrColor(summary.wr) }">{{ summary.wr }}%</span>
+                  <span class="pp__donut-sub">{{ summary.wins }}V {{ summary.losses }}D</span>
+                </div>
+              </div>
+              <div class="pp__summary-kda">
+                <span class="pp__summary-scores">{{ summary.kills }} / <span style="color:#EF4444">{{ summary.deaths }}</span> / {{ summary.assists }}</span>
+                <span class="pp__summary-ratio" :style="{ color: kdaColor(summary.kda) }">{{ summary.kda }} KDA</span>
+                <span class="pp__summary-cs">{{ summary.csMin }} CS/min</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Match history -->
+          <div v-if="profile.riot_stats.recentGames.length" class="pp__section">
         <div class="pp__section-title">HISTORIQUE DES PARTIES</div>
         <div class="pp__matches">
           <div v-for="g in profile.riot_stats.recentGames" :key="g.matchId"
@@ -462,7 +467,10 @@ onMounted(loadProfile)
 
           </div>
         </div>
-      </div>
+      </div><!-- /pp__section match history -->
+
+        </div><!-- /pp__right -->
+      </div><!-- /pp__body -->
 
     </template>
   </div>
@@ -532,6 +540,16 @@ onMounted(loadProfile)
   background: #0D1018; border: 1px solid #1A1F2E; color: #8892B0;
   padding: 1px 6px; border-radius: 4px; white-space: nowrap;
 }
+
+/* ── 30/70 Body layout ── */
+.pp__body {
+  display: grid;
+  grid-template-columns: 30% 1fr;
+  gap: 12px;
+  align-items: start;
+}
+.pp__left  { display: flex; flex-direction: column; gap: 12px; }
+.pp__right { display: flex; flex-direction: column; gap: 10px; }
 .pp__identity { flex: 1; display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
 .pp__name-row { display: flex; align-items: baseline; gap: 8px; }
 .pp__name {
@@ -560,11 +578,8 @@ onMounted(loadProfile)
 }
 .pp__refresh-btn:hover { background: color-mix(in srgb,var(--accent) 18%,transparent); }
 
-/* ── Ranks row ── */
-.pp__ranks-row {
-  display: grid; grid-template-columns: 1fr 1fr 1fr;
-  gap: 10px; margin-bottom: 12px;
-}
+/* ── Ranks col ── */
+.pp__ranks-col { display: flex; flex-direction: column; gap: 10px; }
 .pp__rank-card {
   background: #111520; border: 1px solid #1A1F2E; border-radius: 12px;
   overflow: hidden; transition: border-color .2s;
@@ -578,26 +593,24 @@ onMounted(loadProfile)
 .pp__rank-card-body { display: flex; align-items: center; gap: 14px; padding: 14px; }
 .pp__rank-card-body--unranked { justify-content: center; }
 .pp__rank-emblem {
-  width: 52px; height: 52px; border-radius: 10px; flex-shrink: 0;
-  background: color-mix(in srgb, var(--tc, #3D4460) 10%, transparent);
-  border: 1px solid color-mix(in srgb, var(--tc, #3D4460) 25%, transparent);
+  width: 64px; height: 64px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
 }
+.pp__rank-img {
+  width: 64px; height: 64px; object-fit: contain;
+  filter: drop-shadow(0 2px 8px color-mix(in srgb, var(--tc, #3D4460) 50%, transparent));
+}
 .pp__rank-tier-letter {
-  font-family: 'Rajdhani', sans-serif; font-size: 32px; font-weight: 900; line-height: 1;
+  font-family: 'Rajdhani', sans-serif; font-size: 36px; font-weight: 900; line-height: 1;
 }
 .pp__rank-info { flex: 1; display: flex; flex-direction: column; gap: 4px; }
 .pp__rank-tier-label {
-  font-family: 'Rajdhani', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: 1px; line-height: 1;
+  font-family: 'Rajdhani', sans-serif; font-size: 16px; font-weight: 700; letter-spacing: 1px; line-height: 1;
 }
-.pp__rank-lp { font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 600; color: #8892B0; }
-.pp__lp-bar { height: 3px; background: #1A1F2E; border-radius: 2px; overflow: hidden; }
-.pp__lp-fill { height: 100%; border-radius: 2px; transition: width .8s ease; }
-.pp__rank-record {
-  display: flex; align-items: center; gap: 8px;
-  font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700;
+.pp__rank-lp { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 600; color: #8892B0; }
+.pp__rank-wr {
+  font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700;
 }
-.pp__rank-wr { margin-left: auto; font-size: 13px; }
 .pp__wr-bar { height: 4px; border-radius: 2px; overflow: hidden; display: flex; }
 .pp__wr-win  { background: #10B981; transition: width .6s ease; }
 .pp__wr-loss { background: #EF4444; transition: width .6s ease; }
@@ -795,12 +808,10 @@ onMounted(loadProfile)
 html[data-theme="light"] .pp__header { background: linear-gradient(180deg, #F7F8FC 0%, #FFFFFF 100%); border-color: #E0E3EF; }
 html[data-theme="light"] .pp__header::before { background: linear-gradient(135deg, color-mix(in srgb,var(--accent) 8%,transparent) 0%, transparent 60%); }
 html[data-theme="light"] .pp__avatar { background: linear-gradient(135deg, #EEF0F8, #FFFFFF); border-color: color-mix(in srgb,var(--accent) 30%,transparent); }
-html[data-theme="light"] .pp__avatar-level { background: #FFFFFF; border-color: #E0E3EF; }
 html[data-theme="light"] .pp__name { color: #0D1220; }
 html[data-theme="light"] .pp__rank-card { background: #FFFFFF; border-color: #E0E3EF; }
 html[data-theme="light"] .pp__rank-card-head { border-bottom-color: #E0E3EF; }
 html[data-theme="light"] .pp__rank-lp { color: #4A5280; }
-html[data-theme="light"] .pp__lp-bar { background: #E0E3EF; }
 html[data-theme="light"] .pp__wr-bar { background: #E0E3EF; }
 html[data-theme="light"] .pp__champ-table { background: #FFFFFF; border-color: #E0E3EF; }
 html[data-theme="light"] .pp__champ-table-head { border-bottom-color: #E0E3EF; }
@@ -836,29 +847,20 @@ html[data-theme="light"] .pp__summary-scores { color: #0D1220; }
 @media (max-width: 768px) {
   .pp { gap: 14px; }
 
-  /* Header profil */
-  .pp__hdr { flex-direction: column; align-items: flex-start; gap: 12px; }
-  .pp__hdr-right { width: 100%; }
+  /* Switch to single column on mobile */
+  .pp__body { grid-template-columns: 1fr; }
 
-  /* Rank cards : scroll horizontal */
-  .pp__ranks-row {
-    display: flex;
-    overflow-x: scroll;
+  /* Rank cards: horizontal scroll */
+  .pp__ranks-col {
+    flex-direction: row;
+    overflow-x: auto;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
-    gap: 10px;
+    padding-bottom: 4px;
   }
-  .pp__ranks-row::-webkit-scrollbar { display: none; }
-  .pp__rank-card { flex: 0 0 160px; scroll-snap-align: start; }
-
-  /* Summary tiles : 3 colonnes */
-  .pp__summary { grid-template-columns: repeat(3, 1fr) !important; gap: 8px; }
-  .pp__tile { padding: 10px 6px; }
-  .pp__tile-v { font-size: 18px; }
-
-  /* Champ pool : 2 colonnes */
-  .pp__pool-grid { grid-template-columns: 1fr 1fr !important; }
+  .pp__ranks-col::-webkit-scrollbar { display: none; }
+  .pp__rank-card { flex: 0 0 200px; scroll-snap-align: start; }
 
   /* Recent games */
   .pp__match-main {
