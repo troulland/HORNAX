@@ -127,7 +127,19 @@ async function search() {
     const data = await res.json()
     if (!res.ok) { error.value = data.error; return }
     ddVersion.value = data.ddVersion ?? ddVersion.value
-    results.value   = data.matches
+    const EXCLUDED_QUEUES = new Set([
+      450,  // ARAM
+      1020, 900, 1010, 1900, // URF variants
+      1300, // Nexus Blitz
+      1400, // Ultimate Spellbook
+      720,  // ARAM Clash
+      830, 840, 850, // Co-op vs AI
+      2000, 2010, 2020, // Tutorial
+    ])
+    const EXCLUDED_LABELS = /aram|urf|nexus|brawl|tutorial|co-op|swarm|arena/i
+    results.value = (data.matches as RiotMatch[]).filter(m =>
+      !EXCLUDED_QUEUES.has(m.queueId) && !EXCLUDED_LABELS.test(m.queueLabel)
+    )
     imported.value  = new Set()
   } catch {
     error.value = 'Erreur réseau — vérifie que le backend est démarré.'

@@ -7,6 +7,12 @@ const ROUTING: Record<string, string> = {
   oce: 'sea', sg: 'sea', ph: 'sea', th: 'sea', tw: 'sea', vn: 'sea',
 }
 
+const PLATFORM: Record<string, string> = {
+  euw: 'euw1', eune: 'eun1', tr: 'tr1', ru: 'ru1',
+  na: 'na1', br: 'br1', lan: 'la1', las: 'la2',
+  kr: 'kr', jp: 'jp1', oce: 'oc1',
+}
+
 const QUEUE_LABEL: Record<number, string> = {
   420: 'Ranked Solo/Duo', 440: 'Ranked Flex',
   400: 'Normal Draft', 430: 'Normal Blind',
@@ -181,6 +187,74 @@ export async function fetchRiotMatches(req: Request, res: Response): Promise<voi
     }
 
     res.json({ account: { gameName, tagLine }, ddVersion, matches })
+  } catch (err: any) {
+    const msg: string = err.message ?? 'Erreur inconnue'
+    const status = msg.includes('expirée') || msg.includes('configurée') ? 503
+                 : msg.includes('introuvable') ? 404 : 502
+    res.status(status).json({ error: msg })
+  }
+}
+
+export async function scoutPlayer(req: Request, res: Response): Promise<void> {
+  const { riotId, region = 'euw' } = req.query
+  if (!riotId || typeof riotId !== 'string') {
+    res.status(400).json({ error: 'riotId requis (Pseudo#TAG)' }); return
+  }
+  const parts = riotId.split('#')
+  if (parts.length !== 2) {
+    res.status(400).json({ error: 'Format invalide — exemple : Faker#KR1' }); return
+  }
+  const [gameName, tagLine] = parts
+  const reg = (region as string).toLowerCase()
+  const routing  = ROUTING[reg]  ?? 'europe'
+  const platform = PLATFORM[reg] ?? 'euw1'
+
+  try {
+    const account = await riotFetch(
+      `https://${routing}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}`
+    )
+    const [ranked, ddVerArr, matchIds]: [any[], string[], string[]] = await Promise.all([
+      riotFetch(`https://${platform}.api.riotgames.com/lol/league/v4/entries/by-puuid/${account.puuid}`),
+      fetch('https://ddragon.leagueoflegends.com/api/versions.json').then(r => r.json()) as Promise<string[]>,
+      riotFetch(`https://${routing}.api.riotgames.com/lol/match/v5/matches/by-puuid/${account.puuid}/ids?count=15&type=ranked`),
+    ])
+    const ddVersion = ddVerArr[0]
+
+    const champCount: Record<string, { games: number; wins: number; kills: number; deaths: number; assists: number }> = {}
+    for (const id of matchIds.slice(0, 15)) {
+      try {
+        const m = await riotFetch(`https://${routing}.api.riotgames.com/lol/match/v5/matches/${id}`)
+        const p = m.info.participants.find((x: any) => x.puuid === account.puuid)
+        if (!p) continue
+        if (!champCount[p.championName]) champCount[p.championName] = { games: 0, wins: 0, kills: 0, deaths: 0, assists: 0 }
+        champCount[p.championName].games++
+        if (p.win) champCount[p.championName].wins++
+        champCount[p.championName].kills   += p.kills
+        champCount[p.championName].deaths  += p.deaths
+        champCount[p.championName].assists += p.assists
+      } catch { /* skip failed match */ }
+    }
+
+    const champPool = Object.entries(champCount)
+      .sort((a, b) => b[1].games - a[1].games)
+      .slice(0, 6)
+      .map(([name, s]) => ({
+        name,
+        games: s.games,
+        winRate: Math.round(s.wins / s.games * 100),
+        kda: s.deaths === 0 ? 'Perfect' : ((s.kills + s.assists) / s.deaths).toFixed(2),
+      }))
+
+    function rankEntry(e: any) {
+      return e ? { tier: e.tier, rank: e.rank, lp: e.leaguePoints, wins: e.wins, losses: e.losses, winRate: Math.round(e.wins / (e.wins + e.losses) * 100) } : null
+    }
+
+    res.json({
+      gameName, tagLine, ddVersion,
+      soloQ: rankEntry(ranked.find((e: any) => e.queueType === 'RANKED_SOLO_5x5')),
+      flexQ:  rankEntry(ranked.find((e: any) => e.queueType === 'RANKED_FLEX_SR')),
+      champPool,
+    })
   } catch (err: any) {
     const msg: string = err.message ?? 'Erreur inconnue'
     const status = msg.includes('expirée') || msg.includes('configurée') ? 503

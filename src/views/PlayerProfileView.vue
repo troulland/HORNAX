@@ -39,7 +39,7 @@ const SUMMONER_KEY: Record<number, string> = {
 }
 const RUNE_PATH: Record<number, string> = {
   8005: 'precision/presstheattack/presstheattack',
-  8008: 'precision/lethaltempo/lethaltempoTemp',
+  8008: 'precision/lethaltempo/lethaltempo',
   8021: 'precision/fleetfootwork/fleetfootwork',
   8010: 'precision/conqueror/conqueror',
   8112: 'domination/electrocute/electrocute',
@@ -219,10 +219,6 @@ onMounted(loadProfile)
                   <span class="pp__rank-wr" :style="{ color: wrColor(profile.riot_stats.soloQ.winRate) }">
                     {{ profile.riot_stats.soloQ.winRate }}% WR
                   </span>
-                  <div class="pp__wr-bar">
-                    <div class="pp__wr-win" :style="{ width: `${profile.riot_stats.soloQ.winRate}%` }" />
-                    <div class="pp__wr-loss" :style="{ width: `${100 - profile.riot_stats.soloQ.winRate}%` }" />
-                  </div>
                 </div>
               </div>
               <div v-else class="pp__rank-card-body pp__rank-card-body--unranked">
@@ -253,10 +249,6 @@ onMounted(loadProfile)
                   <span class="pp__rank-wr" :style="{ color: wrColor(profile.riot_stats.flexQ.winRate) }">
                     {{ profile.riot_stats.flexQ.winRate }}% WR
                   </span>
-                  <div class="pp__wr-bar">
-                    <div class="pp__wr-win" :style="{ width: `${profile.riot_stats.flexQ.winRate}%` }" />
-                    <div class="pp__wr-loss" :style="{ width: `${100 - profile.riot_stats.flexQ.winRate}%` }" />
-                  </div>
                 </div>
               </div>
               <div v-else class="pp__rank-card-body pp__rank-card-body--unranked">
@@ -285,12 +277,7 @@ onMounted(loadProfile)
                   <span class="pp__champ-name">{{ c.name }}</span>
                 </div>
                 <span class="pp__champ-games">{{ c.games }}</span>
-                <div class="pp__champ-wr-col">
-                  <span class="pp__champ-wr-pct" :style="{ color: wrColor(c.winRate) }">{{ c.winRate }}%</span>
-                  <div class="pp__champ-wr-bar">
-                    <div :style="{ width: `${c.winRate}%`, background: wrColor(c.winRate) }" />
-                  </div>
-                </div>
+                <span class="pp__champ-wr-pct" :style="{ color: wrColor(c.winRate) }">{{ c.winRate }}%</span>
                 <span class="pp__champ-kda" :style="{ color: kdaColor(c.kda) }">{{ c.kda }}</span>
               </div>
             </div>
@@ -647,28 +634,25 @@ onMounted(loadProfile)
 /* ── Champion table ── */
 .pp__champ-table { background: #111520; border: 1px solid #1A1F2E; border-radius: 12px; overflow: hidden; }
 .pp__champ-table-head {
-  display: grid; grid-template-columns: 1fr 60px 120px 80px;
-  padding: 8px 14px; border-bottom: 1px solid #1A1F2E;
+  display: grid; grid-template-columns: 1fr 28px 44px 52px;
+  padding: 7px 10px; border-bottom: 1px solid #1A1F2E;
   font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 2px; color: #3D4460;
 }
 .pp__champ-row {
-  display: grid; grid-template-columns: 1fr 60px 120px 80px;
-  align-items: center; padding: 8px 14px; border-bottom: 1px solid rgba(255,255,255,.03);
+  display: grid; grid-template-columns: 1fr 28px 44px 52px;
+  align-items: center; padding: 6px 10px; border-bottom: 1px solid rgba(255,255,255,.03);
   transition: background .1s;
 }
 .pp__champ-row:last-child { border-bottom: none; }
 .pp__champ-row:hover { background: rgba(255,255,255,.02); }
 .pp__champ-row-left { display: flex; align-items: center; gap: 10px; }
 .pp__champ-idx { font-family: 'Rajdhani', sans-serif; font-size: 11px; color: #2A3050; width: 14px; text-align: center; }
-.pp__champ-portrait { width: 36px; height: 36px; border-radius: 6px; overflow: hidden; border: 1px solid #1A1F2E; flex-shrink: 0; }
+.pp__champ-portrait { width: 28px; height: 28px; border-radius: 5px; overflow: hidden; border: 1px solid #1A1F2E; flex-shrink: 0; }
 .pp__champ-portrait img { width: 100%; height: 100%; object-fit: cover; }
-.pp__champ-name { font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700; color: #EEF2FF; }
-.pp__champ-games { font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700; color: #8892B0; }
-.pp__champ-wr-col { display: flex; flex-direction: column; gap: 3px; }
-.pp__champ-wr-pct { font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700; }
-.pp__champ-wr-bar { height: 3px; background: #1A1F2E; border-radius: 2px; overflow: hidden; }
-.pp__champ-wr-bar div { height: 100%; border-radius: 2px; }
-.pp__champ-kda { font-family: 'Rajdhani', sans-serif; font-size: 15px; font-weight: 700; }
+.pp__champ-name { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; color: #EEF2FF; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pp__champ-games { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; color: #8892B0; text-align: center; }
+.pp__champ-wr-pct { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; text-align: center; }
+.pp__champ-kda { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; text-align: right; }
 
 /* ── Match history ── */
 .pp__matches { display: flex; flex-direction: column; gap: 4px; }
@@ -819,7 +803,6 @@ html[data-theme="light"] .pp__champ-row { border-bottom-color: #F0F3FF; }
 html[data-theme="light"] .pp__champ-row:hover { background: #F7F8FC; }
 html[data-theme="light"] .pp__champ-portrait { border-color: #E0E3EF; }
 html[data-theme="light"] .pp__champ-name { color: #0D1220; }
-html[data-theme="light"] .pp__champ-wr-bar { background: #E0E3EF; }
 html[data-theme="light"] .pp__match { background: #FFFFFF; border-color: #E0E3EF; }
 html[data-theme="light"] .pp__match:hover > .pp__match-main { background: #F7F8FC; }
 html[data-theme="light"] .pp__match-info     { border-right-color: #E0E3EF; }

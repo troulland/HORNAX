@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useMatchStore, type Match } from '@/stores/matches'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
-import { X, ChevronRight, Users, User } from 'lucide-vue-next'
+import { X, ChevronRight, Users, User, Crosshair } from 'lucide-vue-next'
 import { useCssVar } from '@vueuse/core'
 import { Line, Doughnut } from 'vue-chartjs'
 import { STATIC_BASE } from '@/config'
@@ -19,7 +19,7 @@ const router     = useRouter()
 const matchStore = useMatchStore()
 const auth       = useAuthStore()
 
-const tab = ref<'team' | 'perso'>('team')
+const tab = ref<'team' | 'perso' | 'meta'>('team')
 
 onMounted(() => matchStore.fetchHistory(200))
 
@@ -254,6 +254,63 @@ const champDoughnutData = computed(() => ({
   }],
 }))
 
+// ── META TAB ──────────────────────────────────────────────────────────────────
+
+interface MetaChamp { name: string; games: number; wins: number; kills: number; deaths: number; assists: number }
+
+const metaChamps = computed(() => {
+  const map = new Map<string, MetaChamp>()
+  for (const m of matchStore.history) {
+    if (!m.riot_data) continue
+    try {
+      const rd = JSON.parse(m.riot_data)
+      const player = rd.participants?.find((p: any) => p.isUser)
+      if (!player?.champion) continue
+      const name = player.champion
+      if (!map.has(name)) map.set(name, { name, games: 0, wins: 0, kills: 0, deaths: 0, assists: 0 })
+      const s = map.get(name)!
+      s.games++
+      if (player.win) s.wins++
+      s.kills   += player.kills   ?? 0
+      s.deaths  += player.deaths  ?? 0
+      s.assists += player.assists ?? 0
+    } catch { /* skip */ }
+  }
+  return [...map.values()]
+    .sort((a, b) => b.games - a.games)
+    .map(s => ({
+      name:    s.name,
+      games:   s.games,
+      wins:    s.wins,
+      losses:  s.games - s.wins,
+      winRate: Math.round(s.wins / s.games * 100),
+      kda:     s.deaths === 0 ? 'Perfect' : ((s.kills + s.assists) / s.deaths).toFixed(2),
+    }))
+})
+
+const metaTotalGames = computed(() => matchStore.history.filter(m => m.riot_data).length)
+const metaUniqueChamps = computed(() => metaChamps.value.length)
+const metaAvgWr = computed(() => {
+  if (!metaChamps.value.length) return 0
+  const totalGames = metaChamps.value.reduce((s, c) => s + c.games, 0)
+  const totalWins  = metaChamps.value.reduce((s, c) => s + c.wins,  0)
+  return totalGames ? Math.round(totalWins / totalGames * 100) : 0
+})
+
+const DD_VER_META = '15.6.1'
+const CHAMP_SPECIAL_META: Record<string, string> = {
+  "Nunu & Willump": "Nunu", "Renata Glasc": "Renata",
+  "K'Sante": "KSante", "Bel'Veth": "Belveth", "Wukong": "MonkeyKing",
+}
+function metaChampIcon(name: string) {
+  return `https://ddragon.leagueoflegends.com/cdn/${DD_VER_META}/img/champion/${CHAMP_SPECIAL_META[name] ?? name}.png`
+}
+function metaKdaColor(v: string) {
+  const n = parseFloat(v)
+  return n >= 5 ? '#00C896' : n >= 3 ? '#F0B429' : n >= 1.5 ? '#EEF2FF' : '#EF4444'
+}
+function metaWrColor(v: number) { return v >= 60 ? '#00C896' : v >= 50 ? '#F0B429' : '#EF4444' }
+
 const doughnutOptions = {
   responsive: true,
   maintainAspectRatio: false,
@@ -301,6 +358,10 @@ const doughnutOptions = {
         <button class="analytics__tab" :class="{ 'analytics__tab--active': tab === 'perso' }" @click="tab = 'perso'">
           <User :size="14" />
           <span>PERSO</span>
+        </button>
+        <button class="analytics__tab" :class="{ 'analytics__tab--active': tab === 'meta' }" @click="tab = 'meta'">
+          <Crosshair :size="14" />
+          <span>META</span>
         </button>
       </div>
     </div>
@@ -377,7 +438,7 @@ const doughnutOptions = {
     </template>
 
     <!-- ══════════════ PERSO TAB ══════════════ -->
-    <template v-else>
+    <template v-else-if="tab === 'perso'">
       <div v-if="!personalGames.length" class="perso-empty">
         <span>Aucune donnée personnelle — importe des matchs avec Riot Data pour voir tes stats.</span>
       </div>
@@ -517,6 +578,70 @@ const doughnutOptions = {
           </div>
         </section>
 
+      </template>
+    </template>
+
+    <!-- ══════════════ META TAB ══════════════ -->
+    <template v-else-if="tab === 'meta'">
+      <div v-if="!metaTotalGames" class="perso-empty">
+        <span>Aucune donnée — importe des matchs avec Riot Data pour voir la meta de l'équipe.</span>
+      </div>
+      <template v-else>
+        <!-- Summary bar -->
+        <div class="stat-bar">
+          <div class="stat-bar__item">
+            <span class="stat-bar__label">PARTIES ANALYSÉES</span>
+            <span class="stat-bar__value">{{ metaTotalGames }}</span>
+          </div>
+          <div class="stat-bar__sep" />
+          <div class="stat-bar__item">
+            <span class="stat-bar__label">CHAMPIONS JOUÉS</span>
+            <span class="stat-bar__value">{{ metaUniqueChamps }}</span>
+          </div>
+          <div class="stat-bar__sep" />
+          <div class="stat-bar__item">
+            <span class="stat-bar__label">WIN RATE GLOBAL</span>
+            <span class="stat-bar__value" :style="{ color: metaWrColor(metaAvgWr) }">{{ metaAvgWr }}%</span>
+          </div>
+        </div>
+
+        <!-- Champion pool table -->
+        <div class="perso-section">
+          <div class="perso-section__head">
+            <span class="perso-section__title">CHAMPION POOL — ÉQUIPE</span>
+            <span class="perso-section__hint">Tous joueurs confondus · triés par nombre de parties</span>
+          </div>
+          <div class="meta-table">
+            <div class="meta-table__head">
+              <span>Champion</span>
+              <span>Parties</span>
+              <span>Win Rate</span>
+              <span>KDA</span>
+              <span>V / D</span>
+            </div>
+            <div v-for="(c, i) in metaChamps" :key="c.name" class="meta-table__row">
+              <div class="meta-table__champ">
+                <span class="meta-table__idx">{{ i + 1 }}</span>
+                <img :src="metaChampIcon(c.name)" :alt="c.name" class="meta-table__img"
+                  @error="($event.target as HTMLImageElement).src='/logo.png'" />
+                <span class="meta-table__name">{{ c.name }}</span>
+              </div>
+              <span class="meta-table__games">{{ c.games }}</span>
+              <div class="meta-table__wr-col">
+                <span class="meta-table__wr" :style="{ color: metaWrColor(c.winRate) }">{{ c.winRate }}%</span>
+                <div class="meta-table__wr-bar">
+                  <div :style="{ width: `${c.winRate}%`, background: metaWrColor(c.winRate) }" />
+                </div>
+              </div>
+              <span class="meta-table__kda" :style="{ color: metaKdaColor(c.kda) }">{{ c.kda }}</span>
+              <span class="meta-table__record">
+                <span style="color:#10B981">{{ c.wins }}V</span>
+                <span style="color:#3D4460"> · </span>
+                <span style="color:#EF4444">{{ c.losses }}D</span>
+              </span>
+            </div>
+          </div>
+        </div>
       </template>
     </template>
   </div>
@@ -868,5 +993,94 @@ html[data-theme="light"] .game-card__date { color: var(--t-muted); }
 html[data-theme="light"] .modal__footer { border-top-color: var(--border); }
 html[data-theme="light"] .modal__tag { color: var(--t-muted); background: var(--bg-card); border-color: var(--border); }
 
+/* ── Meta table ── */
+.meta-table { overflow: hidden; }
+.meta-table__head {
+  display: grid; grid-template-columns: 1fr 60px 130px 80px 80px;
+  padding: 8px 18px; border-bottom: 1px solid #1A1F2E;
+  font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 2px; color: #3D4460;
+}
+.meta-table__row {
+  display: grid; grid-template-columns: 1fr 60px 130px 80px 80px;
+  align-items: center; padding: 8px 18px; border-bottom: 1px solid rgba(255,255,255,.03);
+  transition: background .1s;
+}
+.meta-table__row:last-child { border-bottom: none; }
+.meta-table__row:hover { background: rgba(255,255,255,.02); }
+.meta-table__champ { display: flex; align-items: center; gap: 10px; }
+.meta-table__idx  { font-family: 'Rajdhani', sans-serif; font-size: 11px; color: #2A3050; width: 16px; text-align: center; }
+.meta-table__img  { width: 32px; height: 32px; border-radius: 6px; object-fit: cover; border: 1px solid #1A1F2E; flex-shrink: 0; }
+.meta-table__name { font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700; color: #EEF2FF; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.meta-table__games { font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700; color: #8892B0; }
+.meta-table__wr-col { display: flex; flex-direction: column; gap: 3px; }
+.meta-table__wr { font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700; }
+.meta-table__wr-bar { height: 3px; background: #1A1F2E; border-radius: 2px; overflow: hidden; }
+.meta-table__wr-bar div { height: 100%; border-radius: 2px; }
+.meta-table__kda { font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700; }
+.meta-table__record { font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700; }
+
+html[data-theme="light"] .meta-table__head { border-bottom-color: #E0E3EF; }
+html[data-theme="light"] .meta-table__row { border-bottom-color: #F0F3FF; }
+html[data-theme="light"] .meta-table__row:hover { background: #F7F8FC; }
+html[data-theme="light"] .meta-table__img { border-color: #E0E3EF; }
+html[data-theme="light"] .meta-table__name { color: #0D1220; }
+html[data-theme="light"] .meta-table__wr-bar { background: #E0E3EF; }
+
+@media (max-width: 768px) {
+  .meta-table__head { grid-template-columns: 1fr 50px 90px 60px !important; }
+  .meta-table__head span:last-child { display: none; }
+  .meta-table__row  { grid-template-columns: 1fr 50px 90px 60px !important; }
+  .meta-table__record { display: none; }
+  .meta-table__name { font-size: 12px; }
+}
+
 @keyframes pageIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (max-width: 768px) {
+  .analytics { gap: 14px; }
+
+  /* Header: stack title + tabs */
+  .analytics__header { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .analytics__tabs { width: 100%; justify-content: stretch; }
+  .analytics__tab { flex: 1; justify-content: center; padding: 8px 10px; }
+
+  /* Stat bar: 2 cols wrap */
+  .stat-bar { flex-wrap: wrap; }
+  .stat-bar__item { min-width: 33%; }
+  .stat-bar__sep { display: none; }
+
+  /* Series rows: hide chevron, tighten */
+  .series-row { gap: 10px; padding: 10px 12px; }
+  .series-row__chevron { display: none; }
+  .series-row__games { display: none; }
+
+  /* Charts: single column */
+  .perso-charts { grid-template-columns: 1fr; }
+
+  /* Perso rows: simplified */
+  .perso-row { gap: 8px; padding: 10px 12px; }
+  .perso-row__champ { width: auto; flex: 1; min-width: 0; }
+  .perso-row__kda-block { width: auto; }
+  .perso-row__stats { display: none; }
+  .perso-row__meta { display: none; }
+
+  /* Modal: full screen */
+  .modal-overlay { padding: 0; align-items: flex-end; }
+  .modal {
+    max-width: 100%;
+    max-height: 92vh;
+    border-radius: 16px 16px 0 0;
+    border-bottom: none;
+  }
+  .modal__head { flex-direction: column; gap: 10px; padding: 14px 16px 12px; }
+  .modal__head-right { width: 100%; justify-content: space-between; }
+  .modal__mini-stats { gap: 10px; }
+  .modal__close { align-self: flex-end; }
+  .modal__body { padding: 12px 14px; }
+
+  /* Game cards: simplify */
+  .game-card { gap: 8px; padding: 10px 10px; }
+  .game-card__champ-name { display: none; }
+  .game-card__notes { display: none; }
+}
 </style>

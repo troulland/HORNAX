@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import {
   LayoutDashboard, Swords, BarChart3,
-  Map, Calendar, User, LogOut, ChevronRight, ChevronDown
+  Map, Calendar, User, LogOut, ChevronRight, ChevronDown, Crosshair
 } from 'lucide-vue-next'
 
 const route  = useRoute()
@@ -17,10 +17,11 @@ const logoSrc    = computed(() => isRoyalty.value ? '/hornax-royalty.png' : '/lo
 const teamLabel  = computed(() => isRoyalty.value ? 'ROYALTY' : 'HORNAX')
 
 const navItems = [
-  { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-  { label: 'Parties',   path: '/matches',   icon: Swords },
-  { label: 'Analytics', path: '/analytics', icon: BarChart3 },
-  { label: 'Draft',     path: '/draft',     icon: Map,        soon: true },
+  { label: 'Dashboard',  path: '/dashboard', icon: LayoutDashboard },
+  { label: 'Données',    path: '/matches',   icon: Swords },
+  { label: 'Historique', path: '/analytics', icon: BarChart3 },
+  { label: 'Scout',      path: '/scout',     icon: Crosshair },
+  { label: 'Draft',      path: '/draft',     icon: Map,        soon: true },
 ]
 
 const calSub = [
@@ -111,6 +112,10 @@ function logout() { auth.logout(); router.push('/login') }
       <RouterLink to="/analytics" class="mobile-nav__item" :class="{ 'mobile-nav__item--active': route.path === '/analytics' }">
         <BarChart3 :size="20" />
         <span>Analytics</span>
+      </RouterLink>
+      <RouterLink to="/scout" class="mobile-nav__item" :class="{ 'mobile-nav__item--active': route.path === '/scout' }">
+        <Crosshair :size="20" />
+        <span>Scout</span>
       </RouterLink>
       <RouterLink to="/calendar/availability" class="mobile-nav__item" :class="{ 'mobile-nav__item--active': route.path.startsWith('/calendar') }">
         <Calendar :size="20" />

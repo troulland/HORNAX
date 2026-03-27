@@ -52,7 +52,7 @@ const SUMMONER_KEY: Record<number, string> = {
 }
 const RUNE_PATH: Record<number, string> = {
   8005: 'precision/presstheattack/presstheattack',
-  8008: 'precision/lethaltempo/lethaltempoTemp',
+  8008: 'precision/lethaltempo/lethaltempo',
   8021: 'precision/fleetfootwork/fleetfootwork',
   8010: 'precision/conqueror/conqueror',
   8112: 'domination/electrocute/electrocute',
@@ -413,11 +413,11 @@ async function saveEdit() {
             title="Tout sélectionner"
           />
         </span>
-        <span>RÉS.</span>
-        <span>DATE</span>
-        <span>ADVERSAIRE</span>
-        <span>SÉRIE</span>
-        <span>TYPE</span>
+        <span>PARTIE</span>
+        <span>CHAMPION</span>
+        <span>KDA</span>
+        <span>STATS</span>
+        <span>COMPOSITION</span>
         <span></span>
       </div>
       <template v-for="m in filtered" :key="m.id">
@@ -871,8 +871,8 @@ async function saveEdit() {
 
 .hist__table { background: #0A0D16; border: 1px solid #1A1F2E; border-radius: 10px; overflow: hidden; padding: 6px 8px 2px; }
 .hist__head {
-  display: grid; grid-template-columns: 36px 52px 110px 1fr 130px 100px 72px;
-  padding: 10px 20px; border-bottom: 1px solid #1A1F2E; gap: 0 8px;
+  display: grid; grid-template-columns: 28px 105px 168px 100px 130px 1fr 36px;
+  padding: 8px 12px; border-bottom: 1px solid #1A1F2E; gap: 0 8px;
   font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 2px; color: #3D4460;
 }
 .hist__row {

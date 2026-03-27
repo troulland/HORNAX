@@ -156,6 +156,7 @@ watch(weekOffset, loadWeek)
       Connecte-toi pour enregistrer tes disponibilités.
     </div>
 
+    <div class="grid-wrap">
     <div class="grid" :class="{ 'grid--loading': loading }">
       <!-- header -->
       <div class="grid__row grid__row--head">
@@ -215,6 +216,7 @@ watch(weekOffset, loadWeek)
         </div>
       </div>
     </div>
+    </div>
 
     <!-- légende -->
     <div class="legend">
@@ -244,10 +246,11 @@ watch(weekOffset, loadWeek)
 
 .avail__banner { font-family: 'Inter', sans-serif; font-size: 12px; color: var(--accent); background: color-mix(in srgb,var(--accent) 8%,transparent); border: 1px solid color-mix(in srgb,var(--accent) 20%,transparent); border-radius: 6px; padding: 10px 16px; }
 
-.grid { background: #111520; border: 1px solid #1A1F2E; border-radius: 8px; overflow: hidden; transition: opacity .2s; }
+.grid-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.grid { background: #111520; border: 1px solid #1A1F2E; border-radius: 8px; overflow: hidden; transition: opacity .2s; min-width: 640px; }
 .grid--loading { opacity: .6; pointer-events: none; }
 
-.grid__row { display: grid; grid-template-columns: 180px repeat(7,1fr); border-bottom: 1px solid #1A1F2E; }
+.grid__row { display: grid; grid-template-columns: 160px repeat(7,1fr); border-bottom: 1px solid #1A1F2E; }
 .grid__row:last-child { border-bottom: none; }
 .grid__row--head, .grid__row--summary { background: #0D1018; }
 .grid__row--own { background: color-mix(in srgb,var(--accent) 3%,transparent); }
@@ -299,4 +302,10 @@ watch(weekOffset, loadWeek)
   border: 1px solid #1A1F2E;
 }
 .legend__hint { font-family: 'Inter', sans-serif; font-size: 11px; color: #3D4460; margin-left: auto; font-style: italic; display: flex; align-items: center; gap: 4px; }
+
+@media (max-width: 768px) {
+  .avail__week { font-size: 12px; letter-spacing: 1px; }
+  .legend { gap: 10px; }
+  .legend__hint { margin-left: 0; width: 100%; }
+}
 </style>
