@@ -3,12 +3,16 @@ import { computed, onMounted } from 'vue'
 import { useTeamStore } from '@/stores/team'
 import { useAuthStore } from '@/stores/auth'
 import { useMatchStore, type Match } from '@/stores/matches'
+import { useRouter } from 'vue-router'
 import { Trophy } from 'lucide-vue-next'
 import { STATIC_BASE } from '@/config'
 
 const team = useTeamStore()
 const auth = useAuthStore()
 const matchStore = useMatchStore()
+const router = useRouter()
+
+function goToPlayer(id: number) { router.push(`/players/${id}`) }
 
 onMounted(() => {
   matchStore.fetchHistory(30)
@@ -274,7 +278,7 @@ const rosterPlayers = computed(() =>
       <div v-if="team.loading" class="match-empty">Chargement…</div>
       <div v-else-if="rosterPlayers.length === 0" class="match-empty">Aucun joueur dans l'équipe.</div>
       <div v-else class="roster-grid">
-        <div v-for="player in rosterPlayers" :key="player.id" class="roster-card">
+        <div v-for="player in rosterPlayers" :key="player.id" class="roster-card" style="cursor:pointer" @click="goToPlayer(player.id)">
           <div class="roster-card__image-wrap">
             <img src="/character.png" :alt="player.username" class="roster-card__image" />
             <div class="roster-card__overlay">

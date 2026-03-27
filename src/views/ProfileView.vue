@@ -34,6 +34,32 @@ async function saveInfo() {
   finally { infoLoad.value = false }
 }
 
+/* ── Riot ID ─────────────────────────────────────── */
+const riotIdVal  = ref(auth.user?.riot_id ?? '')
+const riotMsg    = ref<{ text: string; ok: boolean } | null>(null)
+const riotLoad   = ref(false)
+
+async function saveRiotId() {
+  riotLoad.value = true; riotMsg.value = null
+  try {
+    const res = await fetch(`${API}/players/me/riot-id`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
+      body: JSON.stringify({ riot_id: riotIdVal.value.trim() || null }),
+    })
+    const data = await res.json()
+    if (!res.ok) { riotMsg.value = { text: data.error ?? 'Erreur.', ok: false } }
+    else {
+      if (auth.user) {
+        auth.user = { ...auth.user, riot_id: data.riot_id }
+        localStorage.setItem('hx_user', JSON.stringify(auth.user))
+      }
+      riotMsg.value = { text: 'Riot ID sauvegardé.', ok: true }
+    }
+  } catch { riotMsg.value = { text: 'Erreur réseau.', ok: false } }
+  finally { riotLoad.value = false }
+}
+
 /* ── Mot de passe ───────────────────────────────── */
 const pwdCurrent = ref('')
 const pwdNew     = ref('')
@@ -126,6 +152,30 @@ const roleColor = computed(() => ROLE_COLOR[auth.user?.game_role ?? ''] ?? '#889
 
           <button class="pcard__save" :disabled="infoLoad" @click="saveInfo">
             <span v-if="!infoLoad">ENREGISTRER</span>
+            <span v-else class="pcard__spinner" />
+          </button>
+        </div>
+      </section>
+
+      <!-- ── RIOT ID ───────────────────────────────── -->
+      <section class="pcard pcard--riot">
+        <div class="pcard__head">
+          <img src="/logo.png" alt="Riot" class="pcard__head-riot-icon" />
+          <span class="pcard__head-title">RIOT ID</span>
+        </div>
+        <div class="pcard__body">
+          <div class="pcard__field">
+            <label class="hx-label">Riot ID <span class="pcard__field-hint">utilisé pour charger tes stats</span></label>
+            <input v-model="riotIdVal" class="hx-input" placeholder="Pseudo#TAG" autocomplete="off" @keyup.enter="saveRiotId" />
+          </div>
+          <Transition name="msg">
+            <div v-if="riotMsg" class="pcard__msg" :class="riotMsg.ok ? 'pcard__msg--ok' : 'pcard__msg--err'">
+              <CheckCircle v-if="riotMsg.ok" :size="13" />
+              {{ riotMsg.text }}
+            </div>
+          </Transition>
+          <button class="pcard__save" :disabled="riotLoad" @click="saveRiotId">
+            <span v-if="!riotLoad">ENREGISTRER</span>
             <span v-else class="pcard__spinner" />
           </button>
         </div>
@@ -226,6 +276,8 @@ const roleColor = computed(() => ROLE_COLOR[auth.user?.game_role ?? ''] ?? '#889
 /* Cards */
 .pcard { background: #111520; border: 1px solid #1A1F2E; border-radius: 10px; overflow: hidden; }
 .pcard--theme { grid-column: 1 / -1; }
+.pcard--riot  { grid-column: 1 / -1; }
+.pcard__head-riot-icon { width: 15px; height: 15px; object-fit: contain; flex-shrink: 0; }
 .pcard__head { display: flex; align-items: center; gap: 8px; padding: 14px 20px; border-bottom: 1px solid #1A1F2E; }
 .pcard__head-icon { color: var(--accent); flex-shrink: 0; }
 .pcard__head-title { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 3px; color: #3D4460; }
