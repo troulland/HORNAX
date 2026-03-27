@@ -27,6 +27,7 @@ function userPayload(user: User, teamName: string | null) {
     team_id:   user.team_id,
     team_name: teamName ?? null,
     team_slug: null as string | null,  // populated below
+    riot_id:   user.riot_id ?? null,
   }
 }
 
@@ -105,7 +106,7 @@ export async function login(req: Request, res: Response): Promise<void> {
 
 export async function updateProfile(req: Request, res: Response): Promise<void> {
   const userId = req.user!.userId
-  const { username, email, currentPassword, newPassword } = req.body
+  const { username, email, currentPassword, newPassword, riot_id } = req.body
 
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId) as unknown as User | undefined
   if (!user) { res.status(404).json({ error: 'Utilisateur introuvable' }); return }
@@ -134,9 +135,14 @@ export async function updateProfile(req: Request, res: Response): Promise<void> 
     db.prepare('UPDATE users SET email = ? WHERE id = ?').run(email, userId)
   }
 
+  // Changement riot_id
+  if (riot_id !== undefined) {
+    db.prepare('UPDATE users SET riot_id = ? WHERE id = ?').run(riot_id, userId)
+  }
+
   // Retourne le profil mis à jour
   const updated = db.prepare(`
-    SELECT u.id, u.username, u.email, u.team_id, u.game_role, u.is_starter,
+    SELECT u.id, u.username, u.email, u.team_id, u.game_role, u.is_starter, u.riot_id,
            t.name as team_name, t.slug as team_slug
     FROM users u LEFT JOIN teams t ON t.id = u.team_id WHERE u.id = ?
   `).get(userId) as unknown as (User & { team_name: string; team_slug: string })
@@ -146,7 +152,7 @@ export async function updateProfile(req: Request, res: Response): Promise<void> 
 
 export function me(req: Request, res: Response): void {
   const row = db.prepare(`
-    SELECT u.id, u.username, u.email, u.team_id, u.game_role, u.is_starter,
+    SELECT u.id, u.username, u.email, u.team_id, u.game_role, u.is_starter, u.riot_id,
            t.name as team_name, t.slug as team_slug
     FROM users u
     LEFT JOIN teams t ON t.id = u.team_id

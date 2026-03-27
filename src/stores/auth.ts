@@ -11,6 +11,7 @@ export interface AuthUser {
   team_id: number
   team_name: string
   team_slug: string
+  riot_id?: string | null
 }
 
 function loadUser(): AuthUser | null {

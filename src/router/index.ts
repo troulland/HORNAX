@@ -23,6 +23,7 @@ const router = createRouter({
         { path: '/profile', name: 'profile', component: () => import('@/views/ProfileView.vue') },
         { path: '/analytics', name: 'analytics', component: () => import('@/views/AnalyticsView.vue') },
         { path: '/analytics/game/:id', name: 'analytics-game', component: () => import('@/views/analytics/GameView.vue') },
+        { path: '/players/:userId',   name: 'player-profile', component: () => import('@/views/PlayerProfileView.vue') },
         { path: '/draft',     name: 'draft',     component: () => import('@/views/DraftView.vue') },
         {
           path: '/calendar',

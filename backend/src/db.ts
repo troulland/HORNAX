@@ -65,6 +65,11 @@ db.exec(`
   try { db.exec(`ALTER TABLE matches ADD COLUMN ${col}`) } catch {}
 })
 
+// Users table migrations
+;['riot_id TEXT'].forEach(col => {
+  try { db.exec(`ALTER TABLE users ADD COLUMN ${col}`) } catch {}
+})
+
 const row = db.prepare('SELECT COUNT(*) as c FROM teams').get() as { c: number }
 if (row.c === 0) {
   const insert = db.prepare('INSERT INTO teams (name, slug, max_players) VALUES (?, ?, ?)')

@@ -1,20 +1,22 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useTeamStore } from '@/stores/team'
-import type { Player, Role } from '@/types'
+import { useAuthStore } from '@/stores/auth'
+import { useRouter } from 'vue-router'
 
-const team = useTeamStore()
-const selectedPlayer = ref<Player | null>(null)
+const team   = useTeamStore()
+const auth   = useAuthStore()
+const router = useRouter()
 
-const ROLE_ORDER: Role[] = ['top', 'jgl', 'mid', 'adc', 'sup']
+onMounted(() => { if (auth.user?.team_id) team.fetchRoster(auth.user.team_id) })
 
-const starters = computed(() =>
-  ROLE_ORDER.map(r => team.players.find(p => p.role === r && p.isStarter)!)
-)
-const subs = computed(() => team.players.filter(p => !p.isStarter))
+function openProfile(p: { id: number }) { router.push(`/players/${p.id}`) }
+
+type RoleKey = 'top' | 'jgl' | 'mid' | 'adc' | 'sup' | 'sub'
+const ROLE_ORDER: RoleKey[] = ['top', 'jgl', 'mid', 'adc', 'sup']
 
 interface RoleMeta { label: string; full: string; color: string; num: string }
-const ROLE: Record<Role, RoleMeta> = {
+const ROLE: Record<RoleKey, RoleMeta> = {
   top: { label: 'TOP', full: 'Top Laner',  color: '#FBBF24', num: '01' },
   jgl: { label: 'JGL', full: 'Jungler',    color: '#34D399', num: '02' },
   mid: { label: 'MID', full: 'Mid Laner',  color: '#60A5FA', num: '03' },
@@ -23,13 +25,14 @@ const ROLE: Record<Role, RoleMeta> = {
   sub: { label: 'SUB', full: 'Substitute', color: '#8892B0', num: '06' },
 }
 
-function kdaColor(v: number) { return v >= 5 ? '#10B981' : v >= 3.5 ? 'var(--accent)' : '#8892B0' }
-function wrColor(v: number)  { return v >= 65 ? '#10B981' : v >= 55 ? 'var(--accent)' : '#EF4444' }
-function select(p: Player) {
-  selectedPlayer.value = selectedPlayer.value?.id === p.id ? null : p
-}
+const starters = computed(() =>
+  ROLE_ORDER
+    .map(r => team.roster.find(p => p.game_role === r && p.is_starter === 1))
+    .filter(Boolean) as typeof team.roster
+)
+const subs = computed(() => team.roster.filter(p => p.game_role === 'sub' || p.is_starter === 0))
 
-const wins = computed(() => Math.round(team.teamStats.totalGames * team.teamStats.winRate / 100))
+const wins   = computed(() => Math.round(team.teamStats.totalGames * team.teamStats.winRate / 100))
 const losses = computed(() => team.teamStats.totalGames - wins.value)
 </script>
 
@@ -67,131 +70,62 @@ const losses = computed(() => team.teamStats.totalGames - wins.value)
         v-for="(player, idx) in starters"
         :key="player.id"
         class="lcard"
-        :class="{ 'lcard--active': selectedPlayer?.id === player.id }"
-        :style="{ '--c': ROLE[player.role].color, animationDelay: `${idx * 0.08}s` }"
-        @click="select(player)"
+        :style="{ '--c': ROLE[player.game_role as RoleKey]?.color ?? '#8892B0', animationDelay: `${idx * 0.08}s` }"
+        @click="openProfile(player)"
       >
         <div class="lcard__bar" />
-        <!-- HUD corners -->
         <span class="lcard__corner lcard__corner--tl" />
         <span class="lcard__corner lcard__corner--tr" />
         <span class="lcard__corner lcard__corner--bl" />
         <span class="lcard__corner lcard__corner--br" />
-        <!-- scan line -->
         <div class="lcard__scan" />
-        <!-- character art -->
-        <img v-if="player.avatar" :src="player.avatar" class="lcard__char" alt="" />
-        <!-- ghost text -->
-        <div class="lcard__ghost">{{ ROLE[player.role].label }}</div>
+        <div class="lcard__ghost">{{ ROLE[player.game_role as RoleKey]?.label ?? player.game_role.toUpperCase() }}</div>
 
         <div class="lcard__meta" style="position:relative;z-index:2">
-          <span class="lcard__num">{{ ROLE[player.role].num }}</span>
-          <span class="lcard__role-badge">{{ ROLE[player.role].label }}</span>
+          <span class="lcard__num">{{ ROLE[player.game_role as RoleKey]?.num ?? '—' }}</span>
+          <span class="lcard__role-badge">{{ ROLE[player.game_role as RoleKey]?.label ?? player.game_role.toUpperCase() }}</span>
         </div>
 
         <div class="lcard__identity" style="position:relative;z-index:2">
-          <span class="lcard__ign">{{ player.ign }}</span>
-          <span class="lcard__role-full">{{ ROLE[player.role].full }}</span>
+          <span class="lcard__ign">{{ player.username }}</span>
+          <span class="lcard__role-full">{{ ROLE[player.game_role as RoleKey]?.full ?? player.game_role }}</span>
         </div>
 
         <div class="lcard__champs" style="position:relative;z-index:2">
-          <span v-for="c in player.stats.mostPlayedChamps.slice(0,3)" :key="c" class="lcard__champ">{{ c }}</span>
+          <span class="lcard__champ lcard__champ--hint">Clique pour voir le profil</span>
         </div>
 
         <div class="lcard__stats" style="position:relative;z-index:2">
-          <div class="lcard__stat">
-            <span class="lcard__stat-v" :style="{ color: kdaColor(player.stats.kda) }">{{ player.stats.kda }}</span>
-            <span class="lcard__stat-l">KDA</span>
-          </div>
+          <div class="lcard__stat"><span class="lcard__stat-v" style="color:#3D4460">—</span><span class="lcard__stat-l">KDA</span></div>
           <div class="lcard__stat-sep" />
-          <div class="lcard__stat">
-            <span class="lcard__stat-v" :style="{ color: wrColor(player.stats.winRate) }">{{ player.stats.winRate }}%</span>
-            <span class="lcard__stat-l">WIN</span>
-          </div>
+          <div class="lcard__stat"><span class="lcard__stat-v" style="color:#3D4460">—</span><span class="lcard__stat-l">WIN</span></div>
           <div class="lcard__stat-sep" />
-          <div class="lcard__stat">
-            <span class="lcard__stat-v" style="color:#8892B0">{{ player.stats.gamesPlayed }}</span>
-            <span class="lcard__stat-l">GAP</span>
-          </div>
+          <div class="lcard__stat"><span class="lcard__stat-v" style="color:#3D4460">—</span><span class="lcard__stat-l">GAP</span></div>
         </div>
 
         <div class="lcard__foot" style="position:relative;z-index:2">
           <div class="lcard__status">
-            <span class="lcard__dot" :class="`dot--${player.status}`" />
-            <span class="lcard__status-txt">{{ player.status === 'available' ? 'DISPONIBLE' : player.status === 'unavailable' ? 'INDISPONIBLE' : 'INCERTAIN' }}</span>
+            <span class="lcard__dot dot--uncertain" />
+            <span class="lcard__status-txt">VOIR LES STATS →</span>
           </div>
           <div class="lcard__loadbar"><div class="lcard__loadfill" /></div>
         </div>
       </article>
     </div>
 
-    <!-- ── DETAIL PANEL ── -->
-    <Transition name="detail">
-      <div v-if="selectedPlayer" class="detail" :style="{ '--c': ROLE[selectedPlayer.role].color }">
-        <div class="detail__inner">
-          <div class="detail__head">
-            <div>
-              <span class="detail__role">{{ ROLE[selectedPlayer.role].full.toUpperCase() }}</span>
-              <h2 class="detail__ign">{{ selectedPlayer.ign }}</h2>
-            </div>
-            <button class="detail__close" @click="selectedPlayer = null">✕</button>
-          </div>
-
-          <div class="detail__tiles">
-            <div class="dtile"><span class="dtile__v" :style="{ color: kdaColor(selectedPlayer.stats.kda) }">{{ selectedPlayer.stats.kda }}</span><span class="dtile__l">KDA</span></div>
-            <div class="dtile"><span class="dtile__v" :style="{ color: wrColor(selectedPlayer.stats.winRate) }">{{ selectedPlayer.stats.winRate }}%</span><span class="dtile__l">Win Rate</span></div>
-            <div class="dtile"><span class="dtile__v" style="color:#10B981">{{ selectedPlayer.stats.avgKills }}</span><span class="dtile__l">Avg K</span></div>
-            <div class="dtile"><span class="dtile__v" style="color:#EF4444">{{ selectedPlayer.stats.avgDeaths }}</span><span class="dtile__l">Avg D</span></div>
-            <div class="dtile"><span class="dtile__v" style="color:#60A5FA">{{ selectedPlayer.stats.avgAssists }}</span><span class="dtile__l">Avg A</span></div>
-            <div class="dtile"><span class="dtile__v" style="color:#8892B0">{{ selectedPlayer.stats.gamesPlayed }}</span><span class="dtile__l">Games</span></div>
-          </div>
-
-          <div class="detail__bars">
-            <div class="dbar">
-              <span class="dbar__l">Kills</span>
-              <div class="dbar__track"><div class="dbar__fill" style="background:#10B981" :style="{ width: `${Math.min(selectedPlayer.stats.avgKills/10*100,100)}%` }" /></div>
-              <span class="dbar__v" style="color:#10B981">{{ selectedPlayer.stats.avgKills }}</span>
-            </div>
-            <div class="dbar">
-              <span class="dbar__l">Deaths</span>
-              <div class="dbar__track"><div class="dbar__fill" style="background:#EF4444" :style="{ width: `${Math.min(selectedPlayer.stats.avgDeaths/10*100,100)}%` }" /></div>
-              <span class="dbar__v" style="color:#EF4444">{{ selectedPlayer.stats.avgDeaths }}</span>
-            </div>
-            <div class="dbar">
-              <span class="dbar__l">Assists</span>
-              <div class="dbar__track"><div class="dbar__fill" style="background:#60A5FA" :style="{ width: `${Math.min(selectedPlayer.stats.avgAssists/15*100,100)}%` }" /></div>
-              <span class="dbar__v" style="color:#60A5FA">{{ selectedPlayer.stats.avgAssists }}</span>
-            </div>
-          </div>
-
-          <div>
-            <span class="detail__sect-lbl">CHAMPION POOL</span>
-            <div class="detail__champs">
-              <span v-for="c in selectedPlayer.stats.mostPlayedChamps" :key="c" class="detail__champ-pill">{{ c }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Transition>
 
     <!-- ── SUBSTITUTES ── -->
     <div class="subs">
       <span class="subs__lbl">SUBSTITUTS</span>
       <div class="subs__list">
-        <div v-for="p in subs" :key="p.id" class="scard" :style="{ '--c': ROLE[p.role].color }">
+        <div v-for="p in subs" :key="p.id" class="scard" :style="{ '--c': ROLE[p.game_role as RoleKey]?.color ?? '#8892B0' }"
+          @click="openProfile(p)" style="cursor:pointer">
           <span class="scard__corner scard__corner--tl" />
           <span class="scard__corner scard__corner--tr" />
-          <div class="scard__role">{{ ROLE[p.role].label }}</div>
-          <div class="scard__ign">{{ p.ign }}</div>
-          <div class="scard__stats">
-            <span :style="{ color: kdaColor(p.stats.kda) }">{{ p.stats.kda }} KDA</span>
-            <span style="color:#3D4460">·</span>
-            <span :style="{ color: wrColor(p.stats.winRate) }">{{ p.stats.winRate }}%</span>
-          </div>
-          <div class="scard__champs">
-            <span v-for="c in p.stats.mostPlayedChamps.slice(0,3)" :key="c">{{ c }}</span>
-          </div>
-          <span class="scard__dot dot--available" />
+          <div class="scard__role">{{ ROLE[p.game_role as RoleKey]?.label ?? p.game_role.toUpperCase() }}</div>
+          <div class="scard__ign">{{ p.username }}</div>
+          <div class="scard__stats"><span style="color:#3D4460">Voir le profil →</span></div>
+          <span class="scard__dot dot--uncertain" />
         </div>
       </div>
     </div>
@@ -277,6 +211,8 @@ const losses = computed(() => team.teamStats.totalGames - wins.value)
 .lcard__champs { padding: 6px 14px; display: flex; flex-direction: column; gap: 2px; }
 .lcard__champ { font-family: 'Inter', sans-serif; font-size: 10px; color: #8892B0; line-height: 1.4; }
 .lcard__champ::before { content: '▸ '; color: var(--c); opacity: .5; }
+.lcard__champ--hint { color: #2A3050; font-style: italic; font-size: 9px; letter-spacing: .5px; }
+.lcard__champ--hint::before { content: none; }
 
 .lcard__stats { display: flex; align-items: center; padding: 7px 14px; border-top: 1px solid rgba(255,255,255,.04); }
 .lcard__stat { flex: 1; display: flex; flex-direction: column; align-items: center; }

@@ -18,6 +18,7 @@ export interface User {
   is_starter: number
   is_active: number
   created_at: string
+  riot_id?: string | null
 }
 
 export interface JwtPayload {

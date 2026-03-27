@@ -49,17 +49,37 @@ function champIcon(name: string) {
 interface RiotParticipantBasic {
   champion: string; kills: number; deaths: number; assists: number
   damage: number; cs: number; vision: number; win: boolean; isUser: boolean
+  teamId?: number; role?: string
+}
+interface RiotData {
+  matchId: string; duration: number; queueLabel: string
+  participants: RiotParticipantBasic[]
+}
+function getRiotData(m: Match): RiotData | null {
+  if (!m.riot_data) return null
+  try { return JSON.parse(m.riot_data) } catch { return null }
 }
 function getPersonalParticipant(m: Match): RiotParticipantBasic | null {
-  if (!m.riot_data) return null
-  try {
-    const rd = JSON.parse(m.riot_data)
-    return (rd.participants as RiotParticipantBasic[])?.find(p => p.isUser) ?? null
-  } catch { return null }
+  return getRiotData(m)?.participants?.find(p => p.isUser) ?? null
 }
 function fmtKda(p: RiotParticipantBasic) {
   return p.deaths === 0 ? 'Perfect' : ((p.kills + p.assists) / p.deaths).toFixed(2)
 }
+function kdaColorHist(kda: string) {
+  const n = parseFloat(kda)
+  return n >= 4 ? '#10B981' : n >= 2.5 ? 'var(--accent)' : n >= 1.5 ? '#EEF2FF' : '#EF4444'
+}
+function getTeams(m: Match) {
+  const rd = getRiotData(m)
+  if (!rd?.participants) return { myTeam: [], enemyTeam: [] }
+  const me = rd.participants.find(p => p.isUser)
+  const myTeamId = me?.teamId ?? 100
+  return {
+    myTeam:    rd.participants.filter(p => p.teamId === myTeamId).map(p => p.champion),
+    enemyTeam: rd.participants.filter(p => p.teamId !== myTeamId).map(p => p.champion),
+  }
+}
+const ROLE_ABBR: Record<string, string> = { TOP: 'TOP', JUNGLE: 'JGL', MIDDLE: 'MID', BOTTOM: 'ADC', UTILITY: 'SUP' }
 
 const QUEUE_MAP: Record<string, string> = {
   'Ranked Solo/Duo': 'RANKED', 'Ranked Flex': 'RANKED FLEX',
@@ -330,50 +350,87 @@ async function saveEdit() {
         <span></span>
       </div>
       <template v-for="m in filtered" :key="m.id">
-        <!-- ── Game row (riot_data imported) ── -->
+        <!-- ── Game card OP.GG style ── -->
         <div
           v-if="getPersonalParticipant(m)"
-          class="hist__row hist__row--game"
-          :class="{ 'hist__row--selected': isSelected(m.id) }"
+          class="og-card"
+          :class="[getPersonalParticipant(m)!.win ? 'og-card--win' : 'og-card--loss', { 'og-card--selected': isSelected(m.id) }]"
         >
-          <span class="hist__cb-col">
+          <!-- checkbox -->
+          <div class="og-card__cb">
             <button class="hist__cb" :class="{ 'hist__cb--checked': isSelected(m.id) }" @click.stop="toggleSelect(m.id)" />
-          </span>
-          <!-- RÉS. -->
-          <span class="hist__badge" :class="getPersonalParticipant(m)!.win ? 'hist__badge--win' : 'hist__badge--loss'">
-            {{ getPersonalParticipant(m)!.win ? 'V' : 'D' }}
-          </span>
-          <!-- DATE -->
-          <span class="hist__date">{{ fmtDate(m.date) }}</span>
-          <!-- ADVERSAIRE → champion joué -->
-          <span class="hist__opp">
-            <div class="hist__game-champ-wrap" :class="getPersonalParticipant(m)!.win ? 'hist__game-champ-wrap--win' : 'hist__game-champ-wrap--loss'">
-              <img :src="champIcon(getPersonalParticipant(m)!.champion)" :alt="getPersonalParticipant(m)!.champion"
-                class="hist__game-champ-img" @error="($event.target as HTMLImageElement).src='/logo.png'" />
-            </div>
-            <div class="hist__game-champ-info">
-              <span class="hist__game-champ-name">{{ getPersonalParticipant(m)!.champion }}</span>
-              <span class="hist__game-champ-kda">{{ getPersonalParticipant(m)!.kills }}/{{ getPersonalParticipant(m)!.deaths }}/{{ getPersonalParticipant(m)!.assists }}
-                <span :style="{ color: getPersonalParticipant(m)!.deaths === 0 || (getPersonalParticipant(m)!.kills + getPersonalParticipant(m)!.assists) / getPersonalParticipant(m)!.deaths >= 3 ? '#10B981'
-                  : (getPersonalParticipant(m)!.kills + getPersonalParticipant(m)!.assists) / getPersonalParticipant(m)!.deaths >= 2 ? 'var(--accent)' : '#EF4444' }">
-                  ({{ fmtKda(getPersonalParticipant(m)!) }} KDA)
-                </span>
+          </div>
+
+          <!-- result + meta -->
+          <div class="og-card__result">
+            <span class="og-card__vd" :class="getPersonalParticipant(m)!.win ? 'og-card__vd--win' : 'og-card__vd--loss'">
+              {{ getPersonalParticipant(m)!.win ? 'Victoire' : 'Défaite' }}
+            </span>
+            <span class="og-card__queue">{{ queueLabel(m) }}</span>
+            <span class="og-card__date">{{ fmtDate(m.date) }}</span>
+          </div>
+
+          <!-- champion -->
+          <div class="og-card__champ">
+            <div class="og-card__champ-img-wrap">
+              <img :src="champIcon(getPersonalParticipant(m)!.champion)"
+                :alt="getPersonalParticipant(m)!.champion" class="og-card__champ-img"
+                @error="($event.target as HTMLImageElement).src='/logo.png'" />
+              <span v-if="getPersonalParticipant(m)!.role" class="og-card__role">
+                {{ ROLE_ABBR[getPersonalParticipant(m)!.role!] ?? getPersonalParticipant(m)!.role }}
               </span>
             </div>
-          </span>
-          <!-- SÉRIE → CS + DMG -->
-          <span class="hist__series hist__game-stats-inline">
-            <span class="hist__game-stat-label">CS</span> {{ getPersonalParticipant(m)!.cs }}
-            &nbsp;·&nbsp;
-            <span class="hist__game-stat-label">DMG</span> {{ (getPersonalParticipant(m)!.damage / 1000).toFixed(1) }}k
-          </span>
-          <!-- TYPE → queue -->
-          <span class="hist__type" :style="{ color: TYPE_COLOR[m.type], borderColor: TYPE_COLOR[m.type] + '44', background: TYPE_COLOR[m.type] + '14' }">
-            {{ queueLabel(m) }}
-          </span>
-          <span class="hist__actions">
+            <span class="og-card__champ-name">{{ getPersonalParticipant(m)!.champion }}</span>
+          </div>
+
+          <!-- KDA -->
+          <div class="og-card__kda">
+            <span class="og-card__score">
+              {{ getPersonalParticipant(m)!.kills }}
+              <span class="og-card__sep"> / </span>
+              <span class="og-card__deaths">{{ getPersonalParticipant(m)!.deaths }}</span>
+              <span class="og-card__sep"> / </span>
+              {{ getPersonalParticipant(m)!.assists }}
+            </span>
+            <span class="og-card__ratio" :style="{ color: kdaColorHist(fmtKda(getPersonalParticipant(m)!)) }">
+              {{ fmtKda(getPersonalParticipant(m)!) }} KDA
+            </span>
+          </div>
+
+          <!-- stats -->
+          <div class="og-card__stats">
+            <div class="og-card__stat">
+              <span class="og-card__stat-v">{{ getPersonalParticipant(m)!.cs }}</span>
+              <span class="og-card__stat-l">CS</span>
+            </div>
+            <div class="og-card__stat">
+              <span class="og-card__stat-v">{{ (getPersonalParticipant(m)!.damage / 1000).toFixed(1) }}k</span>
+              <span class="og-card__stat-l">Dégâts</span>
+            </div>
+            <div class="og-card__stat">
+              <span class="og-card__stat-v">{{ getPersonalParticipant(m)!.vision }}</span>
+              <span class="og-card__stat-l">Vision</span>
+            </div>
+          </div>
+
+          <!-- team comp -->
+          <div class="og-card__teams">
+            <div class="og-card__team">
+              <img v-for="c in getTeams(m).myTeam" :key="c" :src="champIcon(c)" :alt="c"
+                class="og-card__team-icon" :class="{ 'og-card__team-icon--me': c === getPersonalParticipant(m)!.champion }"
+                @error="($event.target as HTMLImageElement).src='/logo.png'" />
+            </div>
+            <div class="og-card__team">
+              <img v-for="c in getTeams(m).enemyTeam" :key="c" :src="champIcon(c)" :alt="c"
+                class="og-card__team-icon"
+                @error="($event.target as HTMLImageElement).src='/logo.png'" />
+            </div>
+          </div>
+
+          <!-- delete -->
+          <div class="og-card__actions">
             <button class="hist__action-btn hist__action-btn--del" :disabled="deleting === m.id" @click="remove(m)" title="Supprimer"><Trash2 :size="12" /></button>
-          </span>
+          </div>
         </div>
 
         <!-- ── Regular row ── -->
@@ -752,14 +809,84 @@ async function saveEdit() {
 .hist__game-kda-score { font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700; color: #EEF2FF; }
 .hist__game-kda-ratio { font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; }
 .hist__game-champ-kda { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 600; color: #8892B0; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
-
 .hist__game-stats { display: flex; flex-direction: column; gap: 2px; }
 .hist__game-stat { display: flex; align-items: center; gap: 4px; font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; color: #8892B0; }
 .hist__game-stat-label { font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 1.5px; color: #3D4460; }
 .hist__game-stats-inline { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; color: #8892B0; display: flex; align-items: center; gap: 2px; flex-wrap: wrap; }
-
 .hist__game-meta { display: flex; flex-direction: column; gap: 2px; }
 .hist__game-vs { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; color: #8892B0; }
+
+/* ── OP.GG style game cards ── */
+.og-card {
+  display: grid;
+  grid-template-columns: 32px 90px 110px 130px 130px 1fr 130px 36px;
+  align-items: center;
+  background: #111520; border: 1px solid #1A1F2E; border-left: 4px solid transparent;
+  border-radius: 8px; margin-bottom: 4px; overflow: hidden; transition: background .1s;
+}
+.og-card:hover { background: #131828; }
+.og-card--win  { border-left-color: #10B981; }
+.og-card--loss { border-left-color: #EF4444; }
+.og-card--selected { outline: 1px solid color-mix(in srgb,var(--accent) 50%,transparent); }
+
+.og-card__cb { display: flex; align-items: center; justify-content: center; padding: 0 4px; }
+.og-card__result {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 14px 8px; border-right: 1px solid rgba(255,255,255,.04);
+}
+.og-card__vd { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: .5px; }
+.og-card__vd--win  { color: #10B981; }
+.og-card__vd--loss { color: #EF4444; }
+.og-card__queue { font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 1px; color: #3D4460; text-align: center; }
+.og-card__date  { font-family: 'Inter', sans-serif; font-size: 9px; color: #2A3050; }
+
+.og-card__champ {
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  padding: 10px 8px; border-right: 1px solid rgba(255,255,255,.04);
+}
+.og-card__champ-img-wrap { position: relative; }
+.og-card__champ-img { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; border: 2px solid rgba(255,255,255,.06); display: block; }
+.og-card__role {
+  position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%);
+  font-family: 'Rajdhani', sans-serif; font-size: 8px; font-weight: 700; letter-spacing: 1px;
+  background: #0D1018; border: 1px solid #1A1F2E; color: #8892B0;
+  padding: 0 4px; border-radius: 3px; white-space: nowrap;
+}
+.og-card__champ-name {
+  font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; color: #EEF2FF;
+  margin-top: 4px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px;
+}
+
+.og-card__kda {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 10px 8px; border-right: 1px solid rgba(255,255,255,.04);
+}
+.og-card__score { font-family: 'Rajdhani', sans-serif; font-size: 20px; font-weight: 700; line-height: 1; color: #EEF2FF; }
+.og-card__sep   { color: #3D4460; font-size: 16px; }
+.og-card__deaths { color: #EF4444; }
+.og-card__ratio { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; }
+
+.og-card__stats {
+  display: flex; flex-direction: column; gap: 5px;
+  padding: 10px 12px; border-right: 1px solid rgba(255,255,255,.04);
+}
+.og-card__stat { display: flex; flex-direction: column; gap: 1px; }
+.og-card__stat-v { font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700; color: #EEF2FF; }
+.og-card__stat-l { font-family: 'Inter', sans-serif; font-size: 9px; color: #3D4460; }
+
+.og-card__teams {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 10px 10px; align-items: center; justify-content: center;
+  border-right: 1px solid rgba(255,255,255,.04);
+}
+.og-card__team { display: flex; gap: 2px; }
+.og-card__team-icon {
+  width: 22px; height: 22px; border-radius: 3px; object-fit: cover;
+  border: 1px solid rgba(255,255,255,.06); opacity: .7;
+}
+.og-card__team-icon--me { border-color: var(--accent) !important; opacity: 1; }
+
+.og-card__actions { display: flex; align-items: center; justify-content: center; padding: 0 6px; }
 
 /* ── Logo upload ──────────────────────────────────── */
 .logo-upload { display: flex; align-items: center; gap: 12px; }
@@ -869,6 +996,14 @@ html[data-theme="light"] .hist__game-champ-name { color: #0D1220; }
 html[data-theme="light"] .hist__game-champ-role { background: #F0F3FF; color: #8892B0; }
 html[data-theme="light"] .hist__game-kda-score { color: #0D1220; }
 html[data-theme="light"] .hist__game-vs { color: #4A5280; }
+html[data-theme="light"] .og-card { background: #FFFFFF; border-color: #E0E3EF; }
+html[data-theme="light"] .og-card:hover { background: #F7F8FC; }
+html[data-theme="light"] .og-card__score { color: #0D1220; }
+html[data-theme="light"] .og-card__stat-v { color: #0D1220; }
+html[data-theme="light"] .og-card__champ-name { color: #0D1220; }
+html[data-theme="light"] .og-card__champ-img { border-color: #E0E3EF; }
+html[data-theme="light"] .og-card__team-icon { border-color: #E0E3EF; }
+html[data-theme="light"] .og-card__role { background: #FFFFFF; border-color: #E0E3EF; }
 html[data-theme="light"] .hist__table { background: #FFFFFF; border-color: #E0E3EF; }
 html[data-theme="light"] .hist__head { border-bottom-color: #E0E3EF; }
 html[data-theme="light"] .hist__row { border-bottom-color: #E0E3EF; }

@@ -9,8 +9,9 @@ const auth  = useAuthStore()
 const theme = useThemeStore()
 
 /* ── Infos ──────────────────────────────────────── */
-const infoUser  = ref(auth.user?.username ?? '')
-const infoEmail = ref(auth.user?.email ?? '')
+const infoUser   = ref(auth.user?.username ?? '')
+const infoEmail  = ref(auth.user?.email ?? '')
+const infoRiotId = ref(auth.user?.riot_id ?? '')
 const infoMsg   = ref<{ text: string; ok: boolean } | null>(null)
 const infoLoad  = ref(false)
 
@@ -21,7 +22,7 @@ async function saveInfo() {
     const res  = await fetch(`${API}/auth/profile`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
-      body: JSON.stringify({ username: infoUser.value.trim(), email: infoEmail.value.trim() }),
+      body: JSON.stringify({ username: infoUser.value.trim(), email: infoEmail.value.trim(), riot_id: infoRiotId.value.trim() || null }),
     })
     const data = await res.json()
     if (!res.ok) { infoMsg.value = { text: data.error, ok: false } }
@@ -116,6 +117,10 @@ const roleColor = computed(() => ROLE_COLOR[auth.user?.game_role ?? ''] ?? '#889
           <div class="pcard__field">
             <label class="hx-label">Email</label>
             <input v-model="infoEmail" class="hx-input" type="email" placeholder="ton@email.com" autocomplete="email" />
+          </div>
+          <div class="pcard__field">
+            <label class="hx-label">Riot ID <span class="pcard__field-hint">utilisé pour les stats sur le roster</span></label>
+            <input v-model="infoRiotId" class="hx-input" placeholder="Kaishi#EUW" autocomplete="off" />
           </div>
 
           <Transition name="msg">
@@ -233,6 +238,7 @@ const roleColor = computed(() => ROLE_COLOR[auth.user?.game_role ?? ''] ?? '#889
 .pcard__body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
 .pcard__body--row { flex-direction: row; gap: 12px; }
 .pcard__field { display: flex; flex-direction: column; }
+.pcard__field-hint { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 400; letter-spacing: 0; color: #3D4460; margin-left: 6px; }
 
 /* Messages */
 .pcard__msg { display: flex; align-items: center; gap: 6px; font-family: 'Inter', sans-serif; font-size: 12px; padding: 8px 12px; border-radius: 4px; }
