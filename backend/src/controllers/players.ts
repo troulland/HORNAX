@@ -81,7 +81,7 @@ export async function getPlayerProfile(req: Request, res: Response): Promise<voi
       `https://${platform}.api.riotgames.com/lol/league/v4/entries/by-summoner/${summoner.id}`
     )
     const ddVersion: string = await fetch('https://ddragon.leagueoflegends.com/api/versions.json')
-      .then(r => r.json()).then((v: string[]) => v[0])
+      .then(r => r.json()).then((v: unknown) => (v as string[])[0])
 
     const matchIds: string[] = await riotFetch(
       `https://${routing}.api.riotgames.com/lol/match/v5/matches/by-puuid/${account.puuid}/ids?count=10`
