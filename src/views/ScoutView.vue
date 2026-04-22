@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { API_BASE as API } from '@/config'
-import { Search, X, RefreshCw, Crosshair } from 'lucide-vue-next'
+import { Search, X, RefreshCw, Crosshair, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 
 const auth = useAuthStore()
 
@@ -51,9 +51,23 @@ interface ScoutResult {
   champPool?: { name: string; games: number; winRate: number; kda: string }[]
 }
 
-const inputId  = ref('')
-const inputReg = ref('euw')
-const scouts   = ref<ScoutResult[]>([])
+const inputId     = ref('')
+const inputReg    = ref('euw')
+const scouts      = ref<ScoutResult[]>([])
+const scoutIndex  = ref(0)
+
+const currentScout = computed(() => scouts.value[scoutIndex.value] ?? null)
+
+function prevScout() { if (scoutIndex.value > 0) scoutIndex.value-- }
+function nextScout() { if (scoutIndex.value < scouts.value.length - 1) scoutIndex.value++ }
+
+let touchStartX = 0
+function onTouchStart(e: TouchEvent) { touchStartX = e.touches[0].clientX }
+function onTouchEnd(e: TouchEvent) {
+  const dx = e.changedTouches[0].clientX - touchStartX
+  if (dx > 50) prevScout()
+  else if (dx < -50) nextScout()
+}
 
 function parseOpGGUrl(url: string): { summoners: string[]; region: string } | null {
   try {
@@ -79,6 +93,7 @@ async function addScout() {
   if (parsed) {
     inputId.value = ''
     inputReg.value = parsed.region
+    const firstIdx = scouts.value.length
     for (const summoner of parsed.summoners) {
       if (scouts.value.length >= 5) break
       const key = `${summoner}__${parsed.region}`
@@ -87,6 +102,7 @@ async function addScout() {
       scouts.value.push(entry)
       fetchScout(entry)
     }
+    if (scouts.value.length > firstIdx) scoutIndex.value = firstIdx
     return
   }
 
@@ -96,6 +112,7 @@ async function addScout() {
 
   const entry: ScoutResult = { id: key, riotId: id, region: inputReg.value, state: 'loading' }
   scouts.value.push(entry)
+  scoutIndex.value = scouts.value.length - 1
   inputId.value = ''
   await fetchScout(entry)
 }
@@ -122,6 +139,7 @@ async function fetchScout(entry: ScoutResult) {
 
 function removeScout(id: string) {
   scouts.value = scouts.value.filter(s => s.id !== id)
+  scoutIndex.value = Math.max(0, Math.min(scoutIndex.value, scouts.value.length - 1))
 }
 </script>
 
@@ -171,13 +189,36 @@ function removeScout(id: string) {
       <span class="scout__empty-sub">Entre un Riot ID ci-dessus pour commencer le scouting</span>
     </div>
 
-    <!-- Scout cards -->
-    <div class="scout__grid" :class="`scout__grid--${scouts.length}`">
-      <div
-        v-for="s in scouts" :key="s.id"
-        class="scout__card"
-        :class="{ 'scout__card--loading': s.state === 'loading', 'scout__card--error': s.state === 'error' }"
-      >
+    <!-- Scout carousel -->
+    <div v-if="scouts.length > 0" class="scout__carousel-wrap">
+      <!-- Nav bar -->
+      <div class="scout__carousel-nav">
+        <button class="scout__nav-btn" @click="prevScout" :disabled="scoutIndex === 0">
+          <ChevronLeft :size="15" />
+        </button>
+        <div class="scout__dots">
+          <button
+            v-for="(s, i) in scouts" :key="s.id"
+            class="scout__dot"
+            :class="{ 'scout__dot--active': i === scoutIndex }"
+            @click="scoutIndex = i"
+            :title="s.gameName ?? s.riotId"
+          />
+        </div>
+        <span class="scout__carousel-counter">{{ scoutIndex + 1 }} / {{ scouts.length }}</span>
+        <button class="scout__nav-btn" @click="nextScout" :disabled="scoutIndex === scouts.length - 1">
+          <ChevronRight :size="15" />
+        </button>
+      </div>
+
+      <!-- Viewport -->
+      <div class="scout__carousel-viewport" @touchstart="onTouchStart" @touchend="onTouchEnd">
+        <div class="scout__carousel-track" :style="{ transform: `translateX(-${scoutIndex * 100}%)` }">
+          <div
+            v-for="s in scouts" :key="s.id"
+            class="scout__card"
+            :class="{ 'scout__card--loading': s.state === 'loading', 'scout__card--error': s.state === 'error' }"
+          >
         <!-- Card header -->
         <div class="scout__card-head">
           <div class="scout__card-id">
@@ -266,7 +307,9 @@ function removeScout(id: string) {
           <div v-else class="scout__no-champs">Pas assez de ranked récents pour le champion pool.</div>
         </template>
       </div>
-    </div>
+        </div><!-- /track -->
+      </div><!-- /viewport -->
+    </div><!-- /carousel-wrap -->
   </div>
 </template>
 
@@ -299,9 +342,33 @@ function removeScout(id: string) {
 .scout__empty-title { font-family: 'Rajdhani', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: 2px; color: #3D4460; }
 .scout__empty-sub { font-family: 'Inter', sans-serif; font-size: 12px; color: #2A3050; }
 
-/* Grid — always a single row, cards share the full width equally */
-.scout__grid { display: flex; gap: 12px; }
-.scout__grid .scout__card { flex: 1; min-width: 0; }
+/* Carousel */
+.scout__carousel-wrap { display: flex; flex-direction: column; gap: 10px; }
+.scout__carousel-nav {
+  display: flex; align-items: center; gap: 10px;
+  background: #111520; border: 1px solid #1A1F2E; border-radius: 8px;
+  padding: 8px 12px;
+}
+.scout__nav-btn {
+  width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+  background: #0D1018; border: 1px solid #1A1F2E; border-radius: 5px;
+  color: #8892B0; cursor: pointer; transition: all .15s; flex-shrink: 0;
+}
+.scout__nav-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.scout__nav-btn:disabled { opacity: .3; cursor: not-allowed; }
+.scout__dots { display: flex; gap: 6px; flex: 1; justify-content: center; flex-wrap: wrap; }
+.scout__dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #1A1F2E; border: none; cursor: pointer; transition: all .2s; padding: 0;
+}
+.scout__dot--active { background: var(--accent); transform: scale(1.3); }
+.scout__dot:hover:not(.scout__dot--active) { background: #3D4460; }
+.scout__carousel-counter { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 1px; color: #3D4460; flex-shrink: 0; }
+.scout__carousel-viewport { overflow: hidden; border-radius: 10px; }
+.scout__carousel-track {
+  display: flex; transition: transform .35s cubic-bezier(.4,0,.2,1);
+}
+.scout__carousel-track .scout__card { flex: 0 0 100%; min-width: 0; }
 
 /* Card */
 .scout__card {

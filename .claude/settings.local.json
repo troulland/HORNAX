@@ -27,7 +27,9 @@
       "Bash(find \"C:\\\\Users\\\\thoma\\\\Documents\\\\HORNAX\" -type f \\\\\\( -name \"*exemple*\" -o -name \"*example*\" \\\\\\) 2>/dev/null | grep -v node_modules)",
       "Bash(find \"C:\\\\Users\\\\thoma\\\\Documents\\\\HORNAX\" -type f \\\\\\( -name \"*.vue\" -o -name \"*.html\" -o -name \"*.ts\" -o -name \"*.js\" -o -name \"*.md\" \\\\\\) ! -path \"*/node_modules/*\" 2>/dev/null | head -30)",
       "Bash(find C:/Users/thoma/Documents/HORNAX -name \"*.png\" -o -name \"*.svg\" -o -name \"*.webp\" 2>/dev/null | head -60)",
-      "Bash(ls \"C:\\\\Users\\\\thoma\\\\Documents\\\\HORNAX\\\\src\\\\assets\\\\ranks lol\" 2>/dev/null || ls \"C:\\\\Users\\\\thoma\\\\Documents\\\\HORNAX\\\\public\" 2>/dev/null || find \"C:\\\\Users\\\\thoma\\\\Documents\\\\HORNAX\" -name \"*rank*\" -o -name \"*Rank*\" 2>/dev/null | head -20)"
+      "Bash(ls \"C:\\\\Users\\\\thoma\\\\Documents\\\\HORNAX\\\\src\\\\assets\\\\ranks lol\" 2>/dev/null || ls \"C:\\\\Users\\\\thoma\\\\Documents\\\\HORNAX\\\\public\" 2>/dev/null || find \"C:\\\\Users\\\\thoma\\\\Documents\\\\HORNAX\" -name \"*rank*\" -o -name \"*Rank*\" 2>/dev/null | head -20)",
+      "Bash(node:*)",
+      "Bash(npx vite:*)"
     ]
   }
 }

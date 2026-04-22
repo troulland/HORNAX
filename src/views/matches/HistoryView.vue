@@ -194,14 +194,15 @@ const groupLogoFile    = ref<File | null>(null)
 const groupLogoPreview = ref<string | null>(null)
 
 const selectedCount   = computed(() => selectedIds.value.length)
-const isBo = computed(() => selectedCount.value >= 3 && selectedCount.value <= 5)
+const isBo = computed(() => selectedCount.value >= 2 && selectedCount.value <= 5)
 
 const groupValidationMsg = computed(() => {
   const n = selectedCount.value
   if (n === 0) return ''
-  if (n === 1 || n === 2) return `${n} partie${n > 1 ? 's' : ''} — envoyées comme games individuelles`
+  if (n === 1) return `1 partie — envoyée comme game individuelle`
+  if (n === 2) return `2 parties — BO2 / BO3 plié 2-0`
   if (n <= 5) return `BO${n} — ${n} parties groupées en série`
-  return `${n} parties — trop pour un BO, envoyées comme games individuelles`
+  return `${n} parties — trop pour un BO`
 })
 
 function onGroupLogoChange(e: Event) {
@@ -223,6 +224,22 @@ async function uploadFile(file: File): Promise<string | null> {
   } catch { return null }
 }
 
+// All unique opponents from history for autocomplete
+const knownOpponents = computed(() => {
+  const map = new Map<string, string | null>()
+  for (const m of store.history) {
+    if (m.opponent && !map.has(m.opponent)) map.set(m.opponent, m.opponent_logo)
+  }
+  return [...map.entries()].map(([name, logo]) => ({ name, logo }))
+})
+
+function onOpponentSelect() {
+  const found = knownOpponents.value.find(o => o.name === groupForm.value.opponent)
+  if (found?.logo && !groupLogoFile.value) {
+    groupLogoPreview.value = found.logo.startsWith('/logos/') ? `${STATIC_BASE}${found.logo}` : found.logo
+  }
+}
+
 function openGroupModal() {
   const matches = store.history.filter(m => selectedIds.value.includes(m.id))
   const opponents = [...new Set(matches.map(m => m.opponent))]
@@ -231,7 +248,15 @@ function openGroupModal() {
   groupForm.value.context  = 'team'
   groupLogoFile.value    = null
   groupLogoPreview.value = null
+  // Auto-fill logo if single known opponent
+  if (opponents.length === 1) onOpponentSelect()
   groupModalOpen.value = true
+}
+
+async function deleteSeriesGroup(seriesId: string) {
+  const n = store.history.filter(m => m.series_id === seriesId).length
+  if (!confirm(`Supprimer ce BO (${n} partie${n > 1 ? 's' : ''}) ? Cette action est irréversible.`)) return
+  await store.deleteSeriesMatches(seriesId)
 }
 function closeGroupModal() { groupModalOpen.value = false; groupLogoFile.value = null; groupLogoPreview.value = null }
 
@@ -240,7 +265,7 @@ async function submitGroup() {
   grouping.value = true
   const logoUrl = groupLogoFile.value ? await uploadFile(groupLogoFile.value) : null
   const n = selectedIds.value.length
-  const isBoFlag = n >= 3 && n <= 5
+  const isBoFlag = n >= 2 && n <= 5
   const seriesId = isBoFlag
     ? (groupForm.value.seriesId.trim() || `bo${n}-${groupForm.value.opponent.trim().toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}`)
     : null
@@ -545,27 +570,69 @@ async function saveEdit() {
   <!-- Scoreboard (expanded) -->
   <div v-if="expanded.has(m.id)" class="og-card__scoreboard">
     <div class="og-card__sb-grid">
+      <!-- Team 100 -->
       <div class="og-card__sb-col">
+        <div class="og-card__sb-team-hdr"
+          :class="getRiotData(m)!.participants.find(x => x.teamId === 100)?.win ? 'og-card__sb-team-hdr--win' : 'og-card__sb-team-hdr--loss'">
+          {{ getRiotData(m)!.participants.find(x => x.teamId === 100)?.win ? 'VICTOIRE' : 'DÉFAITE' }} · ÉQUIPE BLEUE
+        </div>
         <div v-for="p in getRiotData(m)!.participants.filter(x => (x.teamId ?? 100) === 100)"
           :key="p.champion" class="og-card__sb-row"
-          :class="{ 'og-card__sb-row--me': p.isUser, 'og-card__sb-row--win': p.win }">
-          <img :src="champIcon(p.champion)" :alt="p.champion" class="og-card__sb-icon"
-            @error="($event.target as HTMLImageElement).src='/logo.png'" />
-          <span class="og-card__sb-kda">{{ p.kills }}/{{ p.deaths }}/{{ p.assists }}</span>
+          :class="{ 'og-card__sb-row--me': p.isUser }">
+          <div class="og-card__sb-champ">
+            <img :src="champIcon(p.champion)" :alt="p.champion" class="og-card__sb-icon"
+              @error="($event.target as HTMLImageElement).src='/logo.png'" />
+            <span v-if="p.champLevel" class="og-card__sb-lvl">{{ p.champLevel }}</span>
+          </div>
+          <div class="og-card__sb-spells">
+            <img v-if="p.summoner1Id && spellIcon(p.summoner1Id)" :src="spellIcon(p.summoner1Id)" class="og-card__sb-spell" @error="($event.target as HTMLImageElement).style.display='none'" />
+            <img v-if="p.summoner2Id && spellIcon(p.summoner2Id)" :src="spellIcon(p.summoner2Id)" class="og-card__sb-spell" @error="($event.target as HTMLImageElement).style.display='none'" />
+            <img v-if="p.primaryRune && runeIcon(p.primaryRune)" :src="runeIcon(p.primaryRune)" class="og-card__sb-rune" @error="($event.target as HTMLImageElement).style.display='none'" />
+          </div>
+          <div class="og-card__sb-info">
+            <span class="og-card__sb-name">{{ p.champion }}</span>
+            <span class="og-card__sb-kda" :style="{ color: kdaColorHist(p.deaths === 0 ? 'Perfect' : ((p.kills+p.assists)/p.deaths).toFixed(2)) }">{{ p.kills }}/{{ p.deaths }}/{{ p.assists }}</span>
+          </div>
           <span class="og-card__sb-cs">{{ p.cs }} cs</span>
           <span class="og-card__sb-dmg">{{ (p.damage / 1000).toFixed(1) }}k</span>
+          <div class="og-card__sb-items">
+            <div v-for="(itId, ii) in [...(p.items ?? []), p.trinket ?? 0].slice(0, 7)" :key="ii" class="og-card__sb-item-slot">
+              <img v-if="itId" :src="itemIcon(itId)" class="og-card__sb-item" @error="($event.target as HTMLImageElement).style.display='none'" />
+            </div>
+          </div>
         </div>
       </div>
       <div class="og-card__sb-divider" />
+      <!-- Team 200 -->
       <div class="og-card__sb-col">
+        <div class="og-card__sb-team-hdr"
+          :class="getRiotData(m)!.participants.find(x => x.teamId === 200)?.win ? 'og-card__sb-team-hdr--win' : 'og-card__sb-team-hdr--loss'">
+          {{ getRiotData(m)!.participants.find(x => x.teamId === 200)?.win ? 'VICTOIRE' : 'DÉFAITE' }} · ÉQUIPE ROUGE
+        </div>
         <div v-for="p in getRiotData(m)!.participants.filter(x => (x.teamId ?? 200) === 200)"
           :key="p.champion" class="og-card__sb-row"
-          :class="{ 'og-card__sb-row--win': p.win }">
-          <img :src="champIcon(p.champion)" :alt="p.champion" class="og-card__sb-icon"
-            @error="($event.target as HTMLImageElement).src='/logo.png'" />
-          <span class="og-card__sb-kda">{{ p.kills }}/{{ p.deaths }}/{{ p.assists }}</span>
+          :class="{ 'og-card__sb-row--me': p.isUser }">
+          <div class="og-card__sb-champ">
+            <img :src="champIcon(p.champion)" :alt="p.champion" class="og-card__sb-icon"
+              @error="($event.target as HTMLImageElement).src='/logo.png'" />
+            <span v-if="p.champLevel" class="og-card__sb-lvl">{{ p.champLevel }}</span>
+          </div>
+          <div class="og-card__sb-spells">
+            <img v-if="p.summoner1Id && spellIcon(p.summoner1Id)" :src="spellIcon(p.summoner1Id)" class="og-card__sb-spell" @error="($event.target as HTMLImageElement).style.display='none'" />
+            <img v-if="p.summoner2Id && spellIcon(p.summoner2Id)" :src="spellIcon(p.summoner2Id)" class="og-card__sb-spell" @error="($event.target as HTMLImageElement).style.display='none'" />
+            <img v-if="p.primaryRune && runeIcon(p.primaryRune)" :src="runeIcon(p.primaryRune)" class="og-card__sb-rune" @error="($event.target as HTMLImageElement).style.display='none'" />
+          </div>
+          <div class="og-card__sb-info">
+            <span class="og-card__sb-name">{{ p.champion }}</span>
+            <span class="og-card__sb-kda" :style="{ color: kdaColorHist(p.deaths === 0 ? 'Perfect' : ((p.kills+p.assists)/p.deaths).toFixed(2)) }">{{ p.kills }}/{{ p.deaths }}/{{ p.assists }}</span>
+          </div>
           <span class="og-card__sb-cs">{{ p.cs }} cs</span>
           <span class="og-card__sb-dmg">{{ (p.damage / 1000).toFixed(1) }}k</span>
+          <div class="og-card__sb-items">
+            <div v-for="(itId, ii) in [...(p.items ?? []), p.trinket ?? 0].slice(0, 7)" :key="ii" class="og-card__sb-item-slot">
+              <img v-if="itId" :src="itemIcon(itId)" class="og-card__sb-item" @error="($event.target as HTMLImageElement).style.display='none'" />
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -590,12 +657,16 @@ async function saveEdit() {
             <span class="hist__opp-letter" v-else>{{ m.opponent.charAt(0).toUpperCase() }}</span>
             {{ m.opponent }}
           </span>
-          <span class="hist__series" :title="m.series_id ?? ''">{{ m.series_id ?? '—' }}</span>
+          <span class="hist__series" :title="m.series_id ?? ''">
+            <span v-if="m.series_id" class="hist__series-badge">{{ m.series_id }}</span>
+            <span v-else>—</span>
+          </span>
           <span class="hist__type" :style="{ color: TYPE_COLOR[m.type], borderColor: TYPE_COLOR[m.type] + '44', background: TYPE_COLOR[m.type] + '14' }">
             {{ TYPE_LABEL[m.type] }}
           </span>
           <span class="hist__actions">
-            <button class="hist__action-btn hist__action-btn--del" :disabled="deleting === m.id" @click="remove(m)" title="Supprimer"><Trash2 :size="12" /></button>
+            <button v-if="m.series_id" class="hist__action-btn hist__action-btn--del-series" @click.stop="deleteSeriesGroup(m.series_id)" title="Supprimer tout le BO"><Layers :size="12" /></button>
+            <button class="hist__action-btn hist__action-btn--del" :disabled="deleting === m.id" @click="remove(m)" title="Supprimer cette partie"><Trash2 :size="12" /></button>
           </span>
         </div>
       </template>
@@ -608,18 +679,27 @@ async function saveEdit() {
           <div class="modal">
             <div class="modal__head">
               <div>
-                <span class="modal__title">{{ isBo ? `FORMER UN BO${selectedCount}` : 'GROUPER LES PARTIES' }}</span>
+                <span class="modal__title">{{ isBo ? `FORMER UN BO${selectedCount <= 3 ? '3' : selectedCount <= 5 ? '5' : selectedCount}` : 'GROUPER LES PARTIES' }}</span>
                 <p class="modal__subtitle">{{ groupValidationMsg }}</p>
               </div>
               <button class="modal__close" @click="closeGroupModal">✕</button>
             </div>
             <div class="modal__body">
 
-              <!-- Adversaire + Logo + Série : BO seulement (3–5 games) -->
+              <!-- Adversaire + Logo + Série : BO seulement (2–5 games) -->
               <template v-if="isBo">
                 <div class="modal__field">
                   <label class="hx-label">Adversaire *</label>
-                  <input v-model="groupForm.opponent" class="hx-input" placeholder="Nom de l'équipe" />
+                  <input
+                    v-model="groupForm.opponent"
+                    class="hx-input"
+                    placeholder="Nom de l'équipe"
+                    list="known-opponents-list"
+                    @input="onOpponentSelect"
+                  />
+                  <datalist id="known-opponents-list">
+                    <option v-for="o in knownOpponents" :key="o.name" :value="o.name" />
+                  </datalist>
                 </div>
 
                 <div class="modal__field">
@@ -918,6 +998,8 @@ async function saveEdit() {
 }
 .hist__action-btn:hover { border-color: var(--accent); color: var(--accent); }
 .hist__action-btn--del:hover { border-color: #EF4444 !important; color: #EF4444 !important; }
+.hist__action-btn--del-series:hover { border-color: #F0B429 !important; color: #F0B429 !important; }
+.hist__series-badge { font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 600; color: #3D4460; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; display: block; }
 
 /* ── Game detail rows (riot_data) ────────────────── */
 .hist__game-row {
@@ -1081,24 +1163,57 @@ async function saveEdit() {
 .og-card__expand-btn--open .og-card__expand-arrow { transform: rotate(180deg); }
 
 /* Scoreboard */
-.og-card__scoreboard { border-top: 1px solid #1A1F2E; padding: 8px 52px; background: #0A0E18; }
+.og-card__scoreboard { border-top: 1px solid #1A1F2E; padding: 0 0 4px; background: #0A0E18; }
 .og-card__sb-grid    { display: grid; grid-template-columns: 1fr 1px 1fr; }
-.og-card__sb-divider { background: #1A1F2E; margin: 2px 8px; }
-.og-card__sb-col     { display: flex; flex-direction: column; gap: 1px; padding: 0 8px; }
-.og-card__sb-col:first-child { padding-left: 0; }
-.og-card__sb-col:last-child  { padding-right: 0; }
-.og-card__sb-row {
-  display: grid; grid-template-columns: 24px 1fr 50px 44px;
-  align-items: center; gap: 6px; padding: 3px 5px; border-radius: 4px; transition: background .1s;
+.og-card__sb-divider { background: #1A1F2E; }
+.og-card__sb-col     { display: flex; flex-direction: column; }
+.og-card__sb-team-hdr {
+  font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 2px;
+  padding: 5px 12px; border-bottom: 1px solid rgba(255,255,255,.04);
 }
-.og-card__sb-row:hover { background: rgba(255,255,255,.03); }
-.og-card__sb-row--me  { background: color-mix(in srgb, var(--accent) 7%, transparent) !important; }
-.og-card__sb-icon { width: 24px; height: 24px; border-radius: 4px; object-fit: cover; border: 1px solid rgba(255,255,255,.06); }
-.og-card__sb-kda  { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; color: #3D4460; }
-.og-card__sb-cs   { font-family: 'Rajdhani', sans-serif; font-size: 11px; color: #2A3050; text-align: right; }
-.og-card__sb-dmg  { font-family: 'Rajdhani', sans-serif; font-size: 11px; color: #2A3050; text-align: right; }
-.og-card__sb-row--win .og-card__sb-kda { color: #8892B0; }
-.og-card__sb-row--me  .og-card__sb-kda { color: var(--accent); }
+.og-card__sb-team-hdr--win  { color: #10B981; background: rgba(16,185,129,.06); border-left: 2px solid #10B981; }
+.og-card__sb-team-hdr--loss { color: #3D4460; background: transparent; border-left: 2px solid #1A1F2E; }
+.og-card__sb-col:last-child .og-card__sb-team-hdr--win  { border-left: none; border-right: 2px solid #10B981; text-align: right; }
+.og-card__sb-col:last-child .og-card__sb-team-hdr--loss { border-left: none; border-right: 2px solid #1A1F2E; text-align: right; }
+.og-card__sb-col:last-child .og-card__sb-row { flex-direction: row-reverse; }
+.og-card__sb-col:last-child .og-card__sb-info { text-align: right; }
+.og-card__sb-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 10px; transition: background .1s; min-height: 38px;
+}
+.og-card__sb-row:hover { background: rgba(255,255,255,.02); }
+.og-card__sb-row--me  { background: color-mix(in srgb, var(--accent) 6%, transparent) !important; }
+.og-card__sb-champ { position: relative; flex-shrink: 0; }
+.og-card__sb-icon { width: 28px; height: 28px; border-radius: 5px; object-fit: cover; border: 1px solid rgba(255,255,255,.08); display: block; }
+.og-card__sb-lvl {
+  position: absolute; bottom: -3px; right: -3px;
+  font-family: 'Rajdhani', sans-serif; font-size: 8px; font-weight: 700;
+  background: #0A0E18; border: 1px solid #1A1F2E; color: #8892B0;
+  border-radius: 3px; padding: 0 2px; line-height: 12px;
+}
+.og-card__sb-spells { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; flex-shrink: 0; }
+.og-card__sb-spell { width: 14px; height: 14px; border-radius: 2px; object-fit: cover; }
+.og-card__sb-rune  { width: 14px; height: 14px; grid-column: 1 / -1; object-fit: contain; }
+.og-card__sb-info  { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; overflow: hidden; }
+.og-card__sb-name  { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; color: #EEF2FF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.og-card__sb-kda   { font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; }
+.og-card__sb-cs    { font-family: 'Rajdhani', sans-serif; font-size: 10px; color: #3D4460; white-space: nowrap; flex-shrink: 0; }
+.og-card__sb-dmg   { font-family: 'Rajdhani', sans-serif; font-size: 10px; color: #3D4460; white-space: nowrap; flex-shrink: 0; }
+.og-card__sb-items { display: flex; gap: 2px; flex-shrink: 0; }
+.og-card__sb-item-slot { width: 20px; height: 20px; background: #0D1018; border: 1px solid #1A1F2E; border-radius: 3px; overflow: hidden; flex-shrink: 0; }
+.og-card__sb-item  { width: 100%; height: 100%; object-fit: cover; display: block; }
+@media (max-width: 768px) {
+  .og-card__scoreboard { padding: 0; }
+  .og-card__sb-grid { grid-template-columns: 1fr; }
+  .og-card__sb-divider { height: 1px; width: 100%; margin: 0; }
+  .og-card__sb-col:last-child .og-card__sb-row { flex-direction: row; }
+  .og-card__sb-col:last-child .og-card__sb-info { text-align: left; }
+  .og-card__sb-col:last-child .og-card__sb-team-hdr { text-align: left; border-right: none; border-left: 2px solid; }
+  .og-card__sb-col:last-child .og-card__sb-team-hdr--win  { border-left-color: #10B981; }
+  .og-card__sb-col:last-child .og-card__sb-team-hdr--loss { border-left-color: #1A1F2E; }
+  .og-card__sb-items { display: none; }
+  .og-card__sb-cs, .og-card__sb-dmg { display: none; }
+}
 
 /* ── Logo upload ──────────────────────────────────── */
 .logo-upload { display: flex; align-items: center; gap: 12px; }

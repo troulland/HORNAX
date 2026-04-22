@@ -75,6 +75,15 @@ export const useMatchStore = defineStore('matches', () => {
     return true
   }
 
+  async function deleteSeriesMatches(seriesId: string): Promise<boolean> {
+    const ids = history.value.filter(m => m.series_id === seriesId).map(m => m.id)
+    for (const id of ids) {
+      await fetch(`${API}/matches/${id}`, { method: 'DELETE', headers: headers() })
+    }
+    history.value = history.value.filter(m => m.series_id !== seriesId)
+    return true
+  }
+
   async function groupMatches(ids: number[], data: {
     series_id: string | null
     opponent?: string
@@ -94,5 +103,5 @@ export const useMatchStore = defineStore('matches', () => {
     return true
   }
 
-  return { history, upcoming, loading, fetchHistory, fetchUpcoming, createMatch, updateMatch, deleteMatch, groupMatches }
+  return { history, upcoming, loading, fetchHistory, fetchUpcoming, createMatch, updateMatch, deleteMatch, groupMatches, deleteSeriesMatches }
 })

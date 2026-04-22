@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useMatchStore, type Match } from '@/stores/matches'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
-import { X, ChevronRight, Users, User, Crosshair } from 'lucide-vue-next'
+import { X, ChevronRight, Users, User, Crosshair, Trash2 } from 'lucide-vue-next'
 import { useCssVar } from '@vueuse/core'
 import { Line, Doughnut } from 'vue-chartjs'
 import { STATIC_BASE } from '@/config'
@@ -115,6 +115,17 @@ const teamStats = computed(() => {
 // modal
 const selected = ref<BoGroup | null>(null)
 function openBo(group: BoGroup) { selected.value = group }
+
+async function deleteBoGroup(group: BoGroup, e: MouseEvent) {
+  e.stopPropagation()
+  const n = group.matches.length
+  if (!confirm(`Supprimer ce BO (${n} partie${n > 1 ? 's' : ''}) ? Cette action est irréversible.`)) return
+  if (group.seriesId) {
+    await matchStore.deleteSeriesMatches(group.seriesId)
+  } else {
+    for (const m of group.matches) await matchStore.deleteMatch(m.id)
+  }
+}
 function closeBo() { selected.value = null }
 function openGame(match: Match) { closeBo(); router.push({ name: 'analytics-game', params: { id: match.id } }) }
 const modalStats = computed(() => {
@@ -402,7 +413,7 @@ const doughnutOptions = {
         <div v-if="matchStore.loading" class="series-empty">Chargement…</div>
         <div v-else-if="boGroups.length === 0" class="series-empty">Aucun résultat enregistré.</div>
         <div v-else class="series-list">
-          <button
+          <div
             v-for="group in boGroups" :key="group.key"
             class="series-row" :class="group.seriesWin ? 'series-row--win' : 'series-row--loss'"
             @click="openBo(group)"
@@ -435,8 +446,11 @@ const doughnutOptions = {
               </span>
               <span class="series-row__date">{{ fmtDateShort(group.date) }}</span>
             </div>
+            <button class="series-row__del-btn" @click="deleteBoGroup(group, $event)" title="Supprimer ce BO">
+              <Trash2 :size="13" />
+            </button>
             <ChevronRight :size="14" class="series-row__chevron" />
-          </button>
+          </div>
         </div>
       </section>
     </template>
@@ -808,6 +822,13 @@ const doughnutOptions = {
 .series-row__result--loss { color: #EF4444; }
 .series-row__date { font-family: 'Inter', sans-serif; font-size: 10px; color: #3D4460; }
 .series-row__chevron { color: #3D4460; flex-shrink: 0; }
+.series-row__del-btn {
+  width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+  background: transparent; border: 1px solid transparent; border-radius: 5px;
+  color: #2A3050; cursor: pointer; transition: all .15s; flex-shrink: 0; opacity: 0;
+}
+.series-row:hover .series-row__del-btn { opacity: 1; }
+.series-row__del-btn:hover { border-color: #EF4444 !important; color: #EF4444 !important; background: rgba(239,68,68,.08); }
 
 /* ── Perso tab ─────────────────────────────────────────────────────────────── */
 .perso-empty {

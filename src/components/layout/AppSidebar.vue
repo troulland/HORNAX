@@ -4,13 +4,20 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import {
   LayoutDashboard, Swords, BarChart3,
-  Map, Calendar, User, LogOut, ChevronRight, ChevronDown, Crosshair
+  Map, Calendar, User, LogOut, ChevronRight, ChevronDown, Crosshair,
+  PanelLeftClose, PanelLeftOpen
 } from 'lucide-vue-next'
 
 const route  = useRoute()
 const router = useRouter()
 const auth   = useAuthStore()
 const calOpen = ref(route.path.startsWith('/calendar'))
+
+const collapsed = ref(localStorage.getItem('sidebar-collapsed') === 'true')
+function toggleCollapse() {
+  collapsed.value = !collapsed.value
+  localStorage.setItem('sidebar-collapsed', String(collapsed.value))
+}
 
 const isRoyalty  = computed(() => auth.user?.team_slug === 'hornax-royalty')
 const logoSrc    = computed(() => isRoyalty.value ? '/hornax-royalty.png' : '/logo.png')
@@ -34,10 +41,10 @@ function logout() { auth.logout(); router.push('/login') }
 </script>
 
 <template>
-  <aside class="sidebar">
-    <RouterLink to="/dashboard" class="sidebar__logo">
+  <aside class="sidebar" :class="{ 'sidebar--collapsed': collapsed }">
+    <RouterLink to="/dashboard" class="sidebar__logo" :title="collapsed ? teamLabel : ''">
       <img :src="logoSrc" alt="HORNAX" class="sidebar__logo-img" />
-      <span class="sidebar__logo-text">{{ teamLabel }}</span>
+      <span v-show="!collapsed" class="sidebar__logo-text">{{ teamLabel }}</span>
     </RouterLink>
     <div class="sidebar__divider" />
 
@@ -46,20 +53,22 @@ function logout() { auth.logout(); router.push('/login') }
         <div
           v-if="item.soon"
           class="sidebar__item sidebar__item--soon"
+          :title="collapsed ? item.label : ''"
         >
           <component :is="item.icon" :size="17" class="sidebar__icon" />
-          <span class="sidebar__label">{{ item.label }}</span>
-          <span class="sidebar__soon-tag">SOON</span>
+          <span v-show="!collapsed" class="sidebar__label">{{ item.label }}</span>
+          <span v-show="!collapsed" class="sidebar__soon-tag">SOON</span>
         </div>
         <RouterLink
           v-else
           :to="item.path"
           class="sidebar__item"
           :class="{ 'sidebar__item--active': isActive(item.path) }"
+          :title="collapsed ? item.label : ''"
         >
           <component :is="item.icon" :size="17" class="sidebar__icon" />
-          <span class="sidebar__label">{{ item.label }}</span>
-          <ChevronRight v-if="isActive(item.path)" :size="13" class="sidebar__arrow" />
+          <span v-show="!collapsed" class="sidebar__label">{{ item.label }}</span>
+          <ChevronRight v-if="isActive(item.path) && !collapsed" :size="13" class="sidebar__arrow" />
         </RouterLink>
       </template>
 
@@ -67,14 +76,15 @@ function logout() { auth.logout(); router.push('/login') }
       <button
         class="sidebar__item sidebar__item--cal"
         :class="{ 'sidebar__item--active': route.path.startsWith('/calendar') }"
-        @click="calOpen = !calOpen"
+        :title="collapsed ? 'Calendrier' : ''"
+        @click="collapsed ? router.push('/calendar/availability') : (calOpen = !calOpen)"
       >
         <Calendar :size="17" class="sidebar__icon" />
-        <span class="sidebar__label">Calendrier</span>
-        <component :is="calOpen ? ChevronDown : ChevronRight" :size="13" class="sidebar__arrow" />
+        <span v-show="!collapsed" class="sidebar__label">Calendrier</span>
+        <component v-if="!collapsed" :is="calOpen ? ChevronDown : ChevronRight" :size="13" class="sidebar__arrow" />
       </button>
       <Transition name="sub">
-        <div v-if="calOpen" class="sidebar__sub">
+        <div v-if="calOpen && !collapsed" class="sidebar__sub">
           <RouterLink
             v-for="sub in calSub" :key="sub.path"
             :to="sub.path"
@@ -87,14 +97,18 @@ function logout() { auth.logout(); router.push('/login') }
 
     <div class="sidebar__bottom">
       <div class="sidebar__divider" />
-      <RouterLink to="/profile" class="sidebar__item" :class="{ 'sidebar__item--active': isActive('/profile') }">
+      <RouterLink to="/profile" class="sidebar__item" :class="{ 'sidebar__item--active': isActive('/profile') }" :title="collapsed ? 'Mon Profil' : ''">
         <User :size="17" class="sidebar__icon" />
-        <span class="sidebar__label">Mon Profil</span>
-        <ChevronRight v-if="isActive('/profile')" :size="13" class="sidebar__arrow" />
+        <span v-show="!collapsed" class="sidebar__label">Mon Profil</span>
+        <ChevronRight v-if="isActive('/profile') && !collapsed" :size="13" class="sidebar__arrow" />
       </RouterLink>
-      <button class="sidebar__item sidebar__item--logout" @click="logout">
+      <button class="sidebar__item sidebar__item--logout" @click="logout" :title="collapsed ? 'Déconnexion' : ''">
         <LogOut :size="17" class="sidebar__icon" />
-        <span class="sidebar__label">Déconnexion</span>
+        <span v-show="!collapsed" class="sidebar__label">Déconnexion</span>
+      </button>
+      <button class="sidebar__item sidebar__collapse-btn" @click="toggleCollapse" :title="collapsed ? 'Étendre la sidebar' : 'Réduire la sidebar'">
+        <component :is="collapsed ? PanelLeftOpen : PanelLeftClose" :size="17" class="sidebar__icon" />
+        <span v-show="!collapsed" class="sidebar__label">Réduire</span>
       </button>
     </div>
   </aside>
@@ -130,7 +144,7 @@ function logout() { auth.logout(); router.push('/login') }
 </template>
 
 <style scoped>
-.sidebar { width: 220px; flex-shrink: 0; background: #0D1018; border-right: 1px solid #1A1F2E; display: flex; flex-direction: column; height: 100vh; }
+.sidebar { width: 220px; flex-shrink: 0; background: #0D1018; border-right: 1px solid #1A1F2E; display: flex; flex-direction: column; height: 100vh; transition: width .2s ease; overflow: hidden; }
 .sidebar__logo { display: flex; align-items: center; gap: 10px; padding: 22px 20px; text-decoration: none; cursor: pointer; transition: opacity .15s; }
 .sidebar__logo:hover { opacity: .8; }
 .sidebar__logo-img { width: 28px; height: 28px; object-fit: contain; filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 70%, transparent)); }
@@ -163,6 +177,15 @@ function logout() { auth.logout(); router.push('/login') }
 .sub-enter-from, .sub-leave-to { opacity: 0; transform: translateY(-6px); }
 
 .sidebar__bottom { padding: 10px 10px 16px; display: flex; flex-direction: column; gap: 2px; }
+.sidebar__collapse-btn { color: #2A3050; }
+.sidebar__collapse-btn:hover { color: #8892B0; background: #111520; }
+
+/* Collapsed state */
+.sidebar--collapsed { width: 60px; transition: width .2s ease; }
+.sidebar--collapsed .sidebar__logo { justify-content: center; padding: 22px 0; }
+.sidebar--collapsed .sidebar__divider { margin: 0 10px; }
+.sidebar--collapsed .sidebar__item { justify-content: center; padding: 10px 0; }
+.sidebar--collapsed .sidebar__item--active { padding-left: 0; border-left: none; border-bottom: 2px solid var(--accent); }
 
 /* Hide sidebar on mobile */
 @media (max-width: 768px) {

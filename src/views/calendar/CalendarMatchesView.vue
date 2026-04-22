@@ -476,4 +476,19 @@ html[data-theme="light"] .logo-upload__btn:hover { background: #EEF0F8; border-c
 html[data-theme="light"] .logo-upload__preview { background: #F0F3FF; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 768px) {
+  .layout { grid-template-columns: 1fr; }
+  .panel { order: -1; }
+  .panel__list { max-height: 220px; overflow-y: auto; }
+  /* Calendar grid: horizontal scroll on mobile so all 7 days stay legible */
+  .cal-main { overflow-x: auto; }
+  .cal-grid { min-width: 480px; }
+  .cal-grid__cell { min-height: 64px; padding: 4px 3px; }
+  .ev-chip { padding: 2px 3px; }
+  .ev-chip__badge { display: none; }
+  /* Modal full-width + scrollable on mobile */
+  .modal { max-height: 85vh; overflow-y: auto; }
+  .modal__row { grid-template-columns: 1fr; }
+}
 </style>
