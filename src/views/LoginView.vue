@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { API_BASE as API } from '@/config'
 
 const router = useRouter()
 const auth   = useAuthStore()
@@ -10,6 +11,52 @@ const error   = ref('')
 const loading = ref(false)
 const loginId  = ref('')
 const loginPwd = ref('')
+
+const mode = ref<'login' | 'register'>('login')
+
+// ── Inscription (crée un joueur ou un coach/viewer) ──────────────
+const regUsername = ref('')
+const regEmail    = ref('')
+const regPwd      = ref('')
+const regRole     = ref('coach')
+const ROLES = [
+  { value: 'top', label: 'Top' }, { value: 'jgl', label: 'Jungle' },
+  { value: 'mid', label: 'Mid' }, { value: 'adc', label: 'ADC' },
+  { value: 'sup', label: 'Support' }, { value: 'sub', label: 'Remplaçant' },
+  { value: 'coach', label: 'Coach / Viewer (lecture + dispos)' }, { value: 'manager', label: 'Manager' },
+]
+
+// team slug → id (récupéré depuis l'API, repli 1/2)
+const teamIds = ref<Record<string, number>>({ hornax: 1, 'hornax-royalty': 2 })
+onMounted(async () => {
+  try {
+    const res = await fetch(`${API}/teams`)
+    if (res.ok) {
+      const map: Record<string, number> = {}
+      for (const t of await res.json()) map[t.slug] = t.id
+      if (Object.keys(map).length) teamIds.value = map
+    }
+  } catch { /* repli */ }
+})
+
+function switchMode(m: 'login' | 'register') { mode.value = m; error.value = '' }
+
+async function handleRegister() {
+  if (!regUsername.value || !regEmail.value || !regPwd.value) { error.value = 'Tous les champs sont requis.'; return }
+  if (regPwd.value.length < 6) { error.value = 'Mot de passe : 6 caractères min.'; return }
+  loading.value = true; error.value = ''
+  const slug = selectedTeam.value === 'royalty' ? 'hornax-royalty' : 'hornax'
+  const team_id = teamIds.value[slug] ?? (selectedTeam.value === 'royalty' ? 2 : 1)
+  const err = await auth.register({
+    username: regUsername.value.trim(),
+    email: regEmail.value.trim(),
+    password: regPwd.value,
+    team_id,
+    game_role: regRole.value,
+  })
+  if (err) { error.value = err; loading.value = false }
+  else router.push('/dashboard')
+}
 
 // ── Team picker (visual only — drives pre-login brand) ──────────────────────
 const selectedTeam  = ref<'hornax' | 'royalty'>('hornax')
@@ -97,8 +144,8 @@ async function handleLogin() {
           </button>
         </div>
 
-        <!-- Login form -->
-        <form class="login__form" @submit.prevent="handleLogin">
+        <!-- Connexion -->
+        <form v-if="mode === 'login'" class="login__form" @submit.prevent="handleLogin">
           <h2 class="login__heading">Connexion</h2>
           <p class="login__subheading">Accès réservé aux membres de l'équipe</p>
 
@@ -122,7 +169,44 @@ async function handleLogin() {
           </button>
         </form>
 
-        <p class="login__forgot">Mot de passe oublié ? Contacte l'admin.</p>
+        <!-- Inscription (joueur ou coach/viewer) -->
+        <form v-else class="login__form" @submit.prevent="handleRegister">
+          <h2 class="login__heading">Inscription</h2>
+          <p class="login__subheading">Rejoins {{ brandName[selectedTeam] }} — joueur ou coach / viewer</p>
+
+          <div class="login__field">
+            <label class="hx-label">Pseudo</label>
+            <input v-model="regUsername" type="text" class="hx-input" placeholder="Ton pseudo" autocomplete="username" />
+          </div>
+          <div class="login__field">
+            <label class="hx-label">Email</label>
+            <input v-model="regEmail" type="email" class="hx-input" placeholder="email@exemple.com" autocomplete="email" />
+          </div>
+          <div class="login__field">
+            <label class="hx-label">Mot de passe</label>
+            <input v-model="regPwd" type="password" class="hx-input" placeholder="6 caractères min." autocomplete="new-password" />
+          </div>
+          <div class="login__field">
+            <label class="hx-label">Rôle</label>
+            <select v-model="regRole" class="hx-input">
+              <option v-for="r in ROLES" :key="r.value" :value="r.value">{{ r.label }}</option>
+            </select>
+          </div>
+
+          <Transition name="err">
+            <p v-if="error" class="login__error">{{ error }}</p>
+          </Transition>
+
+          <button type="submit" class="login__submit" :disabled="loading">
+            <span v-if="!loading">CRÉER LE COMPTE</span>
+            <span v-else class="login__spinner" />
+          </button>
+        </form>
+
+        <p class="login__forgot">
+          <template v-if="mode === 'login'">Pas de compte ? <button type="button" class="login__link" @click="switchMode('register')">S'inscrire</button></template>
+          <template v-else>Déjà un compte ? <button type="button" class="login__link" @click="switchMode('login')">Se connecter</button></template>
+        </p>
       </div>
     </div>
   </div>
@@ -245,6 +329,8 @@ async function handleLogin() {
 .login__spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.3); border-top-color: white; border-radius: 50%; animation: spin .6s linear infinite; display: block; }
 
 .login__forgot { font-family: 'Inter', sans-serif; font-size: 12px; color: #3D4460; text-align: center; margin-top: 16px; }
+.login__link { background: none; border: none; color: var(--accent); font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; padding: 0; text-decoration: underline; }
+.login__link:hover { color: var(--accent-2); }
 
 @keyframes slideUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes spin { to { transform: rotate(360deg); } }

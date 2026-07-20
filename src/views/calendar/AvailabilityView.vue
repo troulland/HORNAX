@@ -124,7 +124,8 @@ const STATUS: Record<Status, { bg: string; label: string; color: string }> = {
 }
 
 const ROLE_COLOR: Record<string, string> = {
-  top:'#FBBF24', jgl:'#34D399', mid:'#60A5FA', adc:'#F87171', sup:'#C084FC', sub:'#8892B0'
+  top:'#FBBF24', jgl:'#34D399', mid:'#60A5FA', adc:'#F87171', sup:'#C084FC', sub:'#8892B0',
+  coach:'#F59E0B', manager:'#F59E0B'
 }
 
 const daySummary = computed(() =>

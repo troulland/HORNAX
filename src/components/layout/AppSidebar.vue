@@ -37,7 +37,12 @@ const calSub = [
 ]
 
 const isActive = (path: string) => route.path === path
-function logout() { auth.logout(); router.push('/login') }
+function logout() {
+  auth.logout()
+  // rechargement complet → vide tout l'état en mémoire (stores) pour éviter
+  // de garder les données du compte précédent au changement de compte
+  window.location.href = '/login'
+}
 </script>
 
 <template>
