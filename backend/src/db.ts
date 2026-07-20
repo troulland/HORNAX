@@ -185,6 +185,11 @@ export async function initDb(): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_scout_owner ON scout_team(owner_team_id);
   `)
 
+  // Cache d'analyse d'équipe scoutée (picks/bans, duos, customs)
+  for (const col of ['analysis TEXT', 'analyzed_at TEXT']) {
+    try { await client.execute(`ALTER TABLE scout_team ADD COLUMN ${col}`) } catch { /* déjà présente */ }
+  }
+
   const row = await client.execute('SELECT COUNT(*) as c FROM teams')
   if (Number(row.rows[0].c) === 0) {
     await client.execute({ sql: 'INSERT INTO teams (name, slug, max_players) VALUES (?, ?, ?)', args: ['HORNAX', 'hornax', 8] })

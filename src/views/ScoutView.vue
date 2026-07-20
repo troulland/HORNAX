@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { API_BASE as API } from '@/config'
 import { champIcon } from '@/utils/lol'
-import { Search, X, RefreshCw, Crosshair, Save } from 'lucide-vue-next'
+import { Search, X, RefreshCw, Crosshair, Save, BarChart3 } from 'lucide-vue-next'
 
 const auth = useAuthStore()
 
@@ -142,11 +142,44 @@ interface SavedTeam {
   region: string
   players: { riotId: string; gameName: string | null; tagLine: string | null }[]
   created_at: string
+  analysis?: ScoutAnalysis | null
 }
 const savedTeams = ref<SavedTeam[]>([])
 const showSave = ref(false)
 const saveName = ref('')
 const saveCat = ref<'scrim' | 'tournoi' | 'autre'>('autre')
+
+// ── Analyse d'équipe (picks/bans, duos, customs) ──────────────────
+interface ChampStat { champion: string; games: number; wins: number; winRate: number }
+interface Duo { players: string[]; games: number; combos: { champs: string[]; count: number }[] }
+interface CustomGame { matchId: string; date: string; queue: string; win: boolean; players: { name: string; champion: string }[] }
+interface ScoutAnalysis {
+  players: { name: string; puuid: string }[]
+  pickPriorities: ChampStat[]
+  duos: Duo[]
+  customs: CustomGame[]
+  sampledMatches: number
+  truncated: boolean
+}
+const analysis = ref<ScoutAnalysis | null>(null)
+const analyzing = ref(false)
+const analyzeErr = ref('')
+
+async function analyzeTeam() {
+  const riotIds = scouts.value.map(s => s.riotId).filter(Boolean)
+  if (riotIds.length === 0) return
+  analyzing.value = true; analyzeErr.value = ''; analysis.value = null
+  try {
+    const res = await fetch(`${API}/scout/analyze`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
+      body: JSON.stringify({ riotIds, region: scouts.value[0]?.region ?? 'euw' }),
+    })
+    const data = await res.json()
+    if (!res.ok) { analyzeErr.value = data.error ?? 'Erreur analyse' }
+    else analysis.value = data
+  } catch { analyzeErr.value = 'Erreur réseau' } finally { analyzing.value = false }
+}
 
 async function loadSavedTeams() {
   const res = await fetch(`${API}/scout/teams`, { headers: { Authorization: `Bearer ${auth.token}` } })
@@ -164,6 +197,8 @@ async function saveCurrentTeam() {
 }
 function loadSavedTeam(t: SavedTeam) {
   scouts.value = []
+  analysis.value = t.analysis ?? null   // affiche l'analyse en cache si dispo
+  analyzeErr.value = ''
   for (const p of t.players) {
     const entry: ScoutResult = { id: `${p.riotId}__${t.region}`, riotId: p.riotId, region: t.region, state: 'loading' }
     scouts.value.push(entry)
@@ -221,7 +256,10 @@ onMounted(loadSavedTeams)
     <div v-if="scouts.length > 0" class="scout__savebar">
       <template v-if="!showSave">
         <span class="scout__savebar-info">{{ scouts.length }} joueur(s) chargé(s)</span>
-        <button class="scout__save-btn" @click="showSave = true"><Save :size="14" /> Sauvegarder cette équipe</button>
+        <button class="scout__save-btn scout__save-btn--ghost" :disabled="analyzing" @click="analyzeTeam">
+          <BarChart3 :size="14" /> {{ analyzing ? 'Analyse…' : "Analyser l'équipe" }}
+        </button>
+        <button class="scout__save-btn" @click="showSave = true"><Save :size="14" /> Sauvegarder</button>
       </template>
       <template v-else>
         <input v-model="saveName" class="hx-input scout__save-name" placeholder="Nom de l'équipe adverse" @keyup.enter="saveCurrentTeam" />
@@ -353,6 +391,69 @@ onMounted(loadSavedTeams)
         </template>
       </div>
     </div>
+
+    <!-- Analyse d'équipe (picks/bans, duos, customs) -->
+    <div v-if="analyzing" class="scout__an-status">Analyse en cours… (peut prendre 1-2 min — throttlé pour ne pas taper le quota Riot)</div>
+    <div v-else-if="analyzeErr" class="scout__an-status scout__an-status--err">{{ analyzeErr }}</div>
+
+    <div v-if="analysis" class="scout__analysis">
+      <div class="scout__an-head">
+        <span class="scout__an-eyebrow">ANALYSE D'ÉQUIPE</span>
+        <span class="scout__an-sample">{{ analysis.sampledMatches }} games analysées{{ analysis.truncated ? ' (échantillon)' : '' }}</span>
+      </div>
+
+      <div class="scout__an-grid">
+        <!-- Priorités pick/ban -->
+        <div class="scout__an-block">
+          <span class="scout__an-title">PICKS / BANS À PRIORISER</span>
+          <div v-if="analysis.pickPriorities.length" class="scout__an-champs">
+            <div v-for="c in analysis.pickPriorities" :key="c.champion" class="scout__an-champ" :title="`${c.champion} · ${c.games}g · ${c.winRate}%`">
+              <img :src="champIcon(c.champion)" :alt="c.champion" @error="($event.target as HTMLImageElement).src='/logo.png'" />
+              <span class="scout__an-champ-g">{{ c.games }}</span>
+              <span class="scout__an-champ-wr" :style="{ color: wrColor(c.winRate) }">{{ c.winRate }}%</span>
+            </div>
+          </div>
+          <div v-else class="scout__an-empty">Pas assez de données.</div>
+        </div>
+
+        <!-- Joués ensemble -->
+        <div class="scout__an-block">
+          <span class="scout__an-title">JOUÉS ENSEMBLE</span>
+          <div v-if="analysis.duos.length" class="scout__an-duos">
+            <div v-for="(d, i) in analysis.duos" :key="i" class="scout__an-duo">
+              <div class="scout__an-duo-head">
+                <span class="scout__an-duo-names">{{ d.players.join(' + ') }}</span>
+                <span class="scout__an-duo-g">{{ d.games }}g</span>
+              </div>
+              <div class="scout__an-duo-combos">
+                <span v-for="(cb, j) in d.combos" :key="j" class="scout__an-combo">
+                  <img :src="champIcon(cb.champs[0])" :alt="cb.champs[0]" />
+                  <img :src="champIcon(cb.champs[1])" :alt="cb.champs[1]" />
+                  <b>×{{ cb.count }}</b>
+                </span>
+              </div>
+            </div>
+          </div>
+          <div v-else class="scout__an-empty">Aucun duo détecté dans l'échantillon.</div>
+        </div>
+      </div>
+
+      <!-- Customs / tournois -->
+      <div class="scout__an-block">
+        <span class="scout__an-title">CUSTOMS / TOURNOIS DÉTECTÉS</span>
+        <div v-if="analysis.customs.length" class="scout__an-customs">
+          <div v-for="(g, i) in analysis.customs" :key="i" class="scout__an-custom" :class="g.win ? 'win' : 'loss'">
+            <span class="scout__an-custom-date">{{ g.date }}</span>
+            <span class="scout__an-custom-q">{{ g.queue }}</span>
+            <div class="scout__an-custom-champs">
+              <img v-for="(p, j) in g.players" :key="j" :src="champIcon(p.champion)" :title="p.name" :alt="p.champion" />
+            </div>
+            <span class="scout__an-custom-res" :class="g.win ? 'win' : 'loss'">{{ g.win ? 'V' : 'D' }}</span>
+          </div>
+        </div>
+        <div v-else class="scout__an-empty">Aucune partie custom/tournoi récente détectée.</div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -414,6 +515,50 @@ onMounted(loadSavedTeams)
 .scout__saved-count { font-size: 11px; color: var(--t-dim); }
 .scout__saved-del { background: transparent; border: none; border-left: 1px solid var(--border); color: var(--t-muted); padding: 0 10px; cursor: pointer; display: flex; align-items: center; transition: all .15s; }
 .scout__saved-del:hover { color: #EF4444; background: rgba(239,68,68,.08); }
+
+/* Bouton analyser (ghost) */
+.scout__save-btn--ghost { background: transparent; border: 1px solid var(--border); color: var(--t-dim); }
+.scout__save-btn--ghost:not(:disabled):hover { border-color: var(--accent); color: var(--accent); opacity: 1; }
+
+/* Analyse */
+.scout__an-status { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; font-size: 13px; color: var(--t-dim); }
+.scout__an-status--err { color: #EF4444; border-color: rgba(239,68,68,.3); }
+.scout__analysis { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; }
+.scout__an-head { display: flex; align-items: baseline; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+.scout__an-eyebrow { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; color: var(--accent); }
+.scout__an-sample { font-size: 11px; color: var(--t-dim); }
+.scout__an-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); }
+.scout__an-block { background: var(--bg-card); padding: 14px 16px; }
+.scout__an-title { font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 2px; color: var(--t-muted); display: block; margin-bottom: 10px; }
+.scout__an-empty { font-size: 12px; color: var(--t-muted); }
+
+.scout__an-champs { display: flex; flex-wrap: wrap; gap: 8px; }
+.scout__an-champ { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 44px; }
+.scout__an-champ img { width: 40px; height: 40px; border-radius: 6px; border: 1px solid var(--border-2); }
+.scout__an-champ-g { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; color: var(--t-primary); }
+.scout__an-champ-wr { font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; }
+
+.scout__an-duos { display: flex; flex-direction: column; gap: 8px; }
+.scout__an-duo { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; }
+.scout__an-duo-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.scout__an-duo-names { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 12px; color: var(--t-primary); letter-spacing: .5px; }
+.scout__an-duo-g { font-size: 11px; color: var(--t-dim); }
+.scout__an-duo-combos { display: flex; flex-wrap: wrap; gap: 8px; }
+.scout__an-combo { display: inline-flex; align-items: center; gap: 2px; font-size: 11px; color: var(--t-dim); }
+.scout__an-combo img { width: 22px; height: 22px; border-radius: 4px; border: 1px solid var(--border-2); }
+.scout__an-combo b { font-family: 'Rajdhani', sans-serif; color: var(--t-primary); margin-left: 2px; }
+
+.scout__an-customs { display: flex; flex-direction: column; gap: 6px; }
+.scout__an-custom { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 6px; background: var(--bg-surface); border: 1px solid var(--border); border-left: 3px solid transparent; }
+.scout__an-custom.win { border-left-color: #10B981; } .scout__an-custom.loss { border-left-color: #EF4444; }
+.scout__an-custom-date { font-family: 'Inter', sans-serif; font-size: 11px; color: var(--t-dim); min-width: 78px; }
+.scout__an-custom-q { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--accent); min-width: 60px; }
+.scout__an-custom-champs { display: flex; gap: 3px; flex: 1; flex-wrap: wrap; }
+.scout__an-custom-champs img { width: 26px; height: 26px; border-radius: 4px; border: 1px solid var(--border-2); }
+.scout__an-custom-res { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 13px; }
+.scout__an-custom-res.win { color: #10B981; } .scout__an-custom-res.loss { color: #EF4444; }
+
+@media (max-width: 768px) { .scout__an-grid { grid-template-columns: 1fr; } }
 
 /* Carousel */
 .scout__carousel-wrap { display: flex; flex-direction: column; gap: 10px; }

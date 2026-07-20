@@ -1,5 +1,6 @@
 import { Request, Response } from 'express'
 import db from '../db'
+import { analyzeScoutTeam } from '../services/scoutAnalyze'
 
 /**
  * Équipes adverses scoutées, sauvegardées et PARTAGÉES au niveau team
@@ -44,7 +45,11 @@ export async function listScoutTeams(req: Request, res: Response): Promise<void>
     ? await db.prepare('SELECT * FROM scout_team WHERE owner_team_id = ? AND category = ? ORDER BY created_at DESC').all<any>(ownerTeamId, cat)
     : await db.prepare('SELECT * FROM scout_team WHERE owner_team_id = ? ORDER BY created_at DESC').all<any>(ownerTeamId)
 
-  res.json(rows.map(r => ({ ...r, players: safeParse(r.players) })))
+  res.json(rows.map(r => ({
+    ...r,
+    players: safeParse(r.players),
+    analysis: r.analysis ? parseJson(r.analysis) : null,
+  })))
 }
 
 /** DELETE /api/scout/teams/:id */
@@ -55,6 +60,39 @@ export async function deleteScoutTeam(req: Request, res: Response): Promise<void
   res.json({ ok: true })
 }
 
+/**
+ * POST /api/scout/analyze — analyse une équipe (picks/bans, duos, customs).
+ * Body : { riotIds?: string[], region?, scoutTeamId? }. Si scoutTeamId fourni,
+ * le résultat est mis en cache sur la ligne (partagé équipe).
+ */
+export async function analyzeScout(req: Request, res: Response): Promise<void> {
+  const ownerTeamId = req.user!.teamId
+  const { riotIds, region, scoutTeamId } = req.body as { riotIds?: string[]; region?: string; scoutTeamId?: number }
+
+  let ids: string[] = Array.isArray(riotIds) ? riotIds.filter(Boolean) : []
+  let reg = region ?? 'euw'
+
+  if (scoutTeamId) {
+    const row = await db.prepare('SELECT players, region FROM scout_team WHERE id = ? AND owner_team_id = ?')
+      .get<{ players: string; region: string }>(scoutTeamId, ownerTeamId)
+    if (!row) { res.status(404).json({ error: 'Équipe introuvable' }); return }
+    ids = (safeParse(row.players) as { riotId?: string }[]).map(p => p.riotId).filter((x): x is string => !!x)
+    reg = row.region ?? reg
+  }
+  if (ids.length === 0) { res.status(400).json({ error: 'Aucun joueur à analyser' }); return }
+
+  const analysis = await analyzeScoutTeam(ids, reg)
+
+  if (scoutTeamId) {
+    await db.prepare("UPDATE scout_team SET analysis = ?, analyzed_at = datetime('now') WHERE id = ? AND owner_team_id = ?")
+      .run(JSON.stringify(analysis), scoutTeamId, ownerTeamId)
+  }
+  res.json(analysis)
+}
+
 function safeParse(s: string): unknown[] {
-  try { return JSON.parse(s) } catch { return [] }
+  try { const v = JSON.parse(s); return Array.isArray(v) ? v : [] } catch { return [] }
+}
+function parseJson(s: string): unknown {
+  try { return JSON.parse(s) } catch { return null }
 }
