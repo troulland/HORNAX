@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Crown, TrendingDown, Zap } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 import { API_BASE as API } from '@/config'
+import { champIcon } from '@/utils/lol'
 
 const route  = useRoute()
 const router = useRouter()
@@ -147,14 +148,6 @@ const avgPolygon = computed(() => avgData.value.map((v, i) => pt(i, v)).join(' '
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
-const DD_VER = '15.6.1'
-const CHAMP_MAP: Record<string, string> = {
-  "Nunu & Willump": "Nunu", "Renata Glasc": "Renata",
-  "K'Sante": "KSante", "Bel'Veth": "Belveth", "Wukong": "MonkeyKing",
-}
-function champIcon(n: string) {
-  return `https://ddragon.leagueoflegends.com/cdn/${DD_VER}/img/champion/${CHAMP_MAP[n] ?? n}.png`
-}
 function fmtGold(g: number) { return g >= 1000 ? (g / 1000).toFixed(1) + 'k' : String(g) }
 function kdaRatio(p: P) { return p.deaths === 0 ? 'Perfect' : ((p.kills + p.assists) / p.deaths).toFixed(2) }
 function kdaColor(p: P) {
@@ -642,14 +635,20 @@ const teamRed  = computed(() => all.value.filter(p => p.teamId === 200))
 }
 .gv__hero-blur {
   width: 100%; height: 100%; object-fit: cover;
-  filter: blur(28px) brightness(.18) saturate(1.8);
-  transform: scale(1.25);
+  filter: blur(36px) brightness(.4) saturate(1.15);
+  transform: scale(1.3);
 }
-/* Orange tint overlay over the blurred bg */
+/* Voile theme-aware : plus dense à gauche (texte) + fondu bas → lisibilité */
 .gv__hero-bg::after {
   content: '';
   position: absolute; inset: 0;
-  background: linear-gradient(135deg, color-mix(in srgb,var(--accent) 18%,transparent) 0%, rgba(255,60,0,.08) 50%, transparent 100%);
+  background:
+    linear-gradient(90deg,
+      color-mix(in srgb, var(--bg-surface) 95%, transparent) 0%,
+      color-mix(in srgb, var(--bg-surface) 80%, transparent) 48%,
+      color-mix(in srgb, var(--bg-surface) 55%, transparent) 100%),
+    linear-gradient(0deg, color-mix(in srgb, var(--bg-base) 85%, transparent) 0%, transparent 55%),
+    linear-gradient(135deg, color-mix(in srgb, var(--accent) 10%, transparent) 0%, transparent 45%);
 }
 /* HUD corners */
 .hud { position: absolute; width: 10px; height: 10px; border-color: var(--accent); border-style: solid; opacity: .6; z-index: 3; pointer-events: none; }
@@ -979,4 +978,12 @@ html[data-theme="light"] .gv__bar-track { background: #E0E3EF; }
 html[data-theme="light"] .gv__empty { background: #FFFFFF; border-color: #E0E3EF; }
 
 @keyframes pageIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Mobile : on empile les rangées et on rend le scoreboard scrollable */
+@media (max-width: 768px) {
+  .gv__row1 { grid-template-columns: 1fr; }
+  .gv__row2 { grid-template-columns: 1fr; }
+  .gv__sb-table { overflow-x: auto; }
+  .gv__sb-header, .gv__sb-row { min-width: 600px; }
+}
 </style>

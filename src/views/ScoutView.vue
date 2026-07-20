@@ -2,7 +2,8 @@
 import { ref, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { API_BASE as API } from '@/config'
-import { Search, X, RefreshCw, Crosshair, ChevronLeft, ChevronRight } from 'lucide-vue-next'
+import { champIcon } from '@/utils/lol'
+import { Search, X, RefreshCw, Crosshair } from 'lucide-vue-next'
 
 const auth = useAuthStore()
 
@@ -27,14 +28,6 @@ function wrColor(v: number) { return v >= 60 ? '#00C896' : v >= 50 ? '#F0B429' :
 function kdaColor(v: string) {
   const n = parseFloat(v)
   return n >= 5 ? '#00C896' : n >= 3 ? '#F0B429' : n >= 1.5 ? '#EEF2FF' : '#EF4444'
-}
-
-const CHAMP_SPECIAL: Record<string, string> = {
-  "Nunu & Willump": "Nunu", "Renata Glasc": "Renata",
-  "K'Sante": "KSante", "Bel'Veth": "Belveth", "Wukong": "MonkeyKing",
-}
-function champIcon(name: string, ddv: string) {
-  return `https://ddragon.leagueoflegends.com/cdn/${ddv}/img/champion/${CHAMP_SPECIAL[name] ?? name}.png`
 }
 
 interface ScoutResult {
@@ -189,31 +182,8 @@ function removeScout(id: string) {
       <span class="scout__empty-sub">Entre un Riot ID ci-dessus pour commencer le scouting</span>
     </div>
 
-    <!-- Scout carousel -->
-    <div v-if="scouts.length > 0" class="scout__carousel-wrap">
-      <!-- Nav bar -->
-      <div class="scout__carousel-nav">
-        <button class="scout__nav-btn" @click="prevScout" :disabled="scoutIndex === 0">
-          <ChevronLeft :size="15" />
-        </button>
-        <div class="scout__dots">
-          <button
-            v-for="(s, i) in scouts" :key="s.id"
-            class="scout__dot"
-            :class="{ 'scout__dot--active': i === scoutIndex }"
-            @click="scoutIndex = i"
-            :title="s.gameName ?? s.riotId"
-          />
-        </div>
-        <span class="scout__carousel-counter">{{ scoutIndex + 1 }} / {{ scouts.length }}</span>
-        <button class="scout__nav-btn" @click="nextScout" :disabled="scoutIndex === scouts.length - 1">
-          <ChevronRight :size="15" />
-        </button>
-      </div>
-
-      <!-- Viewport -->
-      <div class="scout__carousel-viewport" @touchstart="onTouchStart" @touchend="onTouchEnd">
-        <div class="scout__carousel-track" :style="{ transform: `translateX(-${scoutIndex * 100}%)` }">
+    <!-- Grille de cartes -->
+    <div v-if="scouts.length > 0" class="scout__grid">
           <div
             v-for="s in scouts" :key="s.id"
             class="scout__card"
@@ -290,7 +260,7 @@ function removeScout(id: string) {
                 class="scout__champ"
               >
                 <img
-                  :src="champIcon(c.name, s.ddVersion ?? '15.6.1')"
+                  :src="champIcon(c.name)"
                   :alt="c.name"
                   class="scout__champ-img"
                   @error="($event.target as HTMLImageElement).src='/logo.png'"
@@ -307,9 +277,7 @@ function removeScout(id: string) {
           <div v-else class="scout__no-champs">Pas assez de ranked récents pour le champion pool.</div>
         </template>
       </div>
-        </div><!-- /track -->
-      </div><!-- /viewport -->
-    </div><!-- /carousel-wrap -->
+    </div>
   </div>
 </template>
 
@@ -341,6 +309,9 @@ function removeScout(id: string) {
 .scout__empty-icon { color: #1A1F2E; }
 .scout__empty-title { font-family: 'Rajdhani', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: 2px; color: #3D4460; }
 .scout__empty-sub { font-family: 'Inter', sans-serif; font-size: 12px; color: #2A3050; }
+
+/* Grille de cartes (≈ 3 par ligne, responsive) */
+.scout__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; align-items: start; }
 
 /* Carousel */
 .scout__carousel-wrap { display: flex; flex-direction: column; gap: 10px; }

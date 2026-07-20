@@ -275,5 +275,14 @@ onMounted(async () => {
 .modal__actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
 .modal__actions .hx-btn-primary, .modal__actions .hx-btn-ghost { padding: 9px 18px; }
 
-@media (max-width: 768px) { .stats { grid-template-columns: 1fr 1fr; } .sideblock { grid-column: 1 / -1; } }
+@media (max-width: 768px) {
+  .stats { grid-template-columns: 1fr 1fr; }
+  .sideblock { grid-column: 1 / -1; }
+  .teams { flex-direction: column; align-items: stretch; gap: 8px; }
+  .team, .team.enemy { justify-content: flex-start; }
+  .vs { align-self: center; }
+  .slot { width: 46px; }
+  .slot img { width: 32px; height: 32px; }
+  .bo__opp { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
 </style>

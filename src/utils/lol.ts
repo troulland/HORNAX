@@ -1,19 +1,43 @@
-export const DD_VER = '15.6.1'
+import { ref } from 'vue'
 
-// Noms de fichiers ddragon qui diffèrent du nom d'API
+/**
+ * Version Data Dragon : par défaut une valeur de repli, puis mise à jour avec la
+ * DERNIÈRE version dès qu'elle est récupérée → les nouveaux champions (Yunara,
+ * Ambessa, etc.) ont leurs icônes. La ref étant réactive, les <img> se rafraîchissent.
+ */
+export const ddVersion = ref('15.6.1')
+
+fetch('https://ddragon.leagueoflegends.com/api/versions.json')
+  .then(r => r.json())
+  .then((v: string[]) => { if (Array.isArray(v) && v[0]) ddVersion.value = v[0] })
+  .catch(() => { /* garde le repli */ })
+
+// Nom d'affichage → nom de fichier ddragon (cas particuliers)
 const CHAMP_SPECIAL: Record<string, string> = {
   FiddleSticks: 'Fiddlesticks',
   Wukong: 'MonkeyKing',
+  'Nunu & Willump': 'Nunu',
+  'Renata Glasc': 'Renata',
+  'Dr. Mundo': 'DrMundo',
+  LeBlanc: 'Leblanc',
+  "Cho'Gath": 'Chogath',
+  "Kai'Sa": 'Kaisa',
+  "Kha'Zix": 'Khazix',
+  "Kog'Maw": 'KogMaw',
+  "Rek'Sai": 'RekSai',
+  "Vel'Koz": 'Velkoz',
+  "K'Sante": 'KSante',
+  "Bel'Veth": 'Belveth',
 }
 
 export function champIcon(name: string | null | undefined): string {
   if (!name) return ''
-  const file = CHAMP_SPECIAL[name] ?? name
-  return `https://ddragon.leagueoflegends.com/cdn/${DD_VER}/img/champion/${file}.png`
+  const file = CHAMP_SPECIAL[name] ?? name.replace(/[^A-Za-z0-9]/g, '')
+  return `https://ddragon.leagueoflegends.com/cdn/${ddVersion.value}/img/champion/${file}.png`
 }
 
 export function itemIcon(id: number): string {
-  return `https://ddragon.leagueoflegends.com/cdn/${DD_VER}/img/item/${id}.png`
+  return `https://ddragon.leagueoflegends.com/cdn/${ddVersion.value}/img/item/${id}.png`
 }
 
 /** secondes → "31:24" */

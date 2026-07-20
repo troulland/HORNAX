@@ -227,5 +227,9 @@ onMounted(async () => {
 .row__res.win { color: #10B981; } .row__res.loss { color: #EF4444; }
 .row__date { font-size: 12px; color: var(--t-dim); min-width: 70px; text-align: right; }
 
-@media (max-width: 768px) { .stat-bar { grid-template-columns: 1fr; } }
+@media (max-width: 768px) {
+  .stat-bar { grid-template-columns: 1fr; }
+  .row__comp, .row__date { display: none; }   /* rows plus lisibles sur mobile */
+  .row { gap: 10px; padding: 10px 12px; }
+}
 </style>
