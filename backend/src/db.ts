@@ -21,8 +21,10 @@ function resolveUrl(): string {
   return pathToFileURL(localPath).href
 }
 
+const DB_URL = resolveUrl()
+
 export const client: Client = createClient({
-  url: resolveUrl(),
+  url: DB_URL,
   authToken: process.env.DATABASE_AUTH_TOKEN,
   intMode: 'number',
 })
@@ -70,6 +72,12 @@ export default db
 
 /** Crée le schéma + les 2 équipes (aucun membre). À appeler avant app.listen(). */
 export async function initDb(): Promise<void> {
+  const usingTurso = !DB_URL.startsWith('file:')
+  console.log(`🗄️  Base de données : ${usingTurso ? 'Turso → ' + DB_URL : 'fichier local (' + DB_URL + ')'}`)
+  if (!usingTurso && process.env.NODE_ENV === 'production') {
+    console.warn('⚠️  DATABASE_URL absent en production → base locale ÉPHÉMÈRE (données perdues au redéploiement) !')
+  }
+
   // PRAGMA best-effort : ignoré / non applicable côté Turso distant.
   try { await client.execute('PRAGMA journal_mode = WAL') } catch { /* noop */ }
   try { await client.execute('PRAGMA foreign_keys = ON') } catch { /* noop */ }
