@@ -25,9 +25,11 @@ const MAX_DETAILS = 70      // plafond de fetch détaillés (borne temps/quota)
 
 export interface ChampStat { champion: string; games: number; wins: number; winRate: number }
 export interface Duo { players: string[]; games: number; combos: { champs: string[]; count: number }[] }
-export interface CustomGame { matchId: string; date: string; queue: string; win: boolean; players: { name: string; champion: string }[] }
+export interface CustomParticipant { name: string; champion: string; kills: number; deaths: number; assists: number; cs: number; teamId: number; win: boolean; scouted: boolean }
+export interface CustomGame { matchId: string; date: string; queue: string; win: boolean; duration: number; players: { name: string; champion: string }[]; participants: CustomParticipant[] }
 export interface ScoutAnalysis {
   players: { name: string; puuid: string }[]
+  failed: string[]
   pickPriorities: ChampStat[]
   duos: Duo[]
   customs: CustomGame[]
@@ -52,11 +54,13 @@ async function resolvePuuid(riotId: string, routing: string): Promise<{ puuid: s
 export async function analyzeScoutTeam(riotIds: string[], region = 'euw'): Promise<ScoutAnalysis> {
   const routing = ROUTING[region] ?? 'europe'
 
-  // 1) PUUID des joueurs
+  // 1) PUUID des joueurs (on garde trace de ceux qui ne résolvent pas)
   const resolved: { puuid: string; name: string }[] = []
+  const failed: string[] = []
   for (const rid of riotIds) {
     const r = await resolvePuuid(rid, routing)
     if (r) resolved.push(r)
+    else failed.push(rid)
   }
   const puuidToName = new Map(resolved.map(r => [r.puuid, r.name]))
   const puuidSet = new Set(resolved.map(r => r.puuid))
@@ -117,14 +121,23 @@ export async function analyzeScoutTeam(riotIds: string[], region = 'euw'): Promi
       }
     }
 
-    // Customs / tournois
+    // Customs / tournois (avec la game complète pour l'accordéon)
     if (cat === 'scrim') {
       customs.push({
         matchId: id,
         date: new Date(m.info.gameStartTimestamp).toISOString().slice(0, 10),
         queue: tourneyIds.has(id) ? 'Tournoi' : (QUEUE_LABEL[m.info.queueId] ?? 'Custom'),
         win: !!ours[0].win,
+        duration: Math.round(m.info.gameDuration / 60),
         players: ours.map(p => ({ name: puuidToName.get(p.puuid)!, champion: p.championName })),
+        participants: parts.map(p => ({
+          name: p.riotIdGameName || p.summonerName || '?',
+          champion: p.championName,
+          kills: p.kills, deaths: p.deaths, assists: p.assists,
+          cs: (p.totalMinionsKilled ?? 0) + (p.neutralMinionsKilled ?? 0),
+          teamId: p.teamId, win: !!p.win,
+          scouted: puuidSet.has(p.puuid),
+        })),
       })
     }
   }
@@ -145,6 +158,7 @@ export async function analyzeScoutTeam(riotIds: string[], region = 'euw'): Promi
 
   return {
     players: resolved,
+    failed,
     pickPriorities,
     duos,
     customs: customs.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 15),

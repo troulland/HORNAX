@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { API_BASE as API } from '@/config'
 import { champIcon } from '@/utils/lol'
-import { Search, X, RefreshCw, Crosshair, Save, BarChart3 } from 'lucide-vue-next'
+import { Search, X, RefreshCw, Crosshair, Save, BarChart3, ChevronDown } from 'lucide-vue-next'
 
 const auth = useAuthStore()
 
@@ -115,6 +115,13 @@ async function refetchScout(entry: ScoutResult) {
   await fetchScout(entry)
 }
 
+// Mise à jour RÉACTIVE : on remplace l'élément dans le tableau (muter l'objet
+// poussé directement n'était pas détecté par Vue → données visibles qu'après une action)
+function patchScout(id: string, p: Partial<ScoutResult>) {
+  const i = scouts.value.findIndex(s => s.id === id)
+  if (i >= 0) scouts.value[i] = { ...scouts.value[i], ...p }
+}
+
 async function fetchScout(entry: ScoutResult) {
   try {
     const params = new URLSearchParams({ riotId: entry.riotId, region: entry.region })
@@ -122,11 +129,10 @@ async function fetchScout(entry: ScoutResult) {
       headers: { Authorization: `Bearer ${auth.token}` },
     })
     const data = await res.json()
-    if (!res.ok) { entry.state = 'error'; entry.error = data.error; return }
-    Object.assign(entry, { state: 'ok', ...data })
+    if (!res.ok) { patchScout(entry.id, { state: 'error', error: data.error }); return }
+    patchScout(entry.id, { state: 'ok', ...data })
   } catch {
-    entry.state = 'error'
-    entry.error = 'Erreur réseau'
+    patchScout(entry.id, { state: 'error', error: 'Erreur réseau' })
   }
 }
 
@@ -152,9 +158,11 @@ const saveCat = ref<'scrim' | 'tournoi' | 'autre'>('autre')
 // ── Analyse d'équipe (picks/bans, duos, customs) ──────────────────
 interface ChampStat { champion: string; games: number; wins: number; winRate: number }
 interface Duo { players: string[]; games: number; combos: { champs: string[]; count: number }[] }
-interface CustomGame { matchId: string; date: string; queue: string; win: boolean; players: { name: string; champion: string }[] }
+interface CustomParticipant { name: string; champion: string; kills: number; deaths: number; assists: number; cs: number; teamId: number; win: boolean; scouted: boolean }
+interface CustomGame { matchId: string; date: string; queue: string; win: boolean; duration: number; players: { name: string; champion: string }[]; participants: CustomParticipant[] }
 interface ScoutAnalysis {
   players: { name: string; puuid: string }[]
+  failed: string[]
   pickPriorities: ChampStat[]
   duos: Duo[]
   customs: CustomGame[]
@@ -164,6 +172,8 @@ interface ScoutAnalysis {
 const analysis = ref<ScoutAnalysis | null>(null)
 const analyzing = ref(false)
 const analyzeErr = ref('')
+const expandedGame = ref<string | null>(null)
+function toggleGame(id: string) { expandedGame.value = expandedGame.value === id ? null : id }
 
 async function analyzeTeam() {
   const riotIds = scouts.value.map(s => s.riotId).filter(Boolean)
@@ -402,6 +412,10 @@ onMounted(loadSavedTeams)
         <span class="scout__an-sample">{{ analysis.sampledMatches }} games analysées{{ analysis.truncated ? ' (échantillon)' : '' }}</span>
       </div>
 
+      <div v-if="analysis.failed.length" class="scout__an-warn">
+        ⚠ Joueur(s) non trouvé(s) — Riot ID incorrect ? : {{ analysis.failed.join(', ') }}
+      </div>
+
       <div class="scout__an-grid">
         <!-- Priorités pick/ban -->
         <div class="scout__an-block">
@@ -442,13 +456,29 @@ onMounted(loadSavedTeams)
       <div class="scout__an-block">
         <span class="scout__an-title">CUSTOMS / TOURNOIS DÉTECTÉS</span>
         <div v-if="analysis.customs.length" class="scout__an-customs">
-          <div v-for="(g, i) in analysis.customs" :key="i" class="scout__an-custom" :class="g.win ? 'win' : 'loss'">
-            <span class="scout__an-custom-date">{{ g.date }}</span>
-            <span class="scout__an-custom-q">{{ g.queue }}</span>
-            <div class="scout__an-custom-champs">
-              <img v-for="(p, j) in g.players" :key="j" :src="champIcon(p.champion)" :title="p.name" :alt="p.champion" />
+          <div v-for="g in analysis.customs" :key="g.matchId" class="scout__an-acc">
+            <button class="scout__an-custom" :class="g.win ? 'win' : 'loss'" @click="toggleGame(g.matchId)">
+              <span class="scout__an-custom-date">{{ g.date }}</span>
+              <span class="scout__an-custom-q">{{ g.queue }}</span>
+              <div class="scout__an-custom-champs">
+                <img v-for="(p, j) in g.players" :key="j" :src="champIcon(p.champion)" :title="p.name" :alt="p.champion" @error="($event.target as HTMLImageElement).src='/logo.png'" />
+              </div>
+              <span class="scout__an-custom-res" :class="g.win ? 'win' : 'loss'">{{ g.win ? 'V' : 'D' }}</span>
+              <ChevronDown :size="14" class="scout__an-chev" :class="{ open: expandedGame === g.matchId }" />
+            </button>
+            <div v-if="expandedGame === g.matchId" class="scout__an-detail">
+              <div v-for="side in [100, 200]" :key="side" class="scout__an-side" :class="side === 100 ? 'blue' : 'red'">
+                <div
+                  v-for="(p, k) in g.participants.filter(x => x.teamId === side)" :key="k"
+                  class="scout__an-pl" :class="{ scouted: p.scouted }"
+                >
+                  <img :src="champIcon(p.champion)" :alt="p.champion" @error="($event.target as HTMLImageElement).src='/logo.png'" />
+                  <span class="scout__an-pl-name">{{ p.name }}</span>
+                  <span class="scout__an-pl-kda">{{ p.kills }}/{{ p.deaths }}/{{ p.assists }}</span>
+                  <span class="scout__an-pl-cs">{{ p.cs }} cs</span>
+                </div>
+              </div>
             </div>
-            <span class="scout__an-custom-res" :class="g.win ? 'win' : 'loss'">{{ g.win ? 'V' : 'D' }}</span>
           </div>
         </div>
         <div v-else class="scout__an-empty">Aucune partie custom/tournoi récente détectée.</div>
@@ -548,9 +578,24 @@ onMounted(loadSavedTeams)
 .scout__an-combo img { width: 22px; height: 22px; border-radius: 4px; border: 1px solid var(--border-2); }
 .scout__an-combo b { font-family: 'Rajdhani', sans-serif; color: var(--t-primary); margin-left: 2px; }
 
+.scout__an-warn { background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.3); color: #F59E0B; font-size: 12px; padding: 8px 14px; margin: 12px 16px 0; border-radius: 6px; }
 .scout__an-customs { display: flex; flex-direction: column; gap: 6px; }
-.scout__an-custom { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 6px; background: var(--bg-surface); border: 1px solid var(--border); border-left: 3px solid transparent; }
+.scout__an-acc { border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.scout__an-custom { display: flex; align-items: center; gap: 12px; width: 100%; padding: 8px 10px; background: var(--bg-surface); border: none; border-left: 3px solid transparent; cursor: pointer; font-family: inherit; text-align: left; transition: background .15s; }
+.scout__an-custom:hover { background: var(--bg-hover); }
 .scout__an-custom.win { border-left-color: #10B981; } .scout__an-custom.loss { border-left-color: #EF4444; }
+.scout__an-chev { color: var(--t-muted); transition: transform .2s; flex-shrink: 0; }
+.scout__an-chev.open { transform: rotate(180deg); }
+.scout__an-detail { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); border-top: 1px solid var(--border); }
+.scout__an-side { background: var(--bg-card); padding: 8px; display: flex; flex-direction: column; gap: 4px; }
+.scout__an-side.blue { box-shadow: inset 3px 0 0 #3B82F6; }
+.scout__an-side.red  { box-shadow: inset 3px 0 0 #EF4444; }
+.scout__an-pl { display: flex; align-items: center; gap: 8px; padding: 3px 4px; border-radius: 4px; }
+.scout__an-pl.scouted { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.scout__an-pl img { width: 26px; height: 26px; border-radius: 5px; border: 1px solid var(--border-2); flex-shrink: 0; }
+.scout__an-pl-name { font-size: 11px; color: var(--t-primary); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.scout__an-pl-kda { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; color: var(--t-primary); }
+.scout__an-pl-cs { font-size: 10px; color: var(--t-dim); min-width: 40px; text-align: right; }
 .scout__an-custom-date { font-family: 'Inter', sans-serif; font-size: 11px; color: var(--t-dim); min-width: 78px; }
 .scout__an-custom-q { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--accent); min-width: 60px; }
 .scout__an-custom-champs { display: flex; gap: 3px; flex: 1; flex-wrap: wrap; }
@@ -558,7 +603,7 @@ onMounted(loadSavedTeams)
 .scout__an-custom-res { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 13px; }
 .scout__an-custom-res.win { color: #10B981; } .scout__an-custom-res.loss { color: #EF4444; }
 
-@media (max-width: 768px) { .scout__an-grid { grid-template-columns: 1fr; } }
+@media (max-width: 768px) { .scout__an-grid, .scout__an-detail { grid-template-columns: 1fr; } }
 
 /* Carousel */
 .scout__carousel-wrap { display: flex; flex-direction: column; gap: 10px; }
