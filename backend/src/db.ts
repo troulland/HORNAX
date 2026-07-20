@@ -171,6 +171,18 @@ export async function initDb(): Promise<void> {
       opponent_logo TEXT,
       updated_at    TEXT DEFAULT (datetime('now'))
     );
+
+    -- Équipes adverses scoutées, sauvegardées & partagées au niveau team
+    CREATE TABLE IF NOT EXISTS scout_team (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      owner_team_id INTEGER NOT NULL,
+      name          TEXT NOT NULL,
+      category      TEXT NOT NULL DEFAULT 'autre',  -- scrim | tournoi | autre
+      region        TEXT NOT NULL DEFAULT 'euw',
+      players       TEXT NOT NULL,                  -- JSON [{riotId, gameName, tagLine}]
+      created_at    TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_scout_owner ON scout_team(owner_team_id);
   `)
 
   const row = await client.execute('SELECT COUNT(*) as c FROM teams')

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { API_BASE as API } from '@/config'
 import { champIcon } from '@/utils/lol'
-import { Search, X, RefreshCw, Crosshair } from 'lucide-vue-next'
+import { Search, X, RefreshCw, Crosshair, Save } from 'lucide-vue-next'
 
 const auth = useAuthStore()
 
@@ -132,8 +132,50 @@ async function fetchScout(entry: ScoutResult) {
 
 function removeScout(id: string) {
   scouts.value = scouts.value.filter(s => s.id !== id)
-  scoutIndex.value = Math.max(0, Math.min(scoutIndex.value, scouts.value.length - 1))
 }
+
+// ── Équipes sauvegardées (historique partagé équipe) ──────────────
+interface SavedTeam {
+  id: number
+  name: string
+  category: 'scrim' | 'tournoi' | 'autre'
+  region: string
+  players: { riotId: string; gameName: string | null; tagLine: string | null }[]
+  created_at: string
+}
+const savedTeams = ref<SavedTeam[]>([])
+const showSave = ref(false)
+const saveName = ref('')
+const saveCat = ref<'scrim' | 'tournoi' | 'autre'>('autre')
+
+async function loadSavedTeams() {
+  const res = await fetch(`${API}/scout/teams`, { headers: { Authorization: `Bearer ${auth.token}` } })
+  if (res.ok) savedTeams.value = await res.json()
+}
+async function saveCurrentTeam() {
+  if (!saveName.value.trim() || scouts.value.length === 0) return
+  const players = scouts.value.map(s => ({ riotId: s.riotId, gameName: s.gameName ?? null, tagLine: s.tagLine ?? null }))
+  const res = await fetch(`${API}/scout/teams`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
+    body: JSON.stringify({ name: saveName.value.trim(), category: saveCat.value, region: scouts.value[0]?.region ?? 'euw', players }),
+  })
+  if (res.ok) { showSave.value = false; saveName.value = ''; await loadSavedTeams() }
+}
+function loadSavedTeam(t: SavedTeam) {
+  scouts.value = []
+  for (const p of t.players) {
+    const entry: ScoutResult = { id: `${p.riotId}__${t.region}`, riotId: p.riotId, region: t.region, state: 'loading' }
+    scouts.value.push(entry)
+    fetchScout(entry)
+  }
+}
+async function deleteSavedTeam(id: number) {
+  const res = await fetch(`${API}/scout/teams/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${auth.token}` } })
+  if (res.ok) savedTeams.value = savedTeams.value.filter(t => t.id !== id)
+}
+
+onMounted(loadSavedTeams)
 </script>
 
 <template>
@@ -173,6 +215,39 @@ function removeScout(id: string) {
         <Crosshair :size="11" style="display:inline;vertical-align:middle;margin-right:4px"/>
         Ajoute jusqu'à 5 joueurs (Riot ID ou colle directement un lien op.gg multisearch pour importer les 5 d'un coup).
       </p>
+    </div>
+
+    <!-- Barre de sauvegarde -->
+    <div v-if="scouts.length > 0" class="scout__savebar">
+      <template v-if="!showSave">
+        <span class="scout__savebar-info">{{ scouts.length }} joueur(s) chargé(s)</span>
+        <button class="scout__save-btn" @click="showSave = true"><Save :size="14" /> Sauvegarder cette équipe</button>
+      </template>
+      <template v-else>
+        <input v-model="saveName" class="hx-input scout__save-name" placeholder="Nom de l'équipe adverse" @keyup.enter="saveCurrentTeam" />
+        <select v-model="saveCat" class="hx-input scout__save-cat">
+          <option value="scrim">Scrim</option>
+          <option value="tournoi">Tournoi</option>
+          <option value="autre">Autre</option>
+        </select>
+        <button class="scout__save-btn" :disabled="!saveName.trim()" @click="saveCurrentTeam">Enregistrer</button>
+        <button class="scout__save-cancel" @click="showSave = false"><X :size="14" /></button>
+      </template>
+    </div>
+
+    <!-- Historique des équipes scoutées -->
+    <div v-if="savedTeams.length" class="scout__history">
+      <span class="scout__history-title">ÉQUIPES SAUVEGARDÉES</span>
+      <div class="scout__history-list">
+        <div v-for="t in savedTeams" :key="t.id" class="scout__saved">
+          <button class="scout__saved-main" @click="loadSavedTeam(t)">
+            <span class="scout__saved-cat" :class="'cat-' + t.category">{{ t.category }}</span>
+            <span class="scout__saved-name">{{ t.name }}</span>
+            <span class="scout__saved-count">{{ t.players.length }} joueurs · {{ t.region.toUpperCase() }}</span>
+          </button>
+          <button class="scout__saved-del" @click="deleteSavedTeam(t.id)" title="Supprimer"><X :size="13" /></button>
+        </div>
+      </div>
     </div>
 
     <!-- Empty state -->
@@ -312,6 +387,33 @@ function removeScout(id: string) {
 
 /* Grille de cartes (≈ 3 par ligne, responsive) */
 .scout__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; align-items: start; }
+
+/* Barre de sauvegarde */
+.scout__savebar { display: flex; align-items: center; gap: 10px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; flex-wrap: wrap; }
+.scout__savebar-info { font-family: 'Inter', sans-serif; font-size: 12px; color: var(--t-dim); flex: 1; }
+.scout__save-btn { display: inline-flex; align-items: center; gap: 7px; font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 1px; background: var(--accent); color: #fff; border: none; border-radius: 6px; padding: 9px 16px; cursor: pointer; transition: opacity .15s; }
+.scout__save-btn:disabled { opacity: .4; cursor: not-allowed; }
+.scout__save-btn:not(:disabled):hover { opacity: .85; }
+.scout__save-name { flex: 1; min-width: 160px; }
+.scout__save-cat { max-width: 130px; }
+.scout__save-cancel { background: transparent; border: 1px solid var(--border); color: var(--t-dim); border-radius: 6px; padding: 8px; cursor: pointer; display: flex; }
+.scout__save-cancel:hover { color: #EF4444; border-color: #EF4444; }
+
+/* Historique */
+.scout__history { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+.scout__history-title { font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 2px; color: var(--accent); }
+.scout__history-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; margin-top: 10px; }
+.scout__saved { display: flex; align-items: stretch; background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.scout__saved-main { flex: 1; display: flex; flex-direction: column; gap: 3px; padding: 10px 12px; background: transparent; border: none; cursor: pointer; text-align: left; font-family: inherit; transition: background .15s; }
+.scout__saved-main:hover { background: var(--bg-hover); }
+.scout__saved-cat { font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; width: fit-content; padding: 1px 6px; border-radius: 3px; }
+.scout__saved-cat.cat-scrim   { color: var(--accent); background: color-mix(in srgb,var(--accent) 12%,transparent); }
+.scout__saved-cat.cat-tournoi { color: #3B82F6; background: rgba(59,130,246,.12); }
+.scout__saved-cat.cat-autre   { color: var(--t-dim); background: color-mix(in srgb,var(--t-dim) 12%,transparent); }
+.scout__saved-name { font-family: 'Rajdhani', sans-serif; font-weight: 700; color: var(--t-primary); letter-spacing: .5px; }
+.scout__saved-count { font-size: 11px; color: var(--t-dim); }
+.scout__saved-del { background: transparent; border: none; border-left: 1px solid var(--border); color: var(--t-muted); padding: 0 10px; cursor: pointer; display: flex; align-items: center; transition: all .15s; }
+.scout__saved-del:hover { color: #EF4444; background: rgba(239,68,68,.08); }
 
 /* Carousel */
 .scout__carousel-wrap { display: flex; flex-direction: column; gap: 10px; }
