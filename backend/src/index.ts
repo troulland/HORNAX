@@ -8,6 +8,7 @@ import teamRoutes         from './routes/teams'
 import availabilityRoutes from './routes/availability'
 import matchRoutes        from './routes/matches'
 import riotRoutes         from './routes/riot'
+import riotDataRoutes     from './routes/riotData'
 import playersRoutes      from './routes/players'
 
 const app  = express()
@@ -25,6 +26,7 @@ app.use('/api/teams',        teamRoutes)
 app.use('/api/availability', availabilityRoutes)
 app.use('/api/matches',      matchRoutes)
 app.use('/api/riot',         riotRoutes)
+app.use('/api',              riotDataRoutes)
 app.use('/api/players',     playersRoutes)
 
 app.get('/api/health', (_req, res) => {

@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import {
-  LayoutDashboard, Swords, BarChart3,
+  LayoutDashboard, Swords, TrendingUp,
   Map, Calendar, User, LogOut, ChevronRight, ChevronDown, Crosshair,
   PanelLeftClose, PanelLeftOpen
 } from 'lucide-vue-next'
@@ -24,11 +24,11 @@ const logoSrc    = computed(() => isRoyalty.value ? '/hornax-royalty.png' : '/lo
 const teamLabel  = computed(() => isRoyalty.value ? 'ROYALTY' : 'HORNAX')
 
 const navItems = [
-  { label: 'Dashboard',  path: '/dashboard', icon: LayoutDashboard },
-  { label: 'Données',    path: '/matches',   icon: Swords },
-  { label: 'Historique', path: '/analytics', icon: BarChart3 },
-  { label: 'Scout',      path: '/scout',     icon: Crosshair },
-  { label: 'Draft',      path: '/draft',     icon: Map,        soon: true },
+  { label: 'Dashboard',    path: '/dashboard', icon: LayoutDashboard },
+  { label: 'Scrims',       path: '/scrims',    icon: Swords },
+  { label: 'SoloQ / Flex', path: '/ranked',    icon: TrendingUp },
+  { label: 'Scout',        path: '/scout',     icon: Crosshair },
+  { label: 'Draft',        path: '/draft',     icon: Map,        soon: true },
 ]
 
 const calSub = [
@@ -36,7 +36,7 @@ const calSub = [
   { label: 'Matchs & Scrims', path: '/calendar/matches' },
 ]
 
-const isActive = (path: string) => path === '/matches' ? route.path.startsWith('/matches') : route.path === path
+const isActive = (path: string) => route.path === path
 function logout() { auth.logout(); router.push('/login') }
 </script>
 
@@ -119,13 +119,13 @@ function logout() { auth.logout(); router.push('/login') }
         <LayoutDashboard :size="20" />
         <span>Dashboard</span>
       </RouterLink>
-      <RouterLink to="/matches" class="mobile-nav__item" :class="{ 'mobile-nav__item--active': route.path.startsWith('/matches') }">
+      <RouterLink to="/scrims" class="mobile-nav__item" :class="{ 'mobile-nav__item--active': route.path === '/scrims' }">
         <Swords :size="20" />
-        <span>Parties</span>
+        <span>Scrims</span>
       </RouterLink>
-      <RouterLink to="/analytics" class="mobile-nav__item" :class="{ 'mobile-nav__item--active': route.path === '/analytics' }">
-        <BarChart3 :size="20" />
-        <span>Analytics</span>
+      <RouterLink to="/ranked" class="mobile-nav__item" :class="{ 'mobile-nav__item--active': route.path === '/ranked' }">
+        <TrendingUp :size="20" />
+        <span>SoloQ/Flex</span>
       </RouterLink>
       <RouterLink to="/scout" class="mobile-nav__item" :class="{ 'mobile-nav__item--active': route.path === '/scout' }">
         <Crosshair :size="20" />
