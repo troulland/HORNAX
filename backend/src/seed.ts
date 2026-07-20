@@ -19,8 +19,9 @@ type Role = 'top' | 'jgl' | 'mid' | 'adc' | 'sup' | 'sub' | 'coach' | 'manager'
 
 interface Account {
   team: 'hornax' | 'hornax-royalty'
-  username: string
+  username: string    // identifiant de connexion
   role: Role
+  riot_id?: string    // compte LoL, ex. "Pseudo#EUW"
   password?: string   // défaut : DEFAULT_PASSWORD
   email?: string      // défaut : <pseudo>@<team>.gg
   starter?: boolean   // défaut : true pour top/jgl/mid/adc/sup
@@ -32,16 +33,14 @@ const DEFAULT_PASSWORD = process.env.SEED_PASSWORD ?? 'hornax2026'
 //  👉  ÉDITE CETTE LISTE avec tes comptes, puis lance `npm run seed`
 // ─────────────────────────────────────────────────────────────
 const ACCOUNTS: Account[] = [
-  // === HORNAX ===
-  // { team: 'hornax', username: 'Kaishi',   role: 'mid', password: 'monMdp' },
-  // { team: 'hornax', username: 'TopLaner', role: 'top' },
-  // { team: 'hornax', username: 'Jungler',  role: 'jgl' },
-  // { team: 'hornax', username: 'AdCarry',  role: 'adc' },
-  // { team: 'hornax', username: 'Support',  role: 'sup' },
+  // === HORNAX ===  (mot de passe : SEED_PASSWORD, cf. .env)
+  { team: 'hornax', username: 'Inuripse', riot_id: 'inuripse#C137',   role: 'top' },
+  { team: 'hornax', username: 'Kiki',     riot_id: 'KIKI#Nb001',      role: 'jgl' },
+  { team: 'hornax', username: 'Kaishi',   riot_id: 'HRX Kaishi#EUWW', role: 'mid' },
+  { team: 'hornax', username: 'Souzz',    riot_id: 'HRX Szz#EUUW',    role: 'adc' },
+  { team: 'hornax', username: 'Max',      riot_id: 'MaxGZ#EUWW',      role: 'sup' },
 
-  // === HORNAX ROYALTY ===
-  // { team: 'hornax-royalty', username: 'RoyalTop', role: 'top' },
-  // { team: 'hornax-royalty', username: 'RoyalMid', role: 'mid' },
+  // === HORNAX ROYALTY ===  (vide pour l'instant)
 ]
 
 const RESET = process.argv.includes('--reset') || process.env.SEED_RESET === '1'
@@ -76,8 +75,8 @@ async function seed(): Promise<void> {
     const hash     = await bcrypt.hash(password, 12)
 
     await db.prepare(
-      'INSERT INTO users (username, email, password_hash, team_id, game_role, is_starter) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run(a.username, email, hash, team.id, a.role, starter ? 1 : 0)
+      'INSERT INTO users (username, email, password_hash, team_id, game_role, is_starter, riot_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).run(a.username, email, hash, team.id, a.role, starter ? 1 : 0, a.riot_id ?? null)
 
     console.log(`✓  ${a.username.padEnd(18)} ${a.role.toUpperCase().padEnd(4)} → ${a.team}   [login: ${email} | pass: ${password}]`)
     created++
