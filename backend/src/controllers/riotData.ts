@@ -22,25 +22,43 @@ export async function syncNow(req: Request, res: Response): Promise<void> {
   res.json(result)
 }
 
-/** GET /api/scrims — BOs regroupés + agrégats + comps par game (nos joueurs / adversaires). */
+const SCRIM_WINDOW_DAYS = 30
+
+function pName(p: any): string { return p.riotIdGameName || p.summonerName || '?' }
+function slot(p: any, rostered?: { id: number; username: string }) {
+  return {
+    champion: p.championName, name: pName(p),
+    kills: p.kills, deaths: p.deaths, assists: p.assists, cs: cs(p),
+    userId: rostered?.id ?? null, username: rostered?.username ?? null,
+  }
+}
+
+/** GET /api/scrims — BOs (30 derniers jours) + agrégats + compos 5v5 complètes + adversaire éditable. */
 export async function getScrims(req: Request, res: Response): Promise<void> {
   const teamId = req.user!.teamId
   if (!teamId) { res.json({ stats: null, series: [] }); return }
 
   const players = await teamPlayers(teamId)
   const puuidToUser = new Map(players.filter(p => p.puuid).map(p => [p.puuid!, p]))
+  const cutoff = Date.now() - SCRIM_WINDOW_DAYS * 24 * 60 * 60 * 1000
 
   const rows = await db.prepare(`
     SELECT rm.match_id, rm.game_start, rm.duration, rm.data
     FROM riot_match rm
-    WHERE rm.category = 'scrim'
+    WHERE rm.category = 'scrim' AND rm.game_start >= ?
       AND rm.match_id IN (SELECT match_id FROM riot_match_user WHERE user_id IN
         (SELECT id FROM users WHERE team_id = ? AND is_active = 1))
     ORDER BY rm.game_start DESC
-  `).all<{ match_id: string; game_start: number; duration: number; data: string }>(teamId)
+  `).all<{ match_id: string; game_start: number; duration: number; data: string }>(cutoff, teamId)
+
+  const seriesMeta = new Map(
+    (await db.prepare('SELECT series_id, opponent, opponent_logo FROM scrim_series')
+      .all<{ series_id: string; opponent: string | null; opponent_logo: string | null }>())
+      .map(m => [m.series_id, m])
+  )
 
   const games: ScrimGame[] = []
-  const detail = new Map<string, { ours: any[]; enemies: string[] }>()
+  const detail = new Map<string, { allies: any[]; enemies: any[] }>()
 
   for (const r of rows) {
     let parsed: any
@@ -56,25 +74,49 @@ export async function getScrims(req: Request, res: Response): Promise<void> {
       enemyPuuids: parts.filter(p => p.teamId !== side).map(p => p.puuid),
     })
     detail.set(r.match_id, {
-      ours: ours.map(p => ({
-        userId: puuidToUser.get(p.puuid)!.id,
-        username: puuidToUser.get(p.puuid)!.username,
-        champion: p.championName, kills: p.kills, deaths: p.deaths, assists: p.assists, cs: cs(p),
-      })),
-      enemies: parts.filter(p => p.teamId !== side).map(p => p.championName),
+      allies:  parts.filter(p => p.teamId === side).map(p => slot(p, puuidToUser.get(p.puuid))),
+      enemies: parts.filter(p => p.teamId !== side).map(p => slot(p)),
     })
   }
 
-  const series = groupBOs(games).map(s => ({
-    seriesId: s.seriesId,
-    total: s.total, wins: s.wins, losses: s.losses, seriesWin: s.seriesWin, gameStart: s.gameStart,
-    matches: s.matches.map(m => ({
-      matchId: m.matchId, gameStart: m.gameStart, duration: m.duration, side: m.side, win: m.win,
-      ...(detail.get(m.matchId) ?? { ours: [], enemies: [] }),
-    })),
-  }))
+  const series = groupBOs(games).map(s => {
+    const meta = seriesMeta.get(s.seriesId)
+    return {
+      seriesId: s.seriesId,
+      total: s.total, wins: s.wins, losses: s.losses, seriesWin: s.seriesWin, gameStart: s.gameStart,
+      opponent: meta?.opponent ?? null,
+      opponentLogo: meta?.opponent_logo ?? null,
+      matches: s.matches.map(m => ({
+        matchId: m.matchId, gameStart: m.gameStart, duration: m.duration, side: m.side, win: m.win,
+        ...(detail.get(m.matchId) ?? { allies: [], enemies: [] }),
+      })),
+    }
+  })
 
   res.json({ stats: aggregateScrims(games), series })
+}
+
+/** PATCH /api/scrims/:seriesId — édite l'adversaire + logo d'un BO (team-scoped). */
+export async function editScrimSeries(req: Request, res: Response): Promise<void> {
+  const teamId = req.user!.teamId
+  const seriesId = req.params.seriesId
+  const firstMatch = seriesId.replace(/^bo-/, '')
+
+  // Autorisation : le match doit impliquer un joueur de la team
+  const ok = await db.prepare(`
+    SELECT 1 FROM riot_match_user rmu JOIN users u ON u.id = rmu.user_id
+    WHERE rmu.match_id = ? AND u.team_id = ? LIMIT 1
+  `).get(firstMatch, teamId)
+  if (!ok) { res.status(404).json({ error: 'Série introuvable' }); return }
+
+  const { opponent, opponent_logo } = req.body
+  await db.prepare(`
+    INSERT INTO scrim_series (series_id, opponent, opponent_logo, updated_at)
+    VALUES (?, ?, ?, datetime('now'))
+    ON CONFLICT(series_id) DO UPDATE SET opponent = excluded.opponent, opponent_logo = excluded.opponent_logo, updated_at = datetime('now')
+  `).run(seriesId, opponent ?? null, opponent_logo ?? null)
+
+  res.json({ ok: true, seriesId, opponent: opponent ?? null, opponentLogo: opponent_logo ?? null })
 }
 
 /** Games ranked (soloq/flex) enrichies (KDA + comps) depuis le cache. */

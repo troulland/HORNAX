@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useTeamStore } from '@/stores/team'
 import { useAuthStore } from '@/stores/auth'
 import { useMatchStore, type Match } from '@/stores/matches'
+import { useRiotStore, type ScrimSeries } from '@/stores/riot'
 import { useRouter } from 'vue-router'
 import { Trophy } from 'lucide-vue-next'
 import { STATIC_BASE } from '@/config'
@@ -10,14 +11,27 @@ import { STATIC_BASE } from '@/config'
 const team = useTeamStore()
 const auth = useAuthStore()
 const matchStore = useMatchStore()
+const riot = useRiotStore()
 const router = useRouter()
 
+const scrimSeries = ref<ScrimSeries[]>([])
+const scrimsLoading = ref(true)
+
 function goToPlayer(id: number) { router.push(`/players/${id}`) }
+function goToGame(matchId: string) { router.push(`/game/${matchId}`) }
+
+async function loadScrims() {
+  const d = await riot.fetchScrims()
+  scrimSeries.value = d.series
+  scrimsLoading.value = false
+}
 
 onMounted(() => {
-  matchStore.fetchHistory(30)
   matchStore.fetchUpcoming(3)
   if (auth.user?.team_id) team.fetchRoster(auth.user.team_id)
+  loadScrims()
+  // synchro auto (espace partagé équipe) → les BO importés s'affichent pour tous
+  riot.sync(false).then(r => { if (r && !r.skipped) loadScrims() })
 })
 
 const greeting = computed(() => {
@@ -58,8 +72,8 @@ function boFormat(n: number): string {
 }
 
 interface BoGroup {
-  seriesId: string | null
-  matches: Match[]
+  seriesId: string
+  matches: Array<{ result: 'win' | 'loss'; id: string }>
   wins: number
   losses: number
   total: number
@@ -70,38 +84,21 @@ interface BoGroup {
   seriesWin: boolean
 }
 
-const boGroups = computed<BoGroup[]>(() => {
-  const grouped = new Map<string, Match[]>()
-
-  for (const m of matchStore.history) {
-    if (m.series_id) {
-      if (!grouped.has(m.series_id)) grouped.set(m.series_id, [])
-      grouped.get(m.series_id)!.push(m)
-    }
-  }
-
-  const result: BoGroup[] = []
-
-  for (const [seriesId, matches] of grouped) {
-    const wins = matches.filter(m => m.result === 'win').length
-    const losses = matches.filter(m => m.result === 'loss').length
-    result.push({
-      seriesId,
-      matches,
-      wins,
-      losses,
-      total: matches.length,
-      opponent: matches[0].opponent,
-      logo: matches[0].opponent_logo,
-      date: matches.reduce((latest, m) => m.date > latest ? m.date : latest, matches[0].date),
-      isSolo: false,
-      seriesWin: wins > losses,
-    })
-  }
-
-  result.sort((a, b) => b.date.localeCompare(a.date))
-  return result.slice(0, 3)
-})
+// Dérivé des scrims IMPORTÉS (espace partagé équipe), pas de l'ancienne table matches
+const boGroups = computed<BoGroup[]>(() =>
+  scrimSeries.value.slice(0, 3).map(s => ({
+    seriesId: s.seriesId,
+    matches: s.matches.map(m => ({ result: (m.win ? 'win' : 'loss') as 'win' | 'loss', id: m.matchId })),
+    wins: s.wins,
+    losses: s.losses,
+    total: s.total,
+    opponent: s.opponent || 'Adversaire',
+    logo: s.opponentLogo,
+    date: new Date(s.gameStart).toISOString(),
+    isSolo: s.total <= 1,
+    seriesWin: s.seriesWin,
+  }))
+)
 
 const ROLE_ORDER = ['top', 'jgl', 'mid', 'adc', 'sup', 'sub', 'coach', 'manager']
 const rosterPlayers = computed(() =>
@@ -177,14 +174,16 @@ const rosterPlayers = computed(() =>
       <!-- Derniers BO -->
       <section class="match-section">
         <h2 class="match-section__title">DERNIERS BO</h2>
-        <div v-if="matchStore.loading" class="match-empty">Chargement…</div>
-        <div v-else-if="boGroups.length === 0" class="match-empty">Aucun BO enregistré.</div>
+        <div v-if="scrimsLoading" class="match-empty">Chargement…</div>
+        <div v-else-if="boGroups.length === 0" class="match-empty">Aucun scrim sur les 30 derniers jours.</div>
         <div v-else class="match-cards-grid">
           <div
             v-for="group in boGroups"
-            :key="group.seriesId ?? group.matches[0].id"
+            :key="group.seriesId"
             class="bo-card"
+            style="cursor:pointer"
             :style="{ '--mc': group.seriesWin ? '#10B981' : '#EF4444' }"
+            @click="goToGame(group.matches[0].id)"
           >
             <span class="mc-corner mc-corner--tl" /><span class="mc-corner mc-corner--tr" />
             <span class="mc-corner mc-corner--bl" /><span class="mc-corner mc-corner--br" />

@@ -64,6 +64,8 @@ onMounted(async () => {
   if (auth.user?.team_id) await team.fetchRoster(auth.user.team_id)
   selectedUser.value = auth.user?.id ?? roster.value[0]?.id ?? null
   reload()
+  // synchro auto en arrière-plan (espace partagé équipe, debounce 15 min serveur)
+  riot.sync(false).then(r => { if (r && !r.skipped) reload() })
 })
 </script>
 
@@ -138,6 +140,15 @@ onMounted(async () => {
             <span class="row__champname">{{ g.champion }}</span>
             <span v-if="tab === 'flex'" class="row__player">{{ playerName(g.user_id) }}</span>
           </div>
+          <div class="row__comp">
+            <div class="mini-team">
+              <img v-for="(c, ci) in g.allies" :key="'a' + ci" class="mini" :src="champIcon(c)" :alt="c" />
+            </div>
+            <span class="vsx">VS</span>
+            <div class="mini-team">
+              <img v-for="(c, ci) in g.enemies" :key="'e' + ci" class="mini" :src="champIcon(c)" :alt="c" />
+            </div>
+          </div>
           <div class="row__kda">
             <span class="row__kdanum">{{ g.kills }} / {{ g.deaths }} / {{ g.assists }}</span>
             <span class="row__cs">{{ g.cs }} CS</span>
@@ -193,14 +204,19 @@ onMounted(async () => {
 .empty p { color: var(--t-primary); font-weight: 600; }
 .empty span { font-size: 13px; }
 
-.list { padding: 8px; display: flex; flex-direction: column; gap: 4px; }
+.list { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
 .row {
-  display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 6px; cursor: pointer;
-  background: transparent; border: none; border-left: 3px solid transparent; font-family: inherit; transition: all .15s; text-align: left;
+  display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--border); border-left: 3px solid transparent; font-family: inherit; transition: all .15s; text-align: left;
 }
-.row:hover { background: var(--bg-hover); }
-.row.win { border-left-color: #10B981; } .row.loss { border-left-color: #EF4444; }
-.row__champ { width: 38px; height: 38px; border-radius: 6px; border: 1px solid var(--border-2); }
+.row.win  { background: color-mix(in srgb, #10B981 7%, var(--bg-card)); border-left-color: #10B981; }
+.row.loss { background: color-mix(in srgb, #EF4444 7%, var(--bg-card)); border-left-color: #EF4444; }
+.row:hover { filter: brightness(1.08); }
+.row__comp { display: flex; align-items: center; gap: 6px; }
+.mini-team { display: flex; gap: 2px; }
+.mini { width: 22px; height: 22px; border-radius: 4px; border: 1px solid var(--border-2); }
+.vsx { font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; color: var(--t-muted); }
+.row__champ { width: 40px; height: 40px; border-radius: 6px; border: 1px solid var(--border-2); }
 .row__main { display: flex; flex-direction: column; gap: 2px; flex: 1; }
 .row__champname { font-family: 'Rajdhani', sans-serif; font-weight: 700; color: var(--t-primary); letter-spacing: .5px; }
 .row__player { font-size: 11px; color: var(--t-dim); }

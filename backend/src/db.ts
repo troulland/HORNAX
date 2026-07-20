@@ -163,6 +163,14 @@ export async function initDb(): Promise<void> {
 
     CREATE INDEX IF NOT EXISTS idx_rmu_user     ON riot_match_user(user_id);
     CREATE INDEX IF NOT EXISTS idx_rm_category  ON riot_match(category);
+
+    -- Métadonnées éditables d'un BO de scrim (adversaire + logo)
+    CREATE TABLE IF NOT EXISTS scrim_series (
+      series_id     TEXT PRIMARY KEY,
+      opponent      TEXT,
+      opponent_logo TEXT,
+      updated_at    TEXT DEFAULT (datetime('now'))
+    );
   `)
 
   const row = await client.execute('SELECT COUNT(*) as c FROM teams')

@@ -211,7 +211,7 @@ const teamRed  = computed(() => all.value.filter(p => p.teamId === 200))
     <div class="gv__nav">
       <button class="gv__back" @click="router.back()">
         <ArrowLeft :size="15" />
-        <span>Analytics</span>
+        <span>Retour</span>
       </button>
       <div v-if="match && rd" class="gv__nav-info">
         <span class="gv__nav-queue">{{ rd.queueLabel }}</span>

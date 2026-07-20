@@ -3,14 +3,15 @@ import { ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { API_BASE as API } from '@/config'
 
-export interface ScrimPlayer {
-  userId: number
-  username: string
+export interface ScrimSlot {
   champion: string
+  name: string
   kills: number
   deaths: number
   assists: number
   cs: number
+  userId: number | null
+  username: string | null
 }
 export interface ScrimGameLite {
   matchId: string
@@ -18,8 +19,8 @@ export interface ScrimGameLite {
   duration: number
   side: 100 | 200
   win: boolean
-  ours: ScrimPlayer[]
-  enemies: string[]
+  allies: ScrimSlot[]
+  enemies: ScrimSlot[]
 }
 export interface ScrimSeries {
   seriesId: string
@@ -28,6 +29,8 @@ export interface ScrimSeries {
   losses: number
   seriesWin: boolean
   gameStart: number
+  opponent: string | null
+  opponentLogo: string | null
   matches: ScrimGameLite[]
 }
 export interface ScrimStats {
@@ -84,5 +87,21 @@ export const useRiotStore = defineStore('riot', () => {
     return res.ok ? (await res.json()).games : []
   }
 
-  return { syncing, sync, fetchScrims, fetchSoloq, fetchFlex }
+  async function editSeries(seriesId: string, data: { opponent: string | null; opponent_logo: string | null }): Promise<boolean> {
+    const res = await fetch(`${API}/scrims/${encodeURIComponent(seriesId)}`, {
+      method: 'PATCH', headers: headers(), body: JSON.stringify(data),
+    })
+    return res.ok
+  }
+
+  async function uploadLogo(file: File): Promise<string | null> {
+    const fd = new FormData()
+    fd.append('logo', file)
+    const res = await fetch(`${API}/matches/upload-logo`, {
+      method: 'POST', headers: { Authorization: `Bearer ${auth.token}` }, body: fd,
+    })
+    return res.ok ? (await res.json()).url : null
+  }
+
+  return { syncing, sync, fetchScrims, fetchSoloq, fetchFlex, editSeries, uploadLogo }
 })
