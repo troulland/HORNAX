@@ -134,9 +134,36 @@ export async function initDb(): Promise<void> {
   for (const col of ['opponent_logo TEXT', 'series_id TEXT', 'riot_data TEXT', "context TEXT DEFAULT 'team'"]) {
     try { await client.execute(`ALTER TABLE matches ADD COLUMN ${col}`) } catch { /* déjà présente */ }
   }
-  for (const col of ['riot_id TEXT']) {
+  for (const col of ['riot_id TEXT', 'puuid TEXT', 'last_synced_at TEXT']) {
     try { await client.execute(`ALTER TABLE users ADD COLUMN ${col}`) } catch { /* déjà présente */ }
   }
+
+  // Cache des matchs Riot (import throttlé + incrémental)
+  await client.executeMultiple(`
+    CREATE TABLE IF NOT EXISTS riot_match (
+      match_id   TEXT PRIMARY KEY,
+      queue_id   INTEGER,
+      category   TEXT,               -- 'soloq' | 'flex' | 'scrim' | 'other'
+      game_start INTEGER,            -- timestamp ms (gameStartTimestamp)
+      duration   INTEGER,            -- secondes (gameDuration)
+      region     TEXT,
+      data       TEXT NOT NULL,      -- JSON brut match-v5 (info + metadata)
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS riot_match_user (
+      match_id TEXT NOT NULL,
+      user_id  INTEGER NOT NULL,
+      puuid    TEXT,
+      champion TEXT,
+      win      INTEGER,              -- 0/1
+      team_id  INTEGER,              -- 100 bleu / 200 rouge
+      PRIMARY KEY (match_id, user_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_rmu_user     ON riot_match_user(user_id);
+    CREATE INDEX IF NOT EXISTS idx_rm_category  ON riot_match(category);
+  `)
 
   const row = await client.execute('SELECT COUNT(*) as c FROM teams')
   if (Number(row.rows[0].c) === 0) {
