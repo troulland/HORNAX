@@ -3,12 +3,23 @@ import { ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { API_BASE as API } from '@/config'
 
+export interface ScrimPlayer {
+  userId: number
+  username: string
+  champion: string
+  kills: number
+  deaths: number
+  assists: number
+  cs: number
+}
 export interface ScrimGameLite {
   matchId: string
   gameStart: number
   duration: number
   side: 100 | 200
   win: boolean
+  ours: ScrimPlayer[]
+  enemies: string[]
 }
 export interface ScrimSeries {
   seriesId: string
@@ -35,6 +46,12 @@ export interface RankedGame {
   user_id: number
   champion: string
   win: boolean
+  kills: number
+  deaths: number
+  assists: number
+  cs: number
+  allies: string[]
+  enemies: string[]
 }
 
 export const useRiotStore = defineStore('riot', () => {

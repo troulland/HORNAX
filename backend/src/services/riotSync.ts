@@ -1,6 +1,6 @@
 import db from '../db'
 import { riotGet, RiotNotFound } from './riotLimiter'
-import { classifyQueue } from '../utils/scrims'
+import { classifyQueue, type Category } from '../utils/scrims'
 
 /**
  * Synchronisation des matchs Riot vers le cache (riot_match / riot_match_user).
@@ -44,12 +44,11 @@ export async function resolvePuuid(user: UserRow, region = 'euw'): Promise<strin
   }
 }
 
-async function upsertMatch(m: any, matchId: string, region: string, puuidToUser: Map<string, number>): Promise<void> {
-  const cat = classifyQueue(m.info.queueId)
+async function upsertMatch(m: any, matchId: string, region: string, puuidToUser: Map<string, number>, category: Category): Promise<void> {
   await db.prepare(
     `INSERT OR REPLACE INTO riot_match (match_id, queue_id, category, game_start, duration, region, data)
      VALUES (?, ?, ?, ?, ?, ?, ?)`
-  ).run(matchId, m.info.queueId, cat, m.info.gameStartTimestamp, m.info.gameDuration, region, JSON.stringify(m))
+  ).run(matchId, m.info.queueId, category, m.info.gameStartTimestamp, m.info.gameDuration, region, JSON.stringify(m))
 
   for (const p of m.info.participants) {
     const uid = puuidToUser.get(p.puuid)
@@ -104,16 +103,24 @@ export async function syncTeam(
   )
 
   let added = 0
+  const base = `https://${routing}.api.riotgames.com/lol/match/v5/matches`
   for (const puuid of puuidToUser.keys()) {
-    const ids = await riotGet<string[]>(
-      `https://${routing}.api.riotgames.com/lol/match/v5/matches/by-puuid/${puuid}/ids?count=${count}`
-    )
-    for (const id of ids) {
+    // 1) historique récent (soloq/flex/…) + 2) passe dédiée aux games de tournoi (scrims)
+    const [general, tourney] = await Promise.all([
+      riotGet<string[]>(`${base}/by-puuid/${puuid}/ids?count=${count}`),
+      riotGet<string[]>(`${base}/by-puuid/${puuid}/ids?type=tourney&count=20`),
+    ])
+    const scrimIds = new Set(tourney)
+    const allIds = [...new Set([...tourney, ...general])]
+
+    for (const id of allIds) {
       if (cached.has(id)) continue
-      const m = await riotGet<any>(`https://${routing}.api.riotgames.com/lol/match/v5/matches/${id}`)
+      const m = await riotGet<any>(`${base}/${id}`)
       cached.add(id)
-      if (classifyQueue(m.info.queueId) === 'other') continue  // on ignore ARAM/URF/etc.
-      await upsertMatch(m, id, region, puuidToUser)
+      // les games issues de la passe tournoi = scrim (peu importe le queueId) ; sinon classification standard
+      const cat: Category = scrimIds.has(id) ? 'scrim' : classifyQueue(m.info.queueId)
+      if (cat === 'other') continue  // on ignore ARAM/URF/etc.
+      await upsertMatch(m, id, region, puuidToUser, cat)
       added++
     }
   }
