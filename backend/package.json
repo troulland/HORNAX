@@ -2,13 +2,18 @@
   "name": "hornax-api",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "seed": "ts-node-dev --transpile-only src/seed.ts"
+    "seed": "ts-node-dev --transpile-only src/seed.ts",
+    "seed:reset": "ts-node-dev --transpile-only src/seed.ts --reset"
   },
   "dependencies": {
+    "@libsql/client": "^0.17.4",
     "@types/multer": "^2.1.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",

@@ -5,7 +5,7 @@ export async function updateRiotId(req: Request, res: Response): Promise<void> {
   const userId = req.user!.userId
   const { riot_id } = req.body
   if (riot_id === undefined) { res.status(400).json({ error: 'riot_id requis' }); return }
-  db.prepare('UPDATE users SET riot_id = ? WHERE id = ?').run(riot_id || null, userId)
+  await db.prepare('UPDATE users SET riot_id = ? WHERE id = ?').run(riot_id || null, userId)
   res.json({ riot_id: riot_id || null })
 }
 
@@ -41,11 +41,11 @@ export async function getPlayerProfile(req: Request, res: Response): Promise<voi
   const userId = parseInt(req.params.userId)
   if (isNaN(userId)) { res.status(400).json({ error: 'userId invalide' }); return }
 
-  const user = db.prepare(`
+  const user = await db.prepare(`
     SELECT u.id, u.username, u.game_role, u.is_starter, u.riot_id, t.name as team_name
     FROM users u LEFT JOIN teams t ON t.id = u.team_id
     WHERE u.id = ? AND u.is_active = 1
-  `).get(userId) as any
+  `).get<any>(userId)
 
   if (!user) { res.status(404).json({ error: 'Joueur introuvable' }); return }
 

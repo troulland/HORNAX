@@ -39,7 +39,7 @@ export async function register(req: Request, res: Response): Promise<void> {
     return
   }
 
-  const existing = db.prepare(
+  const existing = await db.prepare(
     'SELECT id FROM users WHERE username = ? OR email = ?'
   ).get(username, email)
   if (existing) {
@@ -47,15 +47,15 @@ export async function register(req: Request, res: Response): Promise<void> {
     return
   }
 
-  const team = db.prepare('SELECT * FROM teams WHERE id = ?').get(team_id) as unknown as Team | undefined
+  const team = await db.prepare('SELECT * FROM teams WHERE id = ?').get<Team>(team_id)
   if (!team) {
     res.status(404).json({ error: 'Équipe introuvable' })
     return
   }
 
-  const roleCount = (db.prepare(
+  const roleCount = (await db.prepare(
     'SELECT COUNT(*) as c FROM users WHERE team_id = ? AND game_role = ? AND is_active = 1'
-  ).get(team_id, game_role) as { c: number }).c
+  ).get<{ c: number }>(team_id, game_role))!.c
 
   if (roleCount >= (MAX_PER_ROLE[game_role] ?? 1)) {
     res.status(409).json({ error: `Le rôle ${game_role.toUpperCase()} est complet dans ${team.name}` })
@@ -65,11 +65,11 @@ export async function register(req: Request, res: Response): Promise<void> {
   const passwordHash = await bcrypt.hash(password, 12)
   const is_starter = ['top', 'jgl', 'mid', 'adc', 'sup'].includes(game_role) ? 1 : 0
 
-  const result = db.prepare(
+  const result = await db.prepare(
     'INSERT INTO users (username, email, password_hash, team_id, game_role, is_starter) VALUES (?, ?, ?, ?, ?, ?)'
   ).run(username, email, passwordHash, team_id, game_role, is_starter)
 
-  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(result.lastInsertRowid) as unknown as User
+  const user = (await db.prepare('SELECT * FROM users WHERE id = ?').get<User>(result.lastInsertRowid))!
 
   const payload = userPayload(user, team.name)
   payload.team_slug = team.slug ?? null
@@ -85,9 +85,9 @@ export async function login(req: Request, res: Response): Promise<void> {
     return
   }
 
-  const user = db.prepare(
+  const user = await db.prepare(
     'SELECT * FROM users WHERE (username = ? OR email = ?) AND is_active = 1'
-  ).get(identifier, identifier) as unknown as User | undefined
+  ).get<User>(identifier, identifier)
 
   if (!user || !(await bcrypt.compare(password, user.password_hash))) {
     res.status(401).json({ error: 'Identifiants incorrects' })
@@ -95,7 +95,7 @@ export async function login(req: Request, res: Response): Promise<void> {
   }
 
   const team = user.team_id
-    ? (db.prepare('SELECT * FROM teams WHERE id = ?').get(user.team_id) as unknown as Team)
+    ? await db.prepare('SELECT * FROM teams WHERE id = ?').get<Team>(user.team_id)
     : null
 
   const payload = userPayload(user, team?.name ?? null)
@@ -108,7 +108,7 @@ export async function updateProfile(req: Request, res: Response): Promise<void> 
   const userId = req.user!.userId
   const { username, email, currentPassword, newPassword, riot_id } = req.body
 
-  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId) as unknown as User | undefined
+  const user = await db.prepare('SELECT * FROM users WHERE id = ?').get<User>(userId)
   if (!user) { res.status(404).json({ error: 'Utilisateur introuvable' }); return }
 
   // Changement de mot de passe
@@ -118,46 +118,46 @@ export async function updateProfile(req: Request, res: Response): Promise<void> 
     if (!ok) { res.status(401).json({ error: 'Mot de passe actuel incorrect' }); return }
     if (newPassword.length < 6) { res.status(400).json({ error: 'Nouveau mot de passe trop court (6 car. min.)' }); return }
     const hash = await bcrypt.hash(newPassword, 12)
-    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, userId)
+    await db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, userId)
   }
 
   // Changement username
   if (username && username !== user.username) {
-    const exists = db.prepare('SELECT id FROM users WHERE username = ? AND id != ?').get(username, userId)
+    const exists = await db.prepare('SELECT id FROM users WHERE username = ? AND id != ?').get(username, userId)
     if (exists) { res.status(409).json({ error: 'Ce pseudo est déjà pris' }); return }
-    db.prepare('UPDATE users SET username = ? WHERE id = ?').run(username, userId)
+    await db.prepare('UPDATE users SET username = ? WHERE id = ?').run(username, userId)
   }
 
   // Changement email
   if (email && email !== user.email) {
-    const exists = db.prepare('SELECT id FROM users WHERE email = ? AND id != ?').get(email, userId)
+    const exists = await db.prepare('SELECT id FROM users WHERE email = ? AND id != ?').get(email, userId)
     if (exists) { res.status(409).json({ error: 'Cet email est déjà utilisé' }); return }
-    db.prepare('UPDATE users SET email = ? WHERE id = ?').run(email, userId)
+    await db.prepare('UPDATE users SET email = ? WHERE id = ?').run(email, userId)
   }
 
   // Changement riot_id
   if (riot_id !== undefined) {
-    db.prepare('UPDATE users SET riot_id = ? WHERE id = ?').run(riot_id, userId)
+    await db.prepare('UPDATE users SET riot_id = ? WHERE id = ?').run(riot_id, userId)
   }
 
   // Retourne le profil mis à jour
-  const updated = db.prepare(`
+  const updated = await db.prepare(`
     SELECT u.id, u.username, u.email, u.team_id, u.game_role, u.is_starter, u.riot_id,
            t.name as team_name, t.slug as team_slug
     FROM users u LEFT JOIN teams t ON t.id = u.team_id WHERE u.id = ?
-  `).get(userId) as unknown as (User & { team_name: string; team_slug: string })
+  `).get(userId)
 
   res.json(updated)
 }
 
-export function me(req: Request, res: Response): void {
-  const row = db.prepare(`
+export async function me(req: Request, res: Response): Promise<void> {
+  const row = await db.prepare(`
     SELECT u.id, u.username, u.email, u.team_id, u.game_role, u.is_starter, u.riot_id,
            t.name as team_name, t.slug as team_slug
     FROM users u
     LEFT JOIN teams t ON t.id = u.team_id
     WHERE u.id = ?
-  `).get(req.user!.userId) as unknown as (User & { team_name: string; team_slug: string }) | undefined
+  `).get(req.user!.userId)
 
   if (!row) { res.status(404).json({ error: 'Utilisateur introuvable' }); return }
   res.json(row)
