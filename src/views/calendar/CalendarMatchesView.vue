@@ -103,16 +103,35 @@ function onLogoChange(e: Event) {
 }
 function clearLogo() { logoFile.value = null; logoPreview.value = null; form.value.opponent_logo = null }
 
+// Logo stocké en data URL (base64) en base → durable (disque Render éphémère)
+function fileToDataUrl(file: File, max = 128): Promise<string | null> {
+  return new Promise((resolve) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const dataUrl = reader.result as string
+      const img = new Image()
+      img.onload = () => {
+        const scale = Math.min(1, max / Math.max(img.width, img.height))
+        const w = Math.max(1, Math.round(img.width * scale))
+        const h = Math.max(1, Math.round(img.height * scale))
+        const canvas = document.createElement('canvas')
+        canvas.width = w; canvas.height = h
+        const ctx = canvas.getContext('2d')
+        if (!ctx) { resolve(dataUrl); return }
+        ctx.drawImage(img, 0, 0, w, h)
+        resolve(canvas.toDataURL('image/webp', 0.85))
+      }
+      img.onerror = () => resolve(dataUrl)
+      img.src = dataUrl
+    }
+    reader.onerror = () => resolve(null)
+    reader.readAsDataURL(file)
+  })
+}
+
 async function uploadLogoFile(): Promise<string | null> {
   if (!logoFile.value) return form.value.opponent_logo
-  const fd = new FormData()
-  fd.append('logo', logoFile.value)
-  try {
-    const res = await fetch(`${API}/matches/upload-logo`, {
-      method: 'POST', headers: { Authorization: `Bearer ${auth.token}` }, body: fd,
-    })
-    return res.ok ? (await res.json()).url as string : form.value.opponent_logo
-  } catch { return form.value.opponent_logo }
+  return (await fileToDataUrl(logoFile.value)) ?? form.value.opponent_logo
 }
 
 function openCreate(day: Date) {

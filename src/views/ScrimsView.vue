@@ -26,7 +26,7 @@ async function sync() {
 }
 
 const boLabel = (n: number) => (n <= 1 ? 'Game' : `BO${n}`)
-const logoUrl = (p: string | null) => (p ? (p.startsWith('http') ? p : `${STATIC_BASE}${p}`) : '')
+const logoUrl = (p: string | null) => (!p ? '' : (p.startsWith('data:') || p.startsWith('http') ? p : `${STATIC_BASE}${p}`))
 const ourFocus = (m: ScrimGameLite) => m.allies.find(a => a.userId)?.userId ?? undefined
 const openGame = (id: string, focus?: number) =>
   router.push(focus ? `/game/${id}?focus=${focus}` : `/game/${id}`)

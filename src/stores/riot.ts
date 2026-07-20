@@ -94,13 +94,34 @@ export const useRiotStore = defineStore('riot', () => {
     return res.ok
   }
 
-  async function uploadLogo(file: File): Promise<string | null> {
-    const fd = new FormData()
-    fd.append('logo', file)
-    const res = await fetch(`${API}/matches/upload-logo`, {
-      method: 'POST', headers: { Authorization: `Bearer ${auth.token}` }, body: fd,
+  /**
+   * Convertit le logo en data URL (base64), redimensionné petit, pour le stocker
+   * DIRECTEMENT en base (Turso). Le disque de Render (gratuit) étant éphémère,
+   * un fichier uploadé serait perdu au redéploiement — la data URL, elle, persiste.
+   */
+  function uploadLogo(file: File, max = 128): Promise<string | null> {
+    return new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const dataUrl = reader.result as string
+        const img = new Image()
+        img.onload = () => {
+          const scale = Math.min(1, max / Math.max(img.width, img.height))
+          const w = Math.max(1, Math.round(img.width * scale))
+          const h = Math.max(1, Math.round(img.height * scale))
+          const canvas = document.createElement('canvas')
+          canvas.width = w; canvas.height = h
+          const ctx = canvas.getContext('2d')
+          if (!ctx) { resolve(dataUrl); return }
+          ctx.drawImage(img, 0, 0, w, h)
+          resolve(canvas.toDataURL('image/webp', 0.85))
+        }
+        img.onerror = () => resolve(dataUrl)
+        img.src = dataUrl
+      }
+      reader.onerror = () => resolve(null)
+      reader.readAsDataURL(file)
     })
-    return res.ok ? (await res.json()).url : null
   }
 
   return { syncing, sync, fetchScrims, fetchSoloq, fetchFlex, editSeries, uploadLogo }
