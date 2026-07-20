@@ -80,10 +80,16 @@ async function rankedGames(category: 'soloq' | 'flex', userIds: number[]) {
   return rows.map(r => ({ ...r, win: !!r.win }))
 }
 
-/** GET /api/ranked/soloq?userId= — games soloq d'UN joueur. */
+/** GET /api/ranked/soloq?userId= — games soloq d'UN joueur (de sa propre team). */
 export async function getSoloq(req: Request, res: Response): Promise<void> {
   const userId = Number(req.query.userId)
   if (!userId) { res.status(400).json({ error: 'userId requis' }); return }
+
+  // Autorisation : le joueur demandé doit appartenir à la team du demandeur
+  const teamId = req.user!.teamId
+  const target = await db.prepare('SELECT id FROM users WHERE id = ? AND team_id = ?').get(userId, teamId)
+  if (!target) { res.status(403).json({ error: 'Joueur hors de ta team' }); return }
+
   res.json({ games: await rankedGames('soloq', [userId]) })
 }
 
@@ -95,9 +101,20 @@ export async function getFlex(req: Request, res: Response): Promise<void> {
   res.json({ games: await rankedGames('flex', players.map(p => p.id)) })
 }
 
-/** GET /api/game/:matchId — match brut (cache) pour la page stats. */
+/** GET /api/game/:matchId — match brut (cache), uniquement si un joueur de la team y a participé. */
 export async function getGame(req: Request, res: Response): Promise<void> {
-  const row = await db.prepare('SELECT data FROM riot_match WHERE match_id = ?').get<{ data: string }>(req.params.matchId)
+  const teamId = req.user!.teamId
+  const matchId = req.params.matchId
+
+  // Autorisation : le match doit impliquer au moins un joueur de la team du demandeur
+  const link = await db.prepare(`
+    SELECT 1 FROM riot_match_user rmu
+    JOIN users u ON u.id = rmu.user_id
+    WHERE rmu.match_id = ? AND u.team_id = ? LIMIT 1
+  `).get(matchId, teamId)
+  if (!link) { res.status(404).json({ error: 'Match introuvable' }); return }
+
+  const row = await db.prepare('SELECT data FROM riot_match WHERE match_id = ?').get<{ data: string }>(matchId)
   if (!row) { res.status(404).json({ error: 'Match introuvable dans le cache' }); return }
   res.json(JSON.parse(row.data))
 }
