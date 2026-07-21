@@ -25,8 +25,9 @@ const MAX_DETAILS = 70      // plafond de fetch détaillés (borne temps/quota)
 
 export interface ChampStat { champion: string; games: number; wins: number; winRate: number }
 export interface Duo { players: string[]; games: number; combos: { champs: string[]; count: number }[] }
-export interface CustomParticipant { name: string; champion: string; kills: number; deaths: number; assists: number; cs: number; teamId: number; win: boolean; scouted: boolean }
-export interface CustomGame { matchId: string; date: string; queue: string; win: boolean; duration: number; players: { name: string; champion: string }[]; participants: CustomParticipant[] }
+export interface CustomParticipant { name: string; champion: string; kills: number; deaths: number; assists: number; cs: number; vision: number; wards: number; teamId: number; win: boolean; scouted: boolean }
+export interface CustomTeamObj { teamId: number; win: boolean; objectives: { baron: number; dragon: number; tower: number; herald: number } }
+export interface CustomGame { matchId: string; date: string; queue: string; win: boolean; duration: number; players: { name: string; champion: string }[]; participants: CustomParticipant[]; teams: CustomTeamObj[] }
 export interface ScoutAnalysis {
   players: { name: string; puuid: string }[]
   failed: string[]
@@ -135,8 +136,18 @@ export async function analyzeScoutTeam(riotIds: string[], region = 'euw'): Promi
           champion: p.championName,
           kills: p.kills, deaths: p.deaths, assists: p.assists,
           cs: (p.totalMinionsKilled ?? 0) + (p.neutralMinionsKilled ?? 0),
+          vision: p.visionScore ?? 0, wards: p.wardsPlaced ?? 0,
           teamId: p.teamId, win: !!p.win,
           scouted: puuidSet.has(p.puuid),
+        })),
+        teams: (m.info.teams ?? []).map((t: any) => ({
+          teamId: t.teamId, win: !!t.win,
+          objectives: {
+            baron:  t.objectives?.baron?.kills ?? 0,
+            dragon: t.objectives?.dragon?.kills ?? 0,
+            tower:  t.objectives?.tower?.kills ?? 0,
+            herald: t.objectives?.riftHerald?.kills ?? 0,
+          },
         })),
       })
     }

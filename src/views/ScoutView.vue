@@ -201,7 +201,11 @@ async function saveCurrentTeam() {
   const res = await fetch(`${API}/scout/teams`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
-    body: JSON.stringify({ name: saveName.value.trim(), category: saveCat.value, region: scouts.value[0]?.region ?? 'euw', players }),
+    body: JSON.stringify({
+      name: saveName.value.trim(), category: saveCat.value,
+      region: scouts.value[0]?.region ?? 'euw', players,
+      analysis: analysis.value,   // persiste l'analyse déjà faite → pas de recalcul au rechargement
+    }),
   })
   if (res.ok) { showSave.value = false; saveName.value = ''; await loadSavedTeams() }
 }
@@ -456,26 +460,44 @@ onMounted(loadSavedTeams)
       <div class="scout__an-block">
         <span class="scout__an-title">CUSTOMS / TOURNOIS DÉTECTÉS</span>
         <div v-if="analysis.customs.length" class="scout__an-customs">
-          <div v-for="g in analysis.customs" :key="g.matchId" class="scout__an-acc">
-            <button class="scout__an-custom" :class="g.win ? 'win' : 'loss'" @click="toggleGame(g.matchId)">
-              <span class="scout__an-custom-date">{{ g.date }}</span>
-              <span class="scout__an-custom-q">{{ g.queue }}</span>
-              <div class="scout__an-custom-champs">
-                <img v-for="(p, j) in g.players" :key="j" :src="champIcon(p.champion)" :title="p.name" :alt="p.champion" @error="($event.target as HTMLImageElement).src='/logo.png'" />
+          <div v-for="g in analysis.customs" :key="g.matchId" class="scout__an-acc" :class="g.win ? 'win' : 'loss'">
+            <button class="scout__an-custom" @click="toggleGame(g.matchId)">
+              <span class="scout__an-cust-badge" :class="g.win ? 'win' : 'loss'">{{ g.win ? 'VICTOIRE' : 'DÉFAITE' }}</span>
+              <div class="scout__an-cust-meta">
+                <span class="scout__an-cust-q">{{ g.queue }}</span>
+                <span class="scout__an-cust-date">{{ g.date }} · {{ g.duration }} min</span>
               </div>
-              <span class="scout__an-custom-res" :class="g.win ? 'win' : 'loss'">{{ g.win ? 'V' : 'D' }}</span>
-              <ChevronDown :size="14" class="scout__an-chev" :class="{ open: expandedGame === g.matchId }" />
+              <div class="scout__an-cust-players">
+                <div v-for="(p, j) in g.players" :key="j" class="scout__an-cust-pl" :title="p.name">
+                  <img :src="champIcon(p.champion)" :alt="p.champion" @error="($event.target as HTMLImageElement).src='/logo.png'" />
+                  <span>{{ p.name }}</span>
+                </div>
+              </div>
+              <span v-if="g.players.length > 1" class="scout__an-cust-together">🤝 {{ g.players.length }} joueurs ensemble</span>
+              <ChevronDown :size="16" class="scout__an-chev" :class="{ open: expandedGame === g.matchId }" />
             </button>
+
             <div v-if="expandedGame === g.matchId" class="scout__an-detail">
-              <div v-for="side in [100, 200]" :key="side" class="scout__an-side" :class="side === 100 ? 'blue' : 'red'">
+              <div v-for="t in g.teams" :key="t.teamId" class="scout__an-side" :class="t.teamId === 100 ? 'blue' : 'red'">
+                <div class="scout__an-side-head">
+                  <span :style="{ color: t.teamId === 100 ? '#3B82F6' : '#EF4444' }">{{ t.teamId === 100 ? 'ÉQUIPE BLEUE' : 'ÉQUIPE ROUGE' }}</span>
+                  <span class="scout__an-side-res" :class="t.win ? 'win' : 'loss'">{{ t.win ? 'VICTOIRE' : 'DÉFAITE' }}</span>
+                </div>
+                <div class="scout__an-obj">
+                  <span><b>{{ t.objectives.baron }}</b> Baron</span>
+                  <span><b>{{ t.objectives.dragon }}</b> Drakes</span>
+                  <span><b>{{ t.objectives.herald }}</b> Héraut</span>
+                  <span><b>{{ t.objectives.tower }}</b> Tours</span>
+                </div>
                 <div
-                  v-for="(p, k) in g.participants.filter(x => x.teamId === side)" :key="k"
+                  v-for="(p, k) in g.participants.filter(x => x.teamId === t.teamId)" :key="k"
                   class="scout__an-pl" :class="{ scouted: p.scouted }"
                 >
                   <img :src="champIcon(p.champion)" :alt="p.champion" @error="($event.target as HTMLImageElement).src='/logo.png'" />
                   <span class="scout__an-pl-name">{{ p.name }}</span>
                   <span class="scout__an-pl-kda">{{ p.kills }}/{{ p.deaths }}/{{ p.assists }}</span>
-                  <span class="scout__an-pl-cs">{{ p.cs }} cs</span>
+                  <span class="scout__an-pl-stat">{{ p.cs }} cs</span>
+                  <span class="scout__an-pl-stat" title="Score de vision">👁 {{ p.vision }}</span>
                 </div>
               </div>
             </div>
@@ -573,29 +595,44 @@ onMounted(loadSavedTeams)
 .scout__an-duo-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
 .scout__an-duo-names { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 12px; color: var(--t-primary); letter-spacing: .5px; }
 .scout__an-duo-g { font-size: 11px; color: var(--t-dim); }
-.scout__an-duo-combos { display: flex; flex-wrap: wrap; gap: 8px; }
-.scout__an-combo { display: inline-flex; align-items: center; gap: 2px; font-size: 11px; color: var(--t-dim); }
-.scout__an-combo img { width: 22px; height: 22px; border-radius: 4px; border: 1px solid var(--border-2); }
-.scout__an-combo b { font-family: 'Rajdhani', sans-serif; color: var(--t-primary); margin-left: 2px; }
+.scout__an-duo-combos { display: flex; flex-wrap: wrap; gap: 10px; }
+.scout__an-combo { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--t-dim); background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 5px 8px; }
+.scout__an-combo img { width: 38px; height: 38px; border-radius: 6px; border: 1px solid var(--border-2); }
+.scout__an-combo b { font-family: 'Rajdhani', sans-serif; font-size: 14px; color: var(--t-primary); margin-left: 3px; }
 
 .scout__an-warn { background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.3); color: #F59E0B; font-size: 12px; padding: 8px 14px; margin: 12px 16px 0; border-radius: 6px; }
 .scout__an-customs { display: flex; flex-direction: column; gap: 6px; }
 .scout__an-acc { border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
-.scout__an-custom { display: flex; align-items: center; gap: 12px; width: 100%; padding: 8px 10px; background: var(--bg-surface); border: none; border-left: 3px solid transparent; cursor: pointer; font-family: inherit; text-align: left; transition: background .15s; }
+.scout__an-acc.win { border-left: 3px solid #10B981; } .scout__an-acc.loss { border-left: 3px solid #EF4444; }
+.scout__an-custom { display: flex; align-items: center; gap: 14px; width: 100%; padding: 12px 14px; background: var(--bg-surface); border: none; cursor: pointer; font-family: inherit; text-align: left; transition: background .15s; flex-wrap: wrap; }
 .scout__an-custom:hover { background: var(--bg-hover); }
-.scout__an-custom.win { border-left-color: #10B981; } .scout__an-custom.loss { border-left-color: #EF4444; }
+.scout__an-cust-badge { font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; padding: 4px 8px; border-radius: 4px; flex-shrink: 0; }
+.scout__an-cust-badge.win { color: #10B981; background: rgba(16,185,129,.14); } .scout__an-cust-badge.loss { color: #EF4444; background: rgba(239,68,68,.14); }
+.scout__an-cust-meta { display: flex; flex-direction: column; gap: 1px; min-width: 84px; }
+.scout__an-cust-q { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: .5px; color: var(--accent); }
+.scout__an-cust-date { font-size: 11px; color: var(--t-dim); }
+.scout__an-cust-players { display: flex; gap: 10px; flex: 1; flex-wrap: wrap; }
+.scout__an-cust-pl { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 54px; }
+.scout__an-cust-pl img { width: 44px; height: 44px; border-radius: 7px; border: 1px solid var(--border-2); }
+.scout__an-cust-pl span { font-size: 10px; color: var(--t-dim); max-width: 54px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.scout__an-cust-together { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: .5px; color: var(--accent); background: color-mix(in srgb,var(--accent) 10%,transparent); padding: 5px 11px; border-radius: 20px; flex-shrink: 0; }
 .scout__an-chev { color: var(--t-muted); transition: transform .2s; flex-shrink: 0; }
 .scout__an-chev.open { transform: rotate(180deg); }
 .scout__an-detail { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); border-top: 1px solid var(--border); }
-.scout__an-side { background: var(--bg-card); padding: 8px; display: flex; flex-direction: column; gap: 4px; }
+.scout__an-side { background: var(--bg-card); padding: 10px; display: flex; flex-direction: column; gap: 5px; }
 .scout__an-side.blue { box-shadow: inset 3px 0 0 #3B82F6; }
 .scout__an-side.red  { box-shadow: inset 3px 0 0 #EF4444; }
-.scout__an-pl { display: flex; align-items: center; gap: 8px; padding: 3px 4px; border-radius: 4px; }
-.scout__an-pl.scouted { background: color-mix(in srgb, var(--accent) 12%, transparent); }
-.scout__an-pl img { width: 26px; height: 26px; border-radius: 5px; border: 1px solid var(--border-2); flex-shrink: 0; }
-.scout__an-pl-name { font-size: 11px; color: var(--t-primary); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.scout__an-pl-kda { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; color: var(--t-primary); }
-.scout__an-pl-cs { font-size: 10px; color: var(--t-dim); min-width: 40px; text-align: right; }
+.scout__an-side-head { display: flex; align-items: center; justify-content: space-between; font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; }
+.scout__an-side-res.win { color: #10B981; } .scout__an-side-res.loss { color: #EF4444; }
+.scout__an-obj { display: flex; gap: 12px; flex-wrap: wrap; padding: 4px 2px 6px; border-bottom: 1px solid var(--border); margin-bottom: 3px; }
+.scout__an-obj span { font-size: 11px; color: var(--t-dim); }
+.scout__an-obj b { font-family: 'Rajdhani', sans-serif; font-size: 13px; color: var(--t-primary); margin-right: 2px; }
+.scout__an-pl { display: flex; align-items: center; gap: 8px; padding: 4px 5px; border-radius: 5px; }
+.scout__an-pl.scouted { background: color-mix(in srgb, var(--accent) 14%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb,var(--accent) 30%,transparent); }
+.scout__an-pl img { width: 30px; height: 30px; border-radius: 5px; border: 1px solid var(--border-2); flex-shrink: 0; }
+.scout__an-pl-name { font-size: 12px; color: var(--t-primary); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.scout__an-pl-kda { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; color: var(--t-primary); min-width: 54px; }
+.scout__an-pl-stat { font-size: 10px; color: var(--t-dim); min-width: 42px; text-align: right; }
 .scout__an-custom-date { font-family: 'Inter', sans-serif; font-size: 11px; color: var(--t-dim); min-width: 78px; }
 .scout__an-custom-q { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--accent); min-width: 60px; }
 .scout__an-custom-champs { display: flex; gap: 3px; flex: 1; flex-wrap: wrap; }
@@ -654,11 +691,11 @@ onMounted(loadSavedTeams)
 
 .scout__icon-btn {
   width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
-  background: #1A1F2E; border: 1px solid #2A3050; border-radius: 5px;
-  color: #3D4460; cursor: pointer; transition: all .15s;
+  background: var(--bg-hover); border: 1px solid var(--border-2); border-radius: 5px;
+  color: var(--t-dim); cursor: pointer; transition: all .15s;
 }
 .scout__icon-btn:hover { border-color: var(--accent); color: var(--accent); }
-.scout__icon-btn--remove:hover { border-color: #EF4444; color: #EF4444; }
+.scout__icon-btn--remove:hover { border-color: #EF4444; color: #EF4444; background: rgba(239,68,68,.08); }
 
 /* Loader */
 .scout__card-loader { padding: 20px 16px; display: flex; flex-direction: column; gap: 8px; }
