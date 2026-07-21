@@ -53,21 +53,27 @@ export async function register(req: Request, res: Response): Promise<void> {
     return
   }
 
-  const roleCount = (await db.prepare(
-    'SELECT COUNT(*) as c FROM users WHERE team_id = ? AND game_role = ? AND is_active = 1'
-  ).get<{ c: number }>(team_id, game_role))!.c
+  const isViewer = game_role === 'viewer'
 
-  if (roleCount >= (MAX_PER_ROLE[game_role] ?? 1)) {
-    res.status(409).json({ error: `Le rôle ${game_role.toUpperCase()} est complet dans ${team.name}` })
-    return
+  // Limite par rôle uniquement pour les non-viewers (les viewers n'occupent pas de slot)
+  if (!isViewer) {
+    const roleCount = (await db.prepare(
+      'SELECT COUNT(*) as c FROM users WHERE team_id = ? AND game_role = ? AND is_active = 1'
+    ).get<{ c: number }>(team_id, game_role))!.c
+
+    if (roleCount >= (MAX_PER_ROLE[game_role] ?? 1)) {
+      res.status(409).json({ error: `Le rôle ${game_role.toUpperCase()} est complet dans ${team.name}` })
+      return
+    }
   }
 
   const passwordHash = await bcrypt.hash(password, 12)
-  const is_starter = ['top', 'jgl', 'mid', 'adc', 'sup'].includes(game_role) ? 1 : 0
+  const realRole   = isViewer ? null : game_role
+  const is_starter = (!isViewer && ['top', 'jgl', 'mid', 'adc', 'sup'].includes(game_role)) ? 1 : 0
 
   const result = await db.prepare(
-    'INSERT INTO users (username, email, password_hash, team_id, game_role, is_starter) VALUES (?, ?, ?, ?, ?, ?)'
-  ).run(username, email, passwordHash, team_id, game_role, is_starter)
+    'INSERT INTO users (username, email, password_hash, team_id, game_role, is_starter, is_viewer) VALUES (?, ?, ?, ?, ?, ?, ?)'
+  ).run(username, email, passwordHash, team_id, realRole, is_starter, isViewer ? 1 : 0)
 
   const user = (await db.prepare('SELECT * FROM users WHERE id = ?').get<User>(result.lastInsertRowid))!
 

@@ -134,7 +134,7 @@ export async function initDb(): Promise<void> {
   for (const col of ['opponent_logo TEXT', 'series_id TEXT', 'riot_data TEXT', "context TEXT DEFAULT 'team'"]) {
     try { await client.execute(`ALTER TABLE matches ADD COLUMN ${col}`) } catch { /* déjà présente */ }
   }
-  for (const col of ['riot_id TEXT', 'puuid TEXT', 'last_synced_at TEXT']) {
+  for (const col of ['riot_id TEXT', 'puuid TEXT', 'last_synced_at TEXT', 'is_viewer INTEGER NOT NULL DEFAULT 0']) {
     try { await client.execute(`ALTER TABLE users ADD COLUMN ${col}`) } catch { /* déjà présente */ }
   }
 

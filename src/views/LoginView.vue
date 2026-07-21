@@ -23,7 +23,9 @@ const ROLES = [
   { value: 'top', label: 'Top' }, { value: 'jgl', label: 'Jungle' },
   { value: 'mid', label: 'Mid' }, { value: 'adc', label: 'ADC' },
   { value: 'sup', label: 'Support' }, { value: 'sub', label: 'Remplaçant' },
-  { value: 'coach', label: 'Coach / Viewer (lecture + dispos)' }, { value: 'manager', label: 'Manager' },
+  { value: 'coach', label: 'Coach (lecture + dispos)' },
+  { value: 'viewer', label: 'Viewer (lecture seule, hors dispos)' },
+  { value: 'manager', label: 'Manager' },
 ]
 
 // team slug → id (récupéré depuis l'API, repli 1/2)

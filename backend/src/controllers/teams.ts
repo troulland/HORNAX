@@ -8,7 +8,7 @@ export async function getTeams(_req: Request, res: Response): Promise<void> {
       t.id, t.name, t.slug, t.max_players, t.created_at,
       COUNT(u.id) as current_players
     FROM teams t
-    LEFT JOIN users u ON u.team_id = t.id AND u.is_active = 1
+    LEFT JOIN users u ON u.team_id = t.id AND u.is_active = 1 AND u.is_viewer = 0
     GROUP BY t.id
   `).all<Team & { current_players: number }>()
 
@@ -25,7 +25,7 @@ export async function getTeamRoster(req: Request, res: Response): Promise<void> 
   const players = await db.prepare(`
     SELECT id, username, game_role, is_starter, created_at
     FROM users
-    WHERE team_id = ? AND is_active = 1
+    WHERE team_id = ? AND is_active = 1 AND is_viewer = 0
     ORDER BY CASE game_role
       WHEN 'top' THEN 1 WHEN 'jgl' THEN 2 WHEN 'mid' THEN 3
       WHEN 'adc' THEN 4 WHEN 'sup' THEN 5 WHEN 'sub' THEN 6
