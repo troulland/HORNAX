@@ -149,6 +149,7 @@ interface SavedTeam {
   players: { riotId: string; gameName: string | null; tagLine: string | null }[]
   created_at: string
   analysis?: ScoutAnalysis | null
+  cards?: ScoutResult[] | null
 }
 const savedTeams = ref<SavedTeam[]>([])
 const showSave = ref(false)
@@ -204,19 +205,34 @@ async function saveCurrentTeam() {
     body: JSON.stringify({
       name: saveName.value.trim(), category: saveCat.value,
       region: scouts.value[0]?.region ?? 'euw', players,
-      analysis: analysis.value,   // persiste l'analyse déjà faite → pas de recalcul au rechargement
+      analysis: analysis.value,                              // analyse en cache
+      cards: scouts.value.filter(s => s.state === 'ok'),     // cartes en cache → pas de re-fetch
     }),
   })
   if (res.ok) { showSave.value = false; saveName.value = ''; await loadSavedTeams() }
 }
 function loadSavedTeam(t: SavedTeam) {
-  scouts.value = []
-  analysis.value = t.analysis ?? null   // affiche l'analyse en cache si dispo
+  analysis.value = t.analysis ?? null   // analyse en cache
   analyzeErr.value = ''
-  for (const p of t.players) {
-    const entry: ScoutResult = { id: `${p.riotId}__${t.region}`, riotId: p.riotId, region: t.region, state: 'loading' }
-    scouts.value.push(entry)
-    fetchScout(entry)
+  if (t.cards && t.cards.length) {
+    // cartes en cache → affichage instantané, aucun appel Riot
+    scouts.value = t.cards.map(c => ({ ...c }))
+  } else {
+    // ancien save sans cartes → on re-fetch
+    scouts.value = []
+    for (const p of t.players) {
+      const entry: ScoutResult = { id: `${p.riotId}__${t.region}`, riotId: p.riotId, region: t.region, state: 'loading' }
+      scouts.value.push(entry)
+      fetchScout(entry)
+    }
+  }
+}
+
+// Rafraîchit les cartes actuellement chargées (re-fetch Riot volontaire)
+function refreshAll() {
+  for (const s of scouts.value) {
+    patchScout(s.id, { state: 'loading' })
+    fetchScout({ ...s })
   }
 }
 async function deleteSavedTeam(id: number) {
@@ -270,6 +286,9 @@ onMounted(loadSavedTeams)
     <div v-if="scouts.length > 0" class="scout__savebar">
       <template v-if="!showSave">
         <span class="scout__savebar-info">{{ scouts.length }} joueur(s) chargé(s)</span>
+        <button class="scout__save-btn scout__save-btn--ghost" @click="refreshAll" title="Re-récupérer les données Riot">
+          <RefreshCw :size="14" /> Rafraîchir
+        </button>
         <button class="scout__save-btn scout__save-btn--ghost" :disabled="analyzing" @click="analyzeTeam">
           <BarChart3 :size="14" /> {{ analyzing ? 'Analyse…' : "Analyser l'équipe" }}
         </button>
@@ -619,9 +638,9 @@ onMounted(loadSavedTeams)
 .scout__an-chev { color: var(--t-muted); transition: transform .2s; flex-shrink: 0; }
 .scout__an-chev.open { transform: rotate(180deg); }
 .scout__an-detail { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); border-top: 1px solid var(--border); }
-.scout__an-side { background: var(--bg-card); padding: 10px; display: flex; flex-direction: column; gap: 5px; }
-.scout__an-side.blue { box-shadow: inset 3px 0 0 #3B82F6; }
-.scout__an-side.red  { box-shadow: inset 3px 0 0 #EF4444; }
+.scout__an-side { background: var(--bg-card); padding: 14px; display: flex; flex-direction: column; gap: 6px; border-top: 2px solid transparent; }
+.scout__an-side.blue { border-top-color: #3B82F6; }
+.scout__an-side.red  { border-top-color: #EF4444; }
 .scout__an-side-head { display: flex; align-items: center; justify-content: space-between; font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; }
 .scout__an-side-res.win { color: #10B981; } .scout__an-side-res.loss { color: #EF4444; }
 .scout__an-obj { display: flex; gap: 12px; flex-wrap: wrap; padding: 4px 2px 6px; border-bottom: 1px solid var(--border); margin-bottom: 3px; }

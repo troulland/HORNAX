@@ -185,8 +185,8 @@ export async function initDb(): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_scout_owner ON scout_team(owner_team_id);
   `)
 
-  // Cache d'analyse d'équipe scoutée (picks/bans, duos, customs)
-  for (const col of ['analysis TEXT', 'analyzed_at TEXT']) {
+  // Cache d'analyse + cartes joueurs d'une équipe scoutée
+  for (const col of ['analysis TEXT', 'analyzed_at TEXT', 'cards TEXT']) {
     try { await client.execute(`ALTER TABLE scout_team ADD COLUMN ${col}`) } catch { /* déjà présente */ }
   }
 

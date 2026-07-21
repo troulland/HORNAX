@@ -16,8 +16,8 @@ export async function saveScoutTeam(req: Request, res: Response): Promise<void> 
   const ownerTeamId = req.user!.teamId
   if (!ownerTeamId) { res.status(400).json({ error: 'Aucune team' }); return }
 
-  const { name, category, region, players, analysis } = req.body as {
-    name?: string; category?: string; region?: string; players?: ScoutPlayerInput[]; analysis?: unknown
+  const { name, category, region, players, analysis, cards } = req.body as {
+    name?: string; category?: string; region?: string; players?: ScoutPlayerInput[]; analysis?: unknown; cards?: unknown
   }
   if (!name?.trim()) { res.status(400).json({ error: 'Nom requis' }); return }
   if (!Array.isArray(players) || players.length === 0) { res.status(400).json({ error: 'Au moins un joueur requis' }); return }
@@ -31,14 +31,19 @@ export async function saveScoutTeam(req: Request, res: Response): Promise<void> 
     'INSERT INTO scout_team (owner_team_id, name, category, region, players) VALUES (?, ?, ?, ?, ?)'
   ).run(ownerTeamId, name.trim(), cat, region ?? 'euw', JSON.stringify(cleanPlayers))
 
-  // Persiste l'analyse déjà calculée (pas besoin de la relancer au rechargement)
-  if (analysis) {
-    await db.prepare("UPDATE scout_team SET analysis = ?, analyzed_at = datetime('now') WHERE id = ?")
-      .run(JSON.stringify(analysis), r.lastInsertRowid)
+  // Persiste l'analyse + les cartes joueurs (pas de recalcul ni re-fetch au rechargement)
+  if (analysis || cards) {
+    await db.prepare("UPDATE scout_team SET analysis = ?, cards = ?, analyzed_at = datetime('now') WHERE id = ?")
+      .run(analysis ? JSON.stringify(analysis) : null, cards ? JSON.stringify(cards) : null, r.lastInsertRowid)
   }
 
   const row = await db.prepare('SELECT * FROM scout_team WHERE id = ?').get<any>(r.lastInsertRowid)
-  res.status(201).json({ ...row, players: JSON.parse(row.players), analysis: row.analysis ? parseJson(row.analysis) : null })
+  res.status(201).json({
+    ...row,
+    players: JSON.parse(row.players),
+    analysis: row.analysis ? parseJson(row.analysis) : null,
+    cards: row.cards ? parseJson(row.cards) : null,
+  })
 }
 
 /** GET /api/scout/teams — liste des équipes scoutées de la team (par catégorie optionnelle). */
@@ -55,6 +60,7 @@ export async function listScoutTeams(req: Request, res: Response): Promise<void>
     ...r,
     players: safeParse(r.players),
     analysis: r.analysis ? parseJson(r.analysis) : null,
+    cards: r.cards ? parseJson(r.cards) : null,
   })))
 }
 
