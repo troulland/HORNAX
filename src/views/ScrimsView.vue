@@ -110,7 +110,7 @@ onMounted(async () => {
         <p class="page__sub">Parties en code de tournoi · 30 derniers jours · partagé avec la team</p>
       </div>
       <div class="head-actions">
-        <button v-if="canGenerate" class="hx-btn-ghost code-btn" @click="openCodes">
+        <button v-if="canGenerate" class="code-btn" @click="openCodes">
           <Ticket :size="15" /> Code de tournoi
         </button>
         <button class="hx-btn-primary sync-btn" :disabled="riot.syncing" @click="sync">
@@ -325,7 +325,14 @@ onMounted(async () => {
 .page__sub { font-size: 13px; color: var(--t-dim); margin-top: 2px; }
 .head-actions { display: flex; align-items: center; gap: 10px; }
 .sync-btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 20px; font-size: 13px; }
-.code-btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; font-size: 13px; }
+.code-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 11px 18px; font-size: 13px; cursor: pointer;
+  font-family: 'Rajdhani', sans-serif; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase;
+  background: var(--bg-card); border: 1px solid var(--border); color: var(--t-primary);
+  border-radius: 6px; transition: border-color .15s ease, color .15s ease, background-color .15s ease;
+}
+.code-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--bg-hover); }
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
