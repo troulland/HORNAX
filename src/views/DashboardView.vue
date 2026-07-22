@@ -106,6 +106,61 @@ const rosterPlayers = computed(() =>
     (a, b) => ROLE_ORDER.indexOf(a.game_role) - ROLE_ORDER.indexOf(b.game_role)
   )
 )
+
+// ── Note de forme par joueur, sur les scrims des 30 derniers jours ──────────
+interface PlayerNote { note: number; games: number; kda: number; winrate: number }
+
+// KDA « de référence » par rôle → normalise la note pour qu'elle soit équitable
+// entre postes (un top n'a pas les mêmes KDA attendus qu'un support).
+// Atteindre la réf de son rôle ≈ 7/10.
+const ROLE_KDA_REF: Record<string, number> = {
+  top: 2.6, jgl: 3.0, mid: 3.2, adc: 3.4, sup: 4.0, sub: 3.2,
+}
+
+const playerNotes = computed<Map<number, PlayerNote>>(() => {
+  const roleOf = new Map<number, string>(team.roster.map(p => [p.id, p.game_role]))
+  const acc = new Map<number, { g: number; w: number; k: number; d: number; a: number }>()
+  for (const s of scrimSeries.value) {
+    for (const m of s.matches) {
+      for (const p of m.allies) {
+        if (p.userId == null) continue
+        const cur = acc.get(p.userId) ?? { g: 0, w: 0, k: 0, d: 0, a: 0 }
+        cur.g += 1
+        cur.w += m.win ? 1 : 0
+        cur.k += p.kills; cur.d += p.deaths; cur.a += p.assists
+        acc.set(p.userId, cur)
+      }
+    }
+  }
+  const out = new Map<number, PlayerNote>()
+  for (const [uid, v] of acc) {
+    const kda = (v.k + v.a) / Math.max(1, v.d)
+    const winrate = v.w / v.g
+    // KDA rapporté à la réf du rôle (réf → 7/10, plafonné à 10), pondéré 70 %
+    const ref = ROLE_KDA_REF[roleOf.get(uid) ?? ''] ?? 3.2
+    const kdaScore = Math.min(10, (kda / ref) * 7)
+    const note = Math.round((kdaScore * 0.7 + winrate * 10 * 0.3) * 10) / 10
+    out.set(uid, { note, games: v.g, kda: Math.round(kda * 10) / 10, winrate })
+  }
+  return out
+})
+
+function noteDisplay(id: number): string {
+  const n = playerNotes.value.get(id)
+  return n ? n.note.toFixed(1) : '—'
+}
+function noteClass(id: number): string {
+  const n = playerNotes.value.get(id)
+  if (!n) return 'roster-card__score-badge--none'
+  if (n.note >= 7) return 'roster-card__score-badge--good'
+  if (n.note >= 5) return 'roster-card__score-badge--mid'
+  return 'roster-card__score-badge--low'
+}
+function noteTitle(id: number): string {
+  const n = playerNotes.value.get(id)
+  if (!n) return 'Aucun scrim sur les 30 derniers jours'
+  return `${n.games} scrim${n.games > 1 ? 's' : ''} · KDA ${n.kda} · ${Math.round(n.winrate * 100)}% WR`
+}
 </script>
 
 <template>
@@ -286,7 +341,10 @@ const rosterPlayers = computed(() =>
                 <span class="roster-card__role">{{ player.game_role.toUpperCase() }}</span>
               </div>
               <div class="roster-card__score">
-                <div class="roster-card__score-badge roster-card__score-badge--available">—</div>
+                <span class="roster-card__score-label">NOTE</span>
+                <div class="roster-card__score-badge" :class="noteClass(player.id)" :title="noteTitle(player.id)">
+                  {{ noteDisplay(player.id) }}
+                </div>
               </div>
             </div>
           </div>
@@ -900,16 +958,29 @@ const rosterPlayers = computed(() =>
   left: 100%;
 }
 
-.roster-card__score-badge--available {
+/* Paliers de note de forme */
+.roster-card__score-badge--good {
+  background: linear-gradient(135deg, rgba(16,185,129,.22), rgba(16,185,129,.10));
+  color: #10B981;
+  border: 1px solid rgba(16,185,129,.45);
+  box-shadow: 0 0 12px rgba(16,185,129,.20);
+}
+.roster-card__score-badge--mid {
   background: linear-gradient(135deg, color-mix(in srgb,var(--accent) 20%,transparent), color-mix(in srgb,var(--accent-2) 15%,transparent));
   color: var(--accent);
   border: 1px solid color-mix(in srgb,var(--accent) 40%,transparent);
   box-shadow: 0 0 12px color-mix(in srgb,var(--accent) 20%,transparent);
 }
-.roster-card__score-badge--sub {
+.roster-card__score-badge--low {
+  background: linear-gradient(135deg, rgba(239,68,68,.20), rgba(239,68,68,.10));
+  color: #EF4444;
+  border: 1px solid rgba(239,68,68,.40);
+  box-shadow: 0 0 12px rgba(239,68,68,.18);
+}
+.roster-card__score-badge--none {
   background: rgba(139,148,170,.08);
   color: #8892B0;
-  border: 1px solid rgba(139,148,170,.25);
+  border: 1px solid rgba(139,148,170,.22);
 }
 
 /* Section */
