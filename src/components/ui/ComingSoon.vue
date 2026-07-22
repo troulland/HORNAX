@@ -49,7 +49,7 @@ defineProps<{ title: string }>()
   gap: 12px;
   padding: 40px 52px;
   background: rgba(13, 16, 24, 0.94);
-  border: 1px solid #1A1F2E;
+  border: 1px solid #2B3346;
   border-radius: 12px;
   backdrop-filter: blur(16px);
   text-align: center;

@@ -96,11 +96,11 @@ const losses = computed(() => team.teamStats.totalGames - wins.value)
         </div>
 
         <div class="lcard__stats" style="position:relative;z-index:2">
-          <div class="lcard__stat"><span class="lcard__stat-v" style="color:#3D4460">—</span><span class="lcard__stat-l">KDA</span></div>
+          <div class="lcard__stat"><span class="lcard__stat-v" style="color:#616C8A">—</span><span class="lcard__stat-l">KDA</span></div>
           <div class="lcard__stat-sep" />
-          <div class="lcard__stat"><span class="lcard__stat-v" style="color:#3D4460">—</span><span class="lcard__stat-l">WIN</span></div>
+          <div class="lcard__stat"><span class="lcard__stat-v" style="color:#616C8A">—</span><span class="lcard__stat-l">WIN</span></div>
           <div class="lcard__stat-sep" />
-          <div class="lcard__stat"><span class="lcard__stat-v" style="color:#3D4460">—</span><span class="lcard__stat-l">GAP</span></div>
+          <div class="lcard__stat"><span class="lcard__stat-v" style="color:#616C8A">—</span><span class="lcard__stat-l">GAP</span></div>
         </div>
 
         <div class="lcard__foot" style="position:relative;z-index:2">
@@ -124,7 +124,7 @@ const losses = computed(() => team.teamStats.totalGames - wins.value)
           <span class="scard__corner scard__corner--tr" />
           <div class="scard__role">{{ ROLE[p.game_role as RoleKey]?.label ?? p.game_role.toUpperCase() }}</div>
           <div class="scard__ign">{{ p.username }}</div>
-          <div class="scard__stats"><span style="color:#3D4460">Voir le profil →</span></div>
+          <div class="scard__stats"><span style="color:#616C8A">Voir le profil →</span></div>
           <span class="scard__dot dot--uncertain" />
         </div>
       </div>
@@ -139,11 +139,11 @@ const losses = computed(() => team.teamStats.totalGames - wins.value)
 .roster__hdr { display: flex; align-items: flex-end; justify-content: space-between; }
 .roster__hdr-eye { display: block; font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 4px; color: var(--accent); margin-bottom: 4px; }
 .roster__hdr-title { font-family: 'Rajdhani', sans-serif; font-size: 30px; font-weight: 700; letter-spacing: 4px; color: #EEF2FF; margin: 0; }
-.roster__record { display: flex; align-items: center; gap: 4px; background: #111520; border: 1px solid #1A1F2E; border-radius: 8px; padding: 10px 18px; }
+.roster__record { display: flex; align-items: center; gap: 4px; background: #1B2030; border: 1px solid #2B3346; border-radius: 8px; padding: 10px 18px; }
 .rec-block { display: flex; flex-direction: column; align-items: center; padding: 0 10px; }
 .rec-val { font-family: 'Rajdhani', sans-serif; font-size: 22px; font-weight: 700; line-height: 1; }
-.rec-lbl { font-family: 'Inter', sans-serif; font-size: 9px; color: #3D4460; letter-spacing: 2px; }
-.rec-sep { width: 1px; height: 28px; background: #1A1F2E; }
+.rec-lbl { font-family: 'Inter', sans-serif; font-size: 9px; color: #616C8A; letter-spacing: 2px; }
+.rec-sep { width: 1px; height: 28px; background: #2B3346; }
 .rec-wr { margin-left: 12px; font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 2px; color: #10B981; background: rgba(16,185,129,.1); border: 1px solid rgba(16,185,129,.25); border-radius: 20px; padding: 4px 12px; }
 
 /* lineup */
@@ -197,7 +197,7 @@ const losses = computed(() => team.teamStats.totalGames - wins.value)
 }
 
 .lcard__meta { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px 0; }
-.lcard__num { font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 600; color: #3D4460; letter-spacing: 2px; }
+.lcard__num { font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 600; color: #616C8A; letter-spacing: 2px; }
 .lcard__role-badge {
   font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 2px;
   color: var(--c); background: color-mix(in srgb, var(--c) 12%, transparent);
@@ -217,13 +217,13 @@ const losses = computed(() => team.teamStats.totalGames - wins.value)
 .lcard__stats { display: flex; align-items: center; padding: 7px 14px; border-top: 1px solid rgba(255,255,255,.04); }
 .lcard__stat { flex: 1; display: flex; flex-direction: column; align-items: center; }
 .lcard__stat-v { font-family: 'Rajdhani', sans-serif; font-size: 15px; font-weight: 700; line-height: 1.2; }
-.lcard__stat-l { font-family: 'Inter', sans-serif; font-size: 9px; color: #3D4460; letter-spacing: 1px; }
+.lcard__stat-l { font-family: 'Inter', sans-serif; font-size: 9px; color: #616C8A; letter-spacing: 1px; }
 .lcard__stat-sep { width: 1px; height: 22px; background: rgba(255,255,255,.06); }
 
 .lcard__foot { padding: 7px 14px 10px; }
 .lcard__status { display: flex; align-items: center; gap: 5px; margin-bottom: 6px; }
 .lcard__dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
-.lcard__status-txt { font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 600; letter-spacing: 1.5px; color: #3D4460; }
+.lcard__status-txt { font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 600; letter-spacing: 1.5px; color: #616C8A; }
 .lcard__loadbar { height: 2px; background: rgba(255,255,255,.05); border-radius: 1px; overflow: hidden; }
 .lcard__loadfill { height: 100%; width: 100%; background: var(--c); box-shadow: 0 0 6px var(--c); }
 
@@ -232,24 +232,24 @@ const losses = computed(() => team.teamStats.totalGames - wins.value)
 .dot--uncertain   { background: #F59E0B; }
 
 /* detail */
-.detail { background: #0D1018; border: 1px solid rgba(255,255,255,.06); border-left: 3px solid var(--c); border-radius: 6px; }
+.detail { background: #151A27; border: 1px solid rgba(255,255,255,.06); border-left: 3px solid var(--c); border-radius: 6px; }
 .detail__inner { padding: 20px; }
 .detail__head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,.05); }
 .detail__role { display: block; font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 3px; color: var(--c); margin-bottom: 3px; }
 .detail__ign { font-family: 'Rajdhani', sans-serif; font-size: 26px; font-weight: 700; letter-spacing: 3px; color: #EEF2FF; margin: 0; }
-.detail__close { background: none; border: none; color: #3D4460; font-size: 15px; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: color .15s; }
+.detail__close { background: none; border: none; color: #616C8A; font-size: 15px; cursor: pointer; padding: 4px 8px; border-radius: 4px; transition: color .15s; }
 .detail__close:hover { color: #EEF2FF; }
 .detail__tiles { display: grid; grid-template-columns: repeat(6,1fr); gap: 8px; margin-bottom: 16px; }
-.dtile { display: flex; flex-direction: column; align-items: center; padding: 10px 4px; background: #111520; border: 1px solid #1A1F2E; border-radius: 6px; }
+.dtile { display: flex; flex-direction: column; align-items: center; padding: 10px 4px; background: #1B2030; border: 1px solid #2B3346; border-radius: 6px; }
 .dtile__v { font-family: 'Rajdhani', sans-serif; font-size: 20px; font-weight: 700; }
-.dtile__l { font-family: 'Inter', sans-serif; font-size: 9px; color: #3D4460; margin-top: 2px; }
+.dtile__l { font-family: 'Inter', sans-serif; font-size: 9px; color: #616C8A; margin-top: 2px; }
 .detail__bars { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
 .dbar { display: flex; align-items: center; gap: 10px; }
 .dbar__l { font-family: 'Inter', sans-serif; font-size: 11px; color: #8892B0; width: 50px; flex-shrink: 0; }
-.dbar__track { flex: 1; height: 4px; background: #1A1F2E; border-radius: 2px; overflow: hidden; }
+.dbar__track { flex: 1; height: 4px; background: #2B3346; border-radius: 2px; overflow: hidden; }
 .dbar__fill { height: 100%; border-radius: 2px; transition: width .8s ease; }
 .dbar__v { font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700; width: 28px; text-align: right; flex-shrink: 0; }
-.detail__sect-lbl { display: block; font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 3px; color: #3D4460; margin-bottom: 8px; }
+.detail__sect-lbl { display: block; font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 3px; color: #616C8A; margin-bottom: 8px; }
 .detail__champs { display: flex; gap: 6px; flex-wrap: wrap; }
 .detail__champ-pill { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 1px; color: var(--c); background: color-mix(in srgb, var(--c) 10%, transparent); border: 1px solid color-mix(in srgb, var(--c) 25%, transparent); padding: 4px 12px; border-radius: 20px; }
 
@@ -259,9 +259,9 @@ const losses = computed(() => team.teamStats.totalGames - wins.value)
 .detail-leave-to   { opacity: 0; transform: translateY(-4px); }
 
 /* subs */
-.subs__lbl { display: block; font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 4px; color: #3D4460; margin-bottom: 10px; }
+.subs__lbl { display: block; font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 4px; color: #616C8A; margin-bottom: 10px; }
 .subs__list { display: flex; gap: 10px; }
-.scard { flex: 0 0 auto; min-width: 260px; background: #0D1018; border: 1px solid rgba(255,255,255,.04); border-left: 2px solid var(--c); border-radius: 6px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; position: relative; overflow: hidden; transition: border-color .2s; }
+.scard { flex: 0 0 auto; min-width: 260px; background: #151A27; border: 1px solid rgba(255,255,255,.04); border-left: 2px solid var(--c); border-radius: 6px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; position: relative; overflow: hidden; transition: border-color .2s; }
 .scard:hover { border-color: var(--c); }
 .scard__corner { position: absolute; width: 8px; height: 8px; border-color: var(--c); border-style: solid; opacity: .4; }
 .scard__corner--tl { top: 4px; left: 3px; border-width: 1px 0 0 1px; }
@@ -269,8 +269,8 @@ const losses = computed(() => team.teamStats.totalGames - wins.value)
 .scard__role { font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 2px; color: var(--c); background: color-mix(in srgb, var(--c) 12%, transparent); padding: 3px 8px; border-radius: 4px; flex-shrink: 0; }
 .scard__ign { font-family: 'Rajdhani', sans-serif; font-size: 16px; font-weight: 700; letter-spacing: 2px; color: #EEF2FF; flex: 1; }
 .scard__stats { display: flex; gap: 6px; font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 600; }
-.scard__champs { display: flex; gap: 4px; font-family: 'Inter', sans-serif; font-size: 9px; color: #3D4460; }
-.scard__champs span { background: #111520; padding: 1px 5px; border-radius: 3px; }
+.scard__champs { display: flex; gap: 4px; font-family: 'Inter', sans-serif; font-size: 9px; color: #616C8A; }
+.scard__champs span { background: #1B2030; padding: 1px 5px; border-radius: 3px; }
 .scard__dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 
 @keyframes pageIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }

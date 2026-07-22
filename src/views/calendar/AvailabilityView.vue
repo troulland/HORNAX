@@ -120,7 +120,7 @@ function cycleStatus(ign: string, dateStr: string, date: Date) {
 const STATUS: Record<Status, { bg: string; label: string; color: string }> = {
   available:   { bg: 'rgba(16,185,129,.15)',  label: '✓', color: '#10B981' },
   unavailable: { bg: 'rgba(239,68,68,.12)',   label: '✗', color: '#EF4444' },
-  uncertain:   { bg: 'rgba(255,255,255,.02)', label: '?', color: '#3D4460' },
+  uncertain:   { bg: 'rgba(255,255,255,.02)', label: '?', color: '#616C8A' },
 }
 
 const ROLE_COLOR: Record<string, string> = {
@@ -210,10 +210,10 @@ watch(weekOffset, loadWeek)
 
       <!-- résumé -->
       <div class="grid__row grid__row--summary">
-        <div class="grid__player-col" style="color:#3D4460;font-size:10px;letter-spacing:2px;">DISPO</div>
+        <div class="grid__player-col" style="color:#616C8A;font-size:10px;letter-spacing:2px;">DISPO</div>
         <div v-for="(s, i) in daySummary" :key="i" class="grid__summary-cell" :class="{ 'grid__summary-cell--past': s.past }">
           <span v-if="!s.past" :style="{ color: s.avail >= 5 ? '#10B981' : s.avail >= 4 ? 'var(--accent)' : '#EF4444' }">{{ s.avail }}/{{ s.total }}</span>
-          <span v-else style="color:#1A1F2E">—</span>
+          <span v-else style="color:#2B3346">—</span>
         </div>
       </div>
     </div>
@@ -223,7 +223,7 @@ watch(weekOffset, loadWeek)
     <div class="legend">
       <span class="legend__item"><span class="legend__dot" style="background:#10B981"/>Disponible</span>
       <span class="legend__item"><span class="legend__dot" style="background:#EF4444"/>Indisponible</span>
-      <span class="legend__item"><span class="legend__dot" style="background:#3D4460"/>Non renseigné</span>
+      <span class="legend__item"><span class="legend__dot" style="background:#616C8A"/>Non renseigné</span>
       <span class="legend__item legend__item--past">
         <span class="legend__dot legend__dot--past"/>Passé
       </span>
@@ -238,35 +238,35 @@ watch(weekOffset, loadWeek)
 <style scoped>
 .avail { display: flex; flex-direction: column; gap: 16px; }
 .avail__nav { display: flex; align-items: center; gap: 10px; }
-.avail__btn { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background: #111520; border: 1px solid #1A1F2E; border-radius: 6px; color: #8892B0; cursor: pointer; transition: all .15s; }
+.avail__btn { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background: #1B2030; border: 1px solid #2B3346; border-radius: 6px; color: #8892B0; cursor: pointer; transition: all .15s; }
 .avail__btn:hover { border-color: var(--accent); color: #EEF2FF; }
 .avail__week { font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 2px; color: #EEF2FF; flex: 1; text-align: center; }
 .avail__today { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 2px; color: var(--accent); background: color-mix(in srgb,var(--accent) 8%,transparent); border: 1px solid color-mix(in srgb,var(--accent) 25%,transparent); border-radius: 4px; padding: 5px 12px; cursor: pointer; }
-.avail__loading { font-family: 'Rajdhani', sans-serif; font-size: 11px; color: #3D4460; letter-spacing: 2px; animation: pulse 1s infinite; }
+.avail__loading { font-family: 'Rajdhani', sans-serif; font-size: 11px; color: #616C8A; letter-spacing: 2px; animation: pulse 1s infinite; }
 @keyframes pulse { 0%,100% { opacity: .4; } 50% { opacity: 1; } }
 
 .avail__banner { font-family: 'Inter', sans-serif; font-size: 12px; color: var(--accent); background: color-mix(in srgb,var(--accent) 8%,transparent); border: 1px solid color-mix(in srgb,var(--accent) 20%,transparent); border-radius: 6px; padding: 10px 16px; }
 
 .grid-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-.grid { background: #111520; border: 1px solid #1A1F2E; border-radius: 8px; overflow: hidden; transition: opacity .2s; min-width: 640px; }
+.grid { background: #1B2030; border: 1px solid #2B3346; border-radius: 8px; overflow: hidden; transition: opacity .2s; min-width: 640px; }
 .grid--loading { opacity: .6; pointer-events: none; }
 
-.grid__row { display: grid; grid-template-columns: 160px repeat(7,1fr); border-bottom: 1px solid #1A1F2E; }
+.grid__row { display: grid; grid-template-columns: 160px repeat(7,1fr); border-bottom: 1px solid #2B3346; }
 .grid__row:last-child { border-bottom: none; }
-.grid__row--head, .grid__row--summary { background: #0D1018; }
+.grid__row--head, .grid__row--summary { background: #151A27; }
 .grid__row--own { background: color-mix(in srgb,var(--accent) 3%,transparent); }
 
-.grid__player-col { padding: 10px 14px; display: flex; align-items: center; gap: 8px; border-right: 1px solid #1A1F2E; }
+.grid__player-col { padding: 10px 14px; display: flex; align-items: center; gap: 8px; border-right: 1px solid #2B3346; }
 .grid__role { font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 2px; flex-shrink: 0; }
 .grid__ign  { font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 1px; color: #EEF2FF; }
-.grid__sub  { font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; color: #3D4460; background: #1A1F2E; padding: 1px 5px; border-radius: 3px; }
+.grid__sub  { font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; color: #616C8A; background: #2B3346; padding: 1px 5px; border-radius: 3px; }
 .grid__lock-icon { color: #2A3050; margin-left: auto; flex-shrink: 0; }
 
-.grid__day-col { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 4px; border-right: 1px solid #1A1F2E; gap: 2px; }
+.grid__day-col { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 4px; border-right: 1px solid #2B3346; gap: 2px; }
 .grid__day-col:last-child { border-right: none; }
 .grid__day-col--today { background: color-mix(in srgb,var(--accent) 5%,transparent); }
 .grid__day-col--past  { opacity: .35; }
-.grid__day-name { font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 2px; color: #3D4460; }
+.grid__day-name { font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 2px; color: #616C8A; }
 .grid__day-num  { font-family: 'Rajdhani', sans-serif; font-size: 16px; font-weight: 700; color: #EEF2FF; line-height: 1; }
 .grid__day-col--today .grid__day-num { color: var(--accent); }
 
@@ -299,10 +299,10 @@ watch(weekOffset, loadWeek)
 .legend__item { display: flex; align-items: center; gap: 6px; font-family: 'Inter', sans-serif; font-size: 11px; color: #8892B0; }
 .legend__dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .legend__dot--past {
-  background: repeating-linear-gradient(-45deg, #1E2436 0px, #1E2436 1px, #111520 1px, #111520 4px);
-  border: 1px solid #1A1F2E;
+  background: repeating-linear-gradient(-45deg, #1E2436 0px, #1E2436 1px, #1B2030 1px, #1B2030 4px);
+  border: 1px solid #2B3346;
 }
-.legend__hint { font-family: 'Inter', sans-serif; font-size: 11px; color: #3D4460; margin-left: auto; font-style: italic; display: flex; align-items: center; gap: 4px; }
+.legend__hint { font-family: 'Inter', sans-serif; font-size: 11px; color: #616C8A; margin-left: auto; font-style: italic; display: flex; align-items: center; gap: 4px; }
 
 @media (max-width: 768px) {
   .avail__week { font-size: 12px; letter-spacing: 1px; }

@@ -149,12 +149,12 @@ function logout() {
 </template>
 
 <style scoped>
-.sidebar { width: 220px; flex-shrink: 0; background: #0D1018; border-right: 1px solid #1A1F2E; display: flex; flex-direction: column; height: 100vh; transition: width .2s ease; overflow: hidden; }
+.sidebar { width: 220px; flex-shrink: 0; background: #151A27; border-right: 1px solid #2B3346; display: flex; flex-direction: column; height: 100vh; transition: width .2s ease; overflow: hidden; }
 .sidebar__logo { display: flex; align-items: center; gap: 10px; padding: 22px 20px; text-decoration: none; cursor: pointer; transition: opacity .15s; }
 .sidebar__logo:hover { opacity: .8; }
 .sidebar__logo-img { width: 28px; height: 28px; object-fit: contain; filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 70%, transparent)); }
 .sidebar__logo-text { font-family: 'Rajdhani', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: 4px; color: #EEF2FF; }
-.sidebar__divider { height: 1px; background: #1A1F2E; margin: 0 16px; }
+.sidebar__divider { height: 1px; background: #2B3346; margin: 0 16px; }
 .sidebar__nav { flex: 1; padding: 12px 10px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; }
 
 .sidebar__item {
@@ -162,7 +162,7 @@ function logout() {
   text-decoration: none; color: #8892B0; transition: all .15s; cursor: pointer;
   border: none; background: transparent; width: 100%; text-align: left; font-family: inherit;
 }
-.sidebar__item:hover { background: #111520; color: #EEF2FF; }
+.sidebar__item:hover { background: #1B2030; color: #EEF2FF; }
 .sidebar__item--active { background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent); border-left: 2px solid var(--accent); padding-left: 10px; }
 .sidebar__item--active:hover { background: color-mix(in srgb, var(--accent) 15%, transparent); }
 .sidebar__item--soon { opacity: .45; cursor: not-allowed; pointer-events: none; }
@@ -171,11 +171,11 @@ function logout() {
 .sidebar__icon { flex-shrink: 0; }
 .sidebar__label { font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; flex: 1; }
 .sidebar__arrow { opacity: .6; }
-.sidebar__soon-tag { font-family: 'Rajdhani', sans-serif; font-size: 8px; font-weight: 700; letter-spacing: 2px; color: #3D4460; background: #1A1F2E; padding: 2px 5px; border-radius: 3px; }
+.sidebar__soon-tag { font-family: 'Rajdhani', sans-serif; font-size: 8px; font-weight: 700; letter-spacing: 2px; color: #616C8A; background: #2B3346; padding: 2px 5px; border-radius: 3px; }
 
 .sidebar__sub { padding-left: 36px; display: flex; flex-direction: column; gap: 1px; margin-top: 1px; }
 .sidebar__sub-item { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 1px; color: #8892B0; text-decoration: none; padding: 7px 12px; border-radius: 5px; transition: all .15s; }
-.sidebar__sub-item:hover { color: #EEF2FF; background: #111520; }
+.sidebar__sub-item:hover { color: #EEF2FF; background: #1B2030; }
 .sidebar__sub-item--active { color: var(--accent); }
 
 .sub-enter-active, .sub-leave-active { transition: all .2s ease; }
@@ -183,7 +183,7 @@ function logout() {
 
 .sidebar__bottom { padding: 10px 10px 16px; display: flex; flex-direction: column; gap: 2px; }
 .sidebar__collapse-btn { color: #2A3050; }
-.sidebar__collapse-btn:hover { color: #8892B0; background: #111520; }
+.sidebar__collapse-btn:hover { color: #8892B0; background: #1B2030; }
 
 /* Collapsed state */
 .sidebar--collapsed { width: 60px; transition: width .2s ease; }
@@ -202,8 +202,8 @@ function logout() {
   display: none;
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
   height: 64px;
-  background: #0D1018;
-  border-top: 1px solid #1A1F2E;
+  background: #151A27;
+  border-top: 1px solid #2B3346;
   flex-direction: row;
   align-items: stretch;
   padding: 0 4px;
@@ -211,7 +211,7 @@ function logout() {
 }
 .mobile-nav__item {
   flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 3px; text-decoration: none; color: #3D4460;
+  gap: 3px; text-decoration: none; color: #616C8A;
   font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 1px;
   transition: color .15s; border-radius: 8px; margin: 4px 2px;
 }

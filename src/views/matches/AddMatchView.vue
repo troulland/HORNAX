@@ -148,20 +148,20 @@ async function submit() {
 
 <style scoped>
 .add { max-width: 600px; }
-.add__card { background: #111520; border: 1px solid #1A1F2E; border-radius: 10px; overflow: hidden; }
-.add__head { padding: 14px 20px; border-bottom: 1px solid #1A1F2E; }
-.add__head-title { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 3px; color: #3D4460; }
+.add__card { background: #1B2030; border: 1px solid #2B3346; border-radius: 10px; overflow: hidden; }
+.add__head { padding: 14px 20px; border-bottom: 1px solid #2B3346; }
+.add__head-title { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 3px; color: #616C8A; }
 .add__body { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
 .add__field { display: flex; flex-direction: column; gap: 6px; }
 .add__row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .add__types { display: flex; gap: 8px; flex-wrap: wrap; }
 .add__type-btn {
   font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 2px;
-  background: #0D1018; border: 1px solid #1A1F2E; border-radius: 5px;
-  color: #3D4460; padding: 7px 16px; cursor: pointer; transition: all .15s;
+  background: #151A27; border: 1px solid #2B3346; border-radius: 5px;
+  color: #616C8A; padding: 7px 16px; cursor: pointer; transition: all .15s;
 }
-.add__type-btn:hover { border-color: #2A2F40; color: #8892B0; }
-.add__played { display: flex; flex-direction: column; gap: 14px; padding: 14px; background: rgba(255,255,255,.02); border-radius: 6px; border: 1px solid #1A1F2E; }
+.add__type-btn:hover { border-color: #3A4358; color: #8892B0; }
+.add__played { display: flex; flex-direction: column; gap: 14px; padding: 14px; background: rgba(255,255,255,.02); border-radius: 6px; border: 1px solid #2B3346; }
 .add__textarea { resize: vertical; min-height: 80px; font-family: 'Inter', sans-serif; }
 .add__msg { display: flex; align-items: center; gap: 6px; font-family: 'Inter', sans-serif; font-size: 12px; padding: 8px 12px; border-radius: 4px; }
 .add__msg--ok  { color: #10B981; background: rgba(16,185,129,.1); border: 1px solid rgba(16,185,129,.2); }

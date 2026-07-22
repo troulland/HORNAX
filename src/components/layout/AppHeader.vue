@@ -84,18 +84,18 @@ const nextEventDate = computed(() => {
 
 .header__date { font-family: 'Inter', sans-serif; font-size: 13px; color: #8892B0; }
 
-.header__next { display: flex; align-items: center; gap: 6px; background: #111520; border: 1px solid #1A1F2E; border-radius: 20px; padding: 4px 12px; }
+.header__next { display: flex; align-items: center; gap: 6px; background: #1B2030; border: 1px solid #2B3346; border-radius: 20px; padding: 4px 12px; }
 .header__next-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 6px color-mix(in srgb,var(--accent) 80%,transparent); flex-shrink: 0; animation: dotPulse 2s ease-in-out infinite; }
 .header__next-text { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 1px; color: #EEF2FF; }
 .header__next-time { font-family: 'Rajdhani', sans-serif; font-size: 11px; color: var(--accent); font-weight: 600; }
 
-.header__icon-btn { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: 6px; border: 1px solid #1A1F2E; background: transparent; color: #8892B0; cursor: pointer; }
-.header__icon-btn:hover { background: #111520; color: #EEF2FF; border-color: var(--accent); }
+.header__icon-btn { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: 6px; border: 1px solid #2B3346; background: transparent; color: #8892B0; cursor: pointer; }
+.header__icon-btn:hover { background: #1B2030; color: #EEF2FF; border-color: var(--accent); }
 .header__notif { position: relative; }
-.header__notif-badge { position: absolute; top: 6px; right: 6px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); border: 1px solid #0D1018; }
+.header__notif-badge { position: absolute; top: 6px; right: 6px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); border: 1px solid #151A27; }
 .header__theme-btn { color: #8892B0; }
 
-.header__user { display: flex; align-items: center; gap: 10px; padding: 6px 12px; border-radius: 6px; border: 1px solid #1A1F2E; background: #111520; margin-left: 4px; cursor: pointer; }
+.header__user { display: flex; align-items: center; gap: 10px; padding: 6px 12px; border-radius: 6px; border: 1px solid #2B3346; background: #1B2030; margin-left: 4px; cursor: pointer; }
 .header__user:hover { border-color: var(--accent); }
 .header__avatar { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent-2)); display: flex; align-items: center; justify-content: center; font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700; color: white; flex-shrink: 0; }
 .header__user-info { display: flex; flex-direction: column; }

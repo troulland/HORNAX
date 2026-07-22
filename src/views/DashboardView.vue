@@ -352,8 +352,8 @@ const rosterPlayers = computed(() =>
 }
 
 .stat-card {
-  background: #111520;
-  border: 1px solid #1A1F2E;
+  background: #1B2030;
+  border: 1px solid #2B3346;
   border-radius: 8px;
   padding: 16px;
   display: flex;
@@ -365,7 +365,7 @@ const rosterPlayers = computed(() =>
 }
 
 .stat-card:hover {
-  border-color: #2A2F40;
+  border-color: #3A4358;
 }
 
 .stat-card__icon {
@@ -407,7 +407,7 @@ const rosterPlayers = computed(() =>
   right: 14px;
   font-family: 'Inter', sans-serif;
   font-size: 10px;
-  color: #3D4460;
+  color: #616C8A;
 }
 
 /* Layout grid */
@@ -463,8 +463,8 @@ const rosterPlayers = computed(() =>
 
 /* Compact match cards */
 .match-card-compact {
-  background: #0D1018;
-  border: 1px solid #1A1F2E;
+  background: #151A27;
+  border: 1px solid #2B3346;
   border-radius: 6px;
   padding: 10px 12px;
   transition: border-color 0.2s;
@@ -472,7 +472,7 @@ const rosterPlayers = computed(() =>
 }
 
 .match-card-compact:hover {
-  border-color: #2A2F40;
+  border-color: #3A4358;
 }
 
 .match-card-compact__header {
@@ -552,8 +552,8 @@ const rosterPlayers = computed(() =>
 
 /* ── Upcoming cards (same skeleton as bo-card) ── */
 .uc-card {
-  background: #0D1018;
-  border: 1px solid #1A1F2E;
+  background: #151A27;
+  border: 1px solid #2B3346;
   border-radius: 6px;
   padding: 12px;
   position: relative;
@@ -566,7 +566,7 @@ const rosterPlayers = computed(() =>
   transition: border-color .2s;
   box-sizing: border-box;
 }
-.uc-card:hover { border-color: #2A2F40; }
+.uc-card:hover { border-color: #3A4358; }
 
 /* Head */
 .uc-card__head { display: flex; align-items: center; justify-content: space-between; }
@@ -584,7 +584,7 @@ const rosterPlayers = computed(() =>
 .uc-card__side--right { align-items: flex-end; }
 .uc-card__logo-wrap {
   width: 38px; height: 38px; border-radius: 7px; overflow: hidden;
-  background: #1A1F2E; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  background: #2B3346; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 .uc-card__logo-img { width: 100%; height: 100%; object-fit: contain; }
 .uc-card__logo-letter { font-family: 'Rajdhani', sans-serif; font-size: 18px; font-weight: 700; color: var(--accent); }
@@ -593,20 +593,20 @@ const rosterPlayers = computed(() =>
   color: #EEF2FF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
 }
 .uc-card__vs {
-  font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; color: #3D4460;
+  font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; color: #616C8A;
   letter-spacing: 1px; flex-shrink: 0; padding: 0 8px;
 }
 
 /* Foot */
 .uc-card__foot { display: flex; align-items: center; justify-content: space-between; }
 .uc-card__time { font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700; color: var(--accent); letter-spacing: 1px; }
-.uc-card__status { font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: #3D4460; }
+.uc-card__status { font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: #616C8A; }
 
 /* Old match card styles - kept for reference */
 /*
 .match-card {
-  background: #0D1018;
-  border: 1px solid #1A1F2E;
+  background: #151A27;
+  border: 1px solid #2B3346;
   border-radius: 8px;
   padding: 14px;
   position: relative;
@@ -614,7 +614,7 @@ const rosterPlayers = computed(() =>
 }
 
 .match-card:hover {
-  border-color: #2A2F40;
+  border-color: #3A4358;
 }
 
 .match-card__date {
@@ -709,7 +709,7 @@ const rosterPlayers = computed(() =>
   font-family: 'Rajdhani', sans-serif;
   font-size: 12px;
   font-weight: 600;
-  color: #3D4460;
+  color: #616C8A;
   letter-spacing: 1px;
   flex-shrink: 0;
 }
@@ -750,10 +750,10 @@ const rosterPlayers = computed(() =>
 
 .roster-card {
   position: relative;
-  background: linear-gradient(135deg, #0D1018 0%, #111520 100%);
+  background: linear-gradient(135deg, #151A27 0%, #1B2030 100%);
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid #1A1F2E;
+  border: 1px solid #2B3346;
   transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   cursor: pointer;
 }
@@ -865,7 +865,7 @@ const rosterPlayers = computed(() =>
 .roster-card__score-label {
   font-family: 'Inter', sans-serif;
   font-size: 8px;
-  color: #3D4460;
+  color: #616C8A;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -914,8 +914,8 @@ const rosterPlayers = computed(() =>
 
 /* Section */
 .dash-section {
-  background: #111520;
-  border: 1px solid #1A1F2E;
+  background: #1B2030;
+  border: 1px solid #2B3346;
   border-radius: 8px;
   padding: 18px;
 }
@@ -964,13 +964,13 @@ const rosterPlayers = computed(() =>
   gap: 12px;
   padding: 10px 12px;
   border-radius: 6px;
-  background: #0D1018;
-  border: 1px solid #1A1F2E;
+  background: #151A27;
+  border: 1px solid #2B3346;
   transition: all 0.15s ease;
 }
 
 .player-card:hover {
-  border-color: #2A2F40;
+  border-color: #3A4358;
   background: #111828;
 }
 
@@ -1013,7 +1013,7 @@ const rosterPlayers = computed(() =>
   font-weight: 700;
   letter-spacing: 1px;
   color: #8892B0;
-  background: #1A1F2E;
+  background: #2B3346;
   padding: 2px 5px;
   border-radius: 3px;
 }
@@ -1062,8 +1062,8 @@ const rosterPlayers = computed(() =>
   padding: 8px 10px;
   min-height: 56px;
   border-radius: 6px;
-  background: #0D1018;
-  border: 1px solid #1A1F2E;
+  background: #151A27;
+  border: 1px solid #2B3346;
 }
 
 .match-row__result {
@@ -1115,13 +1115,13 @@ const rosterPlayers = computed(() =>
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1.5px;
-  color: #3D4460;
+  color: #616C8A;
 }
 
 .match-row__date {
   font-family: 'Inter', sans-serif;
   font-size: 10px;
-  color: #3D4460;
+  color: #616C8A;
 }
 
 /* Events */
@@ -1137,12 +1137,12 @@ const rosterPlayers = computed(() =>
   align-items: flex-start;
   padding: 10px 12px;
   border-radius: 6px;
-  background: #0D1018;
-  border: 1px solid #1A1F2E;
+  background: #151A27;
+  border: 1px solid #2B3346;
   transition: border-color 0.15s;
 }
 
-.event-card:hover { border-color: #2A2F40; }
+.event-card:hover { border-color: #3A4358; }
 
 .event-card__type {
   font-family: 'Rajdhani', sans-serif;
@@ -1185,7 +1185,7 @@ const rosterPlayers = computed(() =>
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 1.5px;
-  color: #3D4460;
+  color: #616C8A;
   padding: 24px 0;
   text-align: center;
 }
@@ -1219,8 +1219,8 @@ const rosterPlayers = computed(() =>
 
 /* BO Cards — compact grid (same structure as match-card-compact) */
 .bo-card {
-  background: #0D1018;
-  border: 1px solid #1A1F2E;
+  background: #151A27;
+  border: 1px solid #2B3346;
   border-radius: 6px;
   padding: 12px;
   position: relative;
@@ -1231,7 +1231,7 @@ const rosterPlayers = computed(() =>
   gap: 8px;
   transition: border-color .2s;
 }
-.bo-card:hover { border-color: #2A2F40; }
+.bo-card:hover { border-color: #3A4358; }
 
 .bo-card__head {
   display: flex;
@@ -1268,7 +1268,7 @@ const rosterPlayers = computed(() =>
   height: 44px;
   border-radius: 8px;
   overflow: hidden;
-  background: #1A1F2E;
+  background: #2B3346;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1304,7 +1304,7 @@ const rosterPlayers = computed(() =>
   line-height: 1;
 }
 .bo-card__score-win  { color: #10B981; }
-.bo-card__score-sep  { color: #3D4460; }
+.bo-card__score-sep  { color: #616C8A; }
 .bo-card__score-loss { color: #EF4444; }
 
 .bo-card__foot {

@@ -292,7 +292,7 @@ async function deleteEvent(id: number) {
 
             <!-- Logo adversaire -->
             <div class="modal__field">
-              <label class="modal__label">LOGO ADVERSAIRE <span style="font-weight:400;font-size:9px;letter-spacing:0;text-transform:none;color:#3D4460">(optionnel)</span></label>
+              <label class="modal__label">LOGO ADVERSAIRE <span style="font-weight:400;font-size:9px;letter-spacing:0;text-transform:none;color:#616C8A">(optionnel)</span></label>
               <div class="logo-upload">
                 <div class="logo-upload__preview">
                   <img v-if="logoPreview" :src="logoPreview" class="logo-upload__img" @error="($event.target as HTMLImageElement).style.display='none'" />
@@ -343,22 +343,22 @@ async function deleteEvent(id: number) {
 .layout { display: grid; grid-template-columns: 1fr 300px; gap: 16px; align-items: start; }
 
 /* ── Calendar ──────────────────────────────────────── */
-.cal-main { background: #111520; border: 1px solid #1A1F2E; border-radius: 8px; overflow: hidden; }
-.cal-nav { display: flex; align-items: center; padding: 14px 16px; border-bottom: 1px solid #1A1F2E; gap: 12px; }
-.cal-nav-btn { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: #0D1018; border: 1px solid #1A1F2E; border-radius: 4px; color: #8892B0; cursor: pointer; transition: all .15s; }
+.cal-main { background: #1B2030; border: 1px solid #2B3346; border-radius: 8px; overflow: hidden; }
+.cal-nav { display: flex; align-items: center; padding: 14px 16px; border-bottom: 1px solid #2B3346; gap: 12px; }
+.cal-nav-btn { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: #151A27; border: 1px solid #2B3346; border-radius: 4px; color: #8892B0; cursor: pointer; transition: all .15s; }
 .cal-nav-btn:hover { border-color: var(--accent); color: #EEF2FF; }
 .cal-month { font-family: 'Rajdhani', sans-serif; font-size: 16px; font-weight: 700; letter-spacing: 3px; color: #EEF2FF; flex: 1; text-align: center; }
 
 .cal-grid { display: grid; grid-template-columns: repeat(7,1fr); }
-.cal-grid__hdr { padding: 8px 4px; text-align: center; font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 2px; color: #3D4460; border-bottom: 1px solid #1A1F2E; }
+.cal-grid__hdr { padding: 8px 4px; text-align: center; font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 2px; color: #616C8A; border-bottom: 1px solid #2B3346; }
 .cal-grid__cell {
   min-height: 96px; padding: 6px 5px;
-  border-right: 1px solid #1A1F2E; border-bottom: 1px solid #1A1F2E;
+  border-right: 1px solid #2B3346; border-bottom: 1px solid #2B3346;
   cursor: pointer; transition: background .1s;
   position: relative; display: flex; flex-direction: column; gap: 3px;
 }
 .cal-grid__cell:nth-child(7n) { border-right: none; }
-.cal-grid__cell:hover:not(.cal-grid__cell--empty) { background: #161B28; }
+.cal-grid__cell:hover:not(.cal-grid__cell--empty) { background: #232A3C; }
 .cal-grid__cell:hover:not(.cal-grid__cell--empty) .cal-grid__add-hint { opacity: 1; }
 .cal-grid__cell--empty { cursor: default; }
 .cal-grid__cell--today { background: color-mix(in srgb,var(--accent) 6%,transparent); }
@@ -368,27 +368,27 @@ async function deleteEvent(id: number) {
 .cal-grid__add-hint { position: absolute; bottom: 4px; right: 5px; color: #1E2436; opacity: 0; transition: opacity .15s; pointer-events: none; }
 
 .ev-chip {
-  background: color-mix(in srgb, var(--ec) 12%, #0D1018);
+  background: color-mix(in srgb, var(--ec) 12%, #151A27);
   border-left: 2px solid var(--ec); border-radius: 3px;
   padding: 2px 5px; display: flex; align-items: center; gap: 4px;
   cursor: pointer; transition: background .1s; overflow: hidden;
 }
-.ev-chip:hover { background: color-mix(in srgb, var(--ec) 22%, #0D1018); }
+.ev-chip:hover { background: color-mix(in srgb, var(--ec) 22%, #151A27); }
 .ev-chip__badge { font-family: 'Rajdhani', sans-serif; font-size: 8px; font-weight: 700; letter-spacing: 1.5px; color: var(--ec); flex-shrink: 0; }
 .ev-chip__title { font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 600; color: #EEF2FF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ev-chip--more { background: rgba(255,255,255,.03); border-left: 2px solid #1A1F2E; }
-.ev-chip--more .ev-chip__title { color: #3D4460; font-size: 9px; }
+.ev-chip--more { background: rgba(255,255,255,.03); border-left: 2px solid #2B3346; }
+.ev-chip--more .ev-chip__title { color: #616C8A; font-size: 9px; }
 
 /* ── Sidebar panel ──────────────────────────────────── */
-.panel { background: #111520; border: 1px solid #1A1F2E; border-radius: 8px; overflow: hidden; }
-.panel__head { padding: 12px 16px; border-bottom: 1px solid #1A1F2E; font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 3px; color: #3D4460; display: flex; align-items: center; justify-content: space-between; }
+.panel { background: #1B2030; border: 1px solid #2B3346; border-radius: 8px; overflow: hidden; }
+.panel__head { padding: 12px 16px; border-bottom: 1px solid #2B3346; font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 3px; color: #616C8A; display: flex; align-items: center; justify-content: space-between; }
 .panel__add-btn { display: flex; align-items: center; gap: 5px; font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 2px; color: var(--accent); background: color-mix(in srgb,var(--accent) 8%,transparent); border: 1px solid color-mix(in srgb,var(--accent) 20%,transparent); border-radius: 4px; padding: 4px 10px; cursor: pointer; transition: all .15s; }
 .panel__add-btn:hover { background: color-mix(in srgb,var(--accent) 15%,transparent); border-color: var(--accent); }
 .panel__list { overflow-y: auto; max-height: 520px; }
-.panel__empty { padding: 24px 16px; font-family: 'Inter', sans-serif; font-size: 12px; color: #3D4460; text-align: center; }
+.panel__empty { padding: 24px 16px; font-family: 'Inter', sans-serif; font-size: 12px; color: #616C8A; text-align: center; }
 
 .ev-row { padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,.03); border-left: 2px solid var(--ec); display: flex; gap: 10px; align-items: flex-start; transition: background .15s; }
-.ev-row:hover { background: #0D1018; }
+.ev-row:hover { background: #151A27; }
 .ev-row:last-child { border-bottom: none; }
 .ev-row__type { font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 2px; color: var(--ec); background: color-mix(in srgb, var(--ec) 12%, transparent); border: 1px solid color-mix(in srgb, var(--ec) 25%, transparent); padding: 2px 6px; border-radius: 3px; flex-shrink: 0; margin-top: 2px; }
 .ev-row__body { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
@@ -396,24 +396,24 @@ async function deleteEvent(id: number) {
 .ev-row__date  { font-family: 'Inter', sans-serif; font-size: 10px; color: #8892B0; }
 .ev-row__actions { display: flex; gap: 4px; flex-shrink: 0; opacity: 0; transition: opacity .15s; }
 .ev-row:hover .ev-row__actions { opacity: 1; }
-.ev-row__btn { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; background: #0D1018; border: 1px solid #1A1F2E; border-radius: 4px; color: #8892B0; cursor: pointer; transition: all .15s; }
+.ev-row__btn { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; background: #151A27; border: 1px solid #2B3346; border-radius: 4px; color: #8892B0; cursor: pointer; transition: all .15s; }
 .ev-row__btn:hover { border-color: var(--accent); color: #EEF2FF; }
 .ev-row__btn--del:hover { border-color: #EF4444 !important; color: #EF4444 !important; }
 
 /* ── Modal ──────────────────────────────────────────── */
 .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.65); backdrop-filter: blur(4px); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; }
-.modal { background: #0D1018; border: 1px solid #1A1F2E; border-radius: 10px; width: 100%; max-width: 460px; padding: 24px; display: flex; flex-direction: column; gap: 18px; }
+.modal { background: #151A27; border: 1px solid #2B3346; border-radius: 10px; width: 100%; max-width: 460px; padding: 24px; display: flex; flex-direction: column; gap: 18px; }
 .modal__head { display: flex; align-items: center; justify-content: space-between; }
 .modal__title { font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 3px; color: #EEF2FF; }
-.modal__close { background: none; border: none; color: #3D4460; font-size: 16px; cursor: pointer; padding: 2px 6px; border-radius: 4px; transition: color .15s; }
+.modal__close { background: none; border: none; color: #616C8A; font-size: 16px; cursor: pointer; padding: 2px 6px; border-radius: 4px; transition: color .15s; }
 .modal__close:hover { color: #EEF2FF; }
 .modal__field { display: flex; flex-direction: column; gap: 6px; }
-.modal__label { font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 2px; color: #3D4460; }
+.modal__label { font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 2px; color: #616C8A; }
 .modal__row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .modal__types { display: flex; gap: 6px; }
 .modal__type-btn {
   flex: 1; padding: 8px; border-radius: 5px; cursor: pointer;
-  border: 1px solid #1A1F2E; background: #111520;
+  border: 1px solid #2B3346; background: #1B2030;
   font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #8892B0;
   transition: all .15s;
 }
@@ -428,12 +428,12 @@ async function deleteEvent(id: number) {
 /* Logo upload */
 .logo-upload { display: flex; align-items: center; gap: 12px; }
 .logo-upload__preview {
-  width: 44px; height: 44px; border-radius: 8px; border: 1px solid #1A1F2E;
-  background: #111520; display: flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; border-radius: 8px; border: 1px solid #2B3346;
+  background: #1B2030; display: flex; align-items: center; justify-content: center;
   position: relative; flex-shrink: 0; overflow: hidden;
 }
 .logo-upload__img { width: 100%; height: 100%; object-fit: contain; }
-.logo-upload__placeholder { font-family: 'Rajdhani', sans-serif; font-size: 18px; font-weight: 700; color: #3D4460; }
+.logo-upload__placeholder { font-family: 'Rajdhani', sans-serif; font-size: 18px; font-weight: 700; color: #616C8A; }
 .logo-upload__clear {
   position: absolute; top: 2px; right: 2px; width: 16px; height: 16px;
   background: rgba(0,0,0,.7); border: none; border-radius: 3px;
@@ -442,7 +442,7 @@ async function deleteEvent(id: number) {
 .logo-upload__btn {
   display: flex; align-items: center; gap: 7px; cursor: pointer;
   font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px;
-  background: #111520; border: 1px solid #1A1F2E; border-radius: 5px;
+  background: #1B2030; border: 1px solid #2B3346; border-radius: 5px;
   color: #8892B0; padding: 7px 12px; transition: all .15s;
 }
 .logo-upload__btn:hover { border-color: var(--accent); color: var(--accent); }
@@ -454,8 +454,8 @@ async function deleteEvent(id: number) {
   font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 2px;
   transition: all .15s; border: 1px solid transparent;
 }
-.modal__btn--cancel { background: #111520; border-color: #1A1F2E; color: #8892B0; }
-.modal__btn--cancel:hover { color: #EEF2FF; border-color: #3D4460; }
+.modal__btn--cancel { background: #1B2030; border-color: #2B3346; color: #8892B0; }
+.modal__btn--cancel:hover { color: #EEF2FF; border-color: #616C8A; }
 .modal__btn--save { background: var(--accent); color: white; border-color: var(--accent); }
 .modal__btn--save:hover:not(:disabled) { background: var(--accent-2); box-shadow: 0 0 16px color-mix(in srgb,var(--accent) 35%,transparent); }
 .modal__btn--save:disabled { opacity: .6; cursor: not-allowed; }

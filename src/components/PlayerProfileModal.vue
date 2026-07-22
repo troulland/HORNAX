@@ -234,7 +234,7 @@ onMounted(async () => {
                 </div>
                 <!-- Meta -->
                 <div class="ppm__game-meta">
-                  <span class="ppm__game-cs">{{ g.cs }} CS <span style="color:#3D4460">({{ g.csMin }}/min)</span></span>
+                  <span class="ppm__game-cs">{{ g.cs }} CS <span style="color:#616C8A">({{ g.csMin }}/min)</span></span>
                   <span class="ppm__game-dur">{{ g.duration }}min · {{ fmtDate(g.date) }}</span>
                 </div>
               </div>
@@ -263,7 +263,7 @@ onMounted(async () => {
   border-radius: 12px;
   display: flex; flex-direction: column;
   animation: slideUp .2s ease-out both;
-  scrollbar-width: thin; scrollbar-color: #1A1F2E transparent;
+  scrollbar-width: thin; scrollbar-color: #2B3346 transparent;
 }
 
 /* ── Header ── */
@@ -290,22 +290,22 @@ onMounted(async () => {
   font-family: 'Inter', sans-serif; font-size: 11px; color: #8892B0;
   display: flex; align-items: center; gap: 5px;
 }
-.ppm__riot-tag--none { color: #3D4460; font-style: italic; }
-.ppm__tag-sep { color: #3D4460; }
+.ppm__riot-tag--none { color: #616C8A; font-style: italic; }
+.ppm__tag-sep { color: #616C8A; }
 .ppm__level {
   font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1px;
-  color: #3D4460; background: #111520; border: 1px solid #1A1F2E;
+  color: #616C8A; background: #1B2030; border: 1px solid #2B3346;
   border-radius: 4px; padding: 1px 6px;
 }
 .ppm__close {
-  background: #111520; border: 1px solid #1A1F2E; color: #8892B0;
+  background: #1B2030; border: 1px solid #2B3346; color: #8892B0;
   width: 30px; height: 30px; border-radius: 6px; display: flex; align-items: center; justify-content: center;
   cursor: pointer; transition: all .15s; flex-shrink: 0;
 }
 .ppm__close:hover { border-color: #EF4444; color: #EF4444; }
 
 /* ── Loader ── */
-.ppm__loader { height: 3px; background: #111520; overflow: hidden; }
+.ppm__loader { height: 3px; background: #1B2030; overflow: hidden; }
 .ppm__loader-bar {
   height: 100%; width: 40%; background: var(--accent);
   animation: loading 1.2s ease-in-out infinite;
@@ -316,7 +316,7 @@ onMounted(async () => {
 .ppm__empty {
   display: flex; flex-direction: column; align-items: center; gap: 8px;
   padding: 48px 24px; text-align: center;
-  font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 1px; color: #3D4460;
+  font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 1px; color: #616C8A;
 }
 .ppm__empty--err { color: #EF4444; }
 .ppm__empty-icon { font-size: 28px; opacity: .4; }
@@ -325,13 +325,13 @@ onMounted(async () => {
 /* ── Ranks ── */
 .ppm__ranks { display: flex; gap: 10px; padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,.05); }
 .ppm__rank {
-  flex: 1; background: #111520; border: 1px solid #1A1F2E; border-radius: 10px;
+  flex: 1; background: #1B2030; border: 1px solid #2B3346; border-radius: 10px;
   padding: 14px 16px; display: flex; flex-direction: column; gap: 5px;
   transition: border-color .2s;
 }
 .ppm__rank-mode {
   font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700;
-  letter-spacing: 2.5px; color: #3D4460; margin-bottom: 2px;
+  letter-spacing: 2.5px; color: #616C8A; margin-bottom: 2px;
 }
 .ppm__rank-tier {
   font-family: 'Rajdhani', sans-serif; font-size: 20px; font-weight: 700;
@@ -343,7 +343,7 @@ onMounted(async () => {
 }
 .ppm__rank-bar {
   height: 4px; border-radius: 2px; overflow: hidden;
-  background: #1A1F2E; display: flex; margin: 2px 0;
+  background: #2B3346; display: flex; margin: 2px 0;
 }
 .ppm__rank-bar-win  { height: 100%; background: #10B981; transition: width .6s ease; }
 .ppm__rank-bar-loss { height: 100%; background: #EF4444; transition: width .6s ease; }
@@ -363,7 +363,7 @@ onMounted(async () => {
 .ppm__section-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
 .ppm__section-title {
   font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700;
-  letter-spacing: 3px; color: #3D4460;
+  letter-spacing: 3px; color: #616C8A;
 }
 .ppm__section-sub { font-family: 'Inter', sans-serif; font-size: 10px; color: #2A3050; }
 
@@ -371,7 +371,7 @@ onMounted(async () => {
 .ppm__champs { display: flex; flex-direction: column; gap: 5px; }
 .ppm__champ {
   display: flex; align-items: center; gap: 12px;
-  padding: 8px 12px; background: #111520; border: 1px solid #1A1F2E;
+  padding: 8px 12px; background: #1B2030; border: 1px solid #2B3346;
   border-radius: 8px; transition: border-color .15s;
 }
 .ppm__champ:hover { border-color: #2A2F42; }
@@ -381,7 +381,7 @@ onMounted(async () => {
 }
 .ppm__champ-portrait {
   width: 40px; height: 40px; border-radius: 8px; overflow: hidden;
-  border: 1px solid #1A1F2E; flex-shrink: 0;
+  border: 1px solid #2B3346; flex-shrink: 0;
 }
 .ppm__champ-portrait img { width: 100%; height: 100%; object-fit: cover; }
 .ppm__champ-info { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
@@ -389,13 +389,13 @@ onMounted(async () => {
   font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700;
   color: #EEF2FF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.ppm__champ-games { font-family: 'Inter', sans-serif; font-size: 10px; color: #3D4460; }
+.ppm__champ-games { font-family: 'Inter', sans-serif; font-size: 10px; color: #616C8A; }
 .ppm__champ-stats { display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 44px; }
 .ppm__champ-wr { font-family: 'Rajdhani', sans-serif; font-size: 16px; font-weight: 700; line-height: 1; }
-.ppm__champ-wr-label { font-family: 'Inter', sans-serif; font-size: 9px; color: #3D4460; }
+.ppm__champ-wr-label { font-family: 'Inter', sans-serif; font-size: 9px; color: #616C8A; }
 .ppm__champ-kda-wrap { display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 44px; }
 .ppm__champ-kda { font-family: 'Rajdhani', sans-serif; font-size: 16px; font-weight: 700; line-height: 1; }
-.ppm__champ-kda-label { font-family: 'Inter', sans-serif; font-size: 9px; color: #3D4460; }
+.ppm__champ-kda-label { font-family: 'Inter', sans-serif; font-size: 9px; color: #616C8A; }
 
 /* ── W/L summary ── */
 .ppm__wl-summary { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
@@ -409,7 +409,7 @@ onMounted(async () => {
 .ppm__game {
   display: flex; align-items: center; gap: 12px;
   padding: 8px 10px; border-radius: 8px; border-left: 3px solid transparent;
-  background: #111520; border: 1px solid #1A1F2E; border-left: 3px solid transparent;
+  background: #1B2030; border: 1px solid #2B3346; border-left: 3px solid transparent;
   transition: background .1s;
 }
 .ppm__game:hover { background: #131828; }
@@ -426,7 +426,7 @@ onMounted(async () => {
 .ppm__game-result--loss { background: rgba(239,68,68,.15);  color: #EF4444; border: 1px solid rgba(239,68,68,.3); }
 
 .ppm__game-champ-wrap { position: relative; flex-shrink: 0; }
-.ppm__game-img { width: 36px; height: 36px; border-radius: 6px; object-fit: cover; border: 1px solid #1A1F2E; display: block; }
+.ppm__game-img { width: 36px; height: 36px; border-radius: 6px; object-fit: cover; border: 1px solid #2B3346; display: block; }
 .ppm__game-champ-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .ppm__game-champ {
   font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700;
@@ -434,14 +434,14 @@ onMounted(async () => {
 }
 .ppm__game-queue {
   font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700;
-  letter-spacing: 1.5px; color: #3D4460;
+  letter-spacing: 1.5px; color: #616C8A;
 }
 .ppm__game-kda { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; min-width: 100px; }
 .ppm__game-score { font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700; color: #EEF2FF; }
 .ppm__game-ratio { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; }
 .ppm__game-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; min-width: 90px; }
 .ppm__game-cs { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 600; color: #8892B0; }
-.ppm__game-dur { font-family: 'Inter', sans-serif; font-size: 10px; color: #3D4460; }
+.ppm__game-dur { font-family: 'Inter', sans-serif; font-size: 10px; color: #616C8A; }
 
 /* ── Light theme ── */
 html[data-theme="light"] .ppm { background: #FFFFFF; border-color: #E0E3EF; }

@@ -198,7 +198,7 @@ onMounted(loadProfile)
 
             <!-- Solo/Duo -->
             <div class="pp__rank-card"
-              :style="profile.riot_stats.soloQ ? { '--tc': TIER_COLOR[profile.riot_stats.soloQ.tier] } : { '--tc': '#3D4460' }">
+              :style="profile.riot_stats.soloQ ? { '--tc': TIER_COLOR[profile.riot_stats.soloQ.tier] } : { '--tc': '#616C8A' }">
               <div class="pp__rank-card-head">RANKED SOLO / DUO</div>
               <div v-if="profile.riot_stats.soloQ" class="pp__rank-card-body">
                 <div class="pp__rank-emblem">
@@ -228,7 +228,7 @@ onMounted(loadProfile)
 
             <!-- Flex -->
             <div class="pp__rank-card"
-              :style="profile.riot_stats.flexQ ? { '--tc': TIER_COLOR[profile.riot_stats.flexQ.tier] } : { '--tc': '#3D4460' }">
+              :style="profile.riot_stats.flexQ ? { '--tc': TIER_COLOR[profile.riot_stats.flexQ.tier] } : { '--tc': '#616C8A' }">
               <div class="pp__rank-card-head">RANKED FLEX</div>
               <div v-if="profile.riot_stats.flexQ" class="pp__rank-card-body">
                 <div class="pp__rank-emblem">
@@ -294,7 +294,7 @@ onMounted(loadProfile)
             <div class="pp__summary-body">
               <div class="pp__summary-wr">
                 <svg viewBox="0 0 36 36" class="pp__donut">
-                  <circle cx="18" cy="18" r="15.9" fill="none" stroke="#1A1F2E" stroke-width="3.2"/>
+                  <circle cx="18" cy="18" r="15.9" fill="none" stroke="#2B3346" stroke-width="3.2"/>
                   <circle cx="18" cy="18" r="15.9" fill="none"
                     :stroke="wrColor(summary.wr)"
                     stroke-width="3.2"
@@ -479,7 +479,7 @@ onMounted(loadProfile)
 .pp__back:hover { color: #EEF2FF; }
 
 /* ── Loading ── */
-.pp__loading { height: 3px; background: #111520; border-radius: 2px; overflow: hidden; margin-bottom: 24px; }
+.pp__loading { height: 3px; background: #1B2030; border-radius: 2px; overflow: hidden; margin-bottom: 24px; }
 .pp__loading-bar {
   height: 100%; width: 35%; background: var(--accent);
   animation: loading 1.2s ease-in-out infinite;
@@ -496,12 +496,12 @@ onMounted(loadProfile)
   font-family: 'Rajdhani', sans-serif; font-size: 26px; font-weight: 700;
   letter-spacing: 3px; color: #EEF2FF;
 }
-.pp__empty-sub { font-family: 'Inter', sans-serif; font-size: 13px; color: #3D4460; }
+.pp__empty-sub { font-family: 'Inter', sans-serif; font-size: 13px; color: #616C8A; }
 
 /* ── Header ── */
 .pp__header {
-  background: linear-gradient(180deg, #111520 0%, #0D1018 100%);
-  border: 1px solid #1A1F2E; border-radius: 12px; margin-bottom: 12px; overflow: hidden;
+  background: linear-gradient(180deg, #1B2030 0%, #151A27 100%);
+  border: 1px solid #2B3346; border-radius: 12px; margin-bottom: 12px; overflow: hidden;
 }
 .pp__header::before {
   content: ''; display: block; height: 60px;
@@ -513,7 +513,7 @@ onMounted(loadProfile)
 }
 .pp__avatar {
   position: relative; width: 72px; height: 72px; border-radius: 12px;
-  background: linear-gradient(135deg, #1A1F2E, #0D1018);
+  background: linear-gradient(135deg, #2B3346, #151A27);
   border: 3px solid color-mix(in srgb,var(--accent) 40%,transparent);
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
@@ -524,7 +524,7 @@ onMounted(loadProfile)
 .pp__avatar-level {
   position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%);
   font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1px;
-  background: #0D1018; border: 1px solid #1A1F2E; color: #8892B0;
+  background: #151A27; border: 1px solid #2B3346; color: #8892B0;
   padding: 1px 6px; border-radius: 4px; white-space: nowrap;
 }
 
@@ -543,15 +543,15 @@ onMounted(loadProfile)
   font-family: 'Rajdhani', sans-serif; font-size: 30px; font-weight: 700;
   letter-spacing: 3px; color: #EEF2FF; margin: 0; line-height: 1;
 }
-.pp__tag { font-family: 'Rajdhani', sans-serif; font-size: 16px; font-weight: 600; color: #3D4460; }
+.pp__tag { font-family: 'Rajdhani', sans-serif; font-size: 16px; font-weight: 600; color: #616C8A; }
 .pp__role-row { display: flex; align-items: center; gap: 10px; }
 .pp__role-badge {
   font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 2px;
   padding: 3px 8px; border-radius: 4px; border: 1px solid;
 }
-.pp__team-name { font-family: 'Inter', sans-serif; font-size: 12px; color: #3D4460; }
+.pp__team-name { font-family: 'Inter', sans-serif; font-size: 12px; color: #616C8A; }
 .pp__refresh-btn--top {
-  background: #111520; border: 1px solid #1A1F2E; color: #3D4460;
+  background: #1B2030; border: 1px solid #2B3346; color: #616C8A;
   width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center;
   cursor: pointer; transition: all .15s; flex-shrink: 0; align-self: flex-start; margin-top: 10px;
 }
@@ -568,14 +568,14 @@ onMounted(loadProfile)
 /* ── Ranks col ── */
 .pp__ranks-col { display: flex; flex-direction: column; gap: 10px; }
 .pp__rank-card {
-  background: #111520; border: 1px solid #1A1F2E; border-radius: 12px;
+  background: #1B2030; border: 1px solid #2B3346; border-radius: 12px;
   overflow: hidden; transition: border-color .2s;
 }
-.pp__rank-card:hover { border-color: color-mix(in srgb, var(--tc, #3D4460) 40%, transparent); }
+.pp__rank-card:hover { border-color: color-mix(in srgb, var(--tc, #616C8A) 40%, transparent); }
 .pp__rank-card-head {
   font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 2.5px;
-  color: #3D4460; padding: 10px 14px 8px;
-  border-bottom: 1px solid #1A1F2E;
+  color: #616C8A; padding: 10px 14px 8px;
+  border-bottom: 1px solid #2B3346;
 }
 .pp__rank-card-body { display: flex; align-items: center; gap: 14px; padding: 14px; }
 .pp__rank-card-body--unranked { justify-content: center; }
@@ -585,7 +585,7 @@ onMounted(loadProfile)
 }
 .pp__rank-img {
   width: 64px; height: 64px; object-fit: contain;
-  filter: drop-shadow(0 2px 8px color-mix(in srgb, var(--tc, #3D4460) 50%, transparent));
+  filter: drop-shadow(0 2px 8px color-mix(in srgb, var(--tc, #616C8A) 50%, transparent));
 }
 .pp__rank-tier-letter {
   font-family: 'Rajdhani', sans-serif; font-size: 36px; font-weight: 900; line-height: 1;
@@ -616,27 +616,27 @@ onMounted(loadProfile)
   align-items: center; justify-content: center; gap: 1px;
 }
 .pp__donut-wr { font-family: 'Rajdhani', sans-serif; font-size: 15px; font-weight: 700; line-height: 1; }
-.pp__donut-sub { font-family: 'Inter', sans-serif; font-size: 9px; color: #3D4460; }
+.pp__donut-sub { font-family: 'Inter', sans-serif; font-size: 9px; color: #616C8A; }
 .pp__summary-kda { display: flex; flex-direction: column; gap: 4px; }
 .pp__summary-scores {
   font-family: 'Rajdhani', sans-serif; font-size: 20px; font-weight: 700; color: #EEF2FF; line-height: 1;
 }
 .pp__summary-ratio { font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700; }
-.pp__summary-cs { font-family: 'Inter', sans-serif; font-size: 11px; color: #3D4460; }
+.pp__summary-cs { font-family: 'Inter', sans-serif; font-size: 11px; color: #616C8A; }
 
 /* ── Section ── */
 .pp__section { margin-bottom: 12px; }
 .pp__section-title {
   font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 3px;
-  color: #3D4460; padding: 0 2px 10px;
+  color: #616C8A; padding: 0 2px 10px;
 }
 
 /* ── Champion table ── */
-.pp__champ-table { background: #111520; border: 1px solid #1A1F2E; border-radius: 12px; overflow: hidden; }
+.pp__champ-table { background: #1B2030; border: 1px solid #2B3346; border-radius: 12px; overflow: hidden; }
 .pp__champ-table-head {
   display: grid; grid-template-columns: 1fr 28px 44px 52px;
-  padding: 7px 10px; border-bottom: 1px solid #1A1F2E;
-  font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 2px; color: #3D4460;
+  padding: 7px 10px; border-bottom: 1px solid #2B3346;
+  font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 2px; color: #616C8A;
 }
 .pp__champ-row {
   display: grid; grid-template-columns: 1fr 28px 44px 52px;
@@ -647,7 +647,7 @@ onMounted(loadProfile)
 .pp__champ-row:hover { background: rgba(255,255,255,.02); }
 .pp__champ-row-left { display: flex; align-items: center; gap: 10px; }
 .pp__champ-idx { font-family: 'Rajdhani', sans-serif; font-size: 11px; color: #2A3050; width: 14px; text-align: center; }
-.pp__champ-portrait { width: 28px; height: 28px; border-radius: 5px; overflow: hidden; border: 1px solid #1A1F2E; flex-shrink: 0; }
+.pp__champ-portrait { width: 28px; height: 28px; border-radius: 5px; overflow: hidden; border: 1px solid #2B3346; flex-shrink: 0; }
 .pp__champ-portrait img { width: 100%; height: 100%; object-fit: cover; }
 .pp__champ-name { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; color: #EEF2FF; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pp__champ-games { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; color: #8892B0; text-align: center; }
@@ -658,7 +658,7 @@ onMounted(loadProfile)
 .pp__matches { display: flex; flex-direction: column; gap: 4px; }
 .pp__match {
   display: flex; flex-direction: column;
-  background: #111520; border: 1px solid #1A1F2E; border-radius: 10px;
+  background: #1B2030; border: 1px solid #2B3346; border-radius: 10px;
   border-left: 4px solid transparent; overflow: hidden;
 }
 .pp__match:hover > .pp__match-main { background: #131828; }
@@ -679,11 +679,11 @@ onMounted(loadProfile)
 .pp__match-info-top { display: flex; flex-direction: column; gap: 2px; }
 .pp__match-info-bot { display: flex; flex-direction: column; gap: 2px; }
 .pp__match-queue { font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1px; }
-.pp__match-date  { font-family: 'Inter', sans-serif; font-size: 9px; color: #3D4460; }
+.pp__match-date  { font-family: 'Inter', sans-serif; font-size: 9px; color: #616C8A; }
 .pp__match-vd    { font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: .5px; }
 .pp__match-vd--win  { color: #10B981; }
 .pp__match-vd--loss { color: #EF4444; }
-.pp__match-dur   { font-family: 'Inter', sans-serif; font-size: 10px; color: #3D4460; }
+.pp__match-dur   { font-family: 'Inter', sans-serif; font-size: 10px; color: #616C8A; }
 
 /* 2. Champion zone */
 .pp__match-champ-zone {
@@ -695,7 +695,7 @@ onMounted(loadProfile)
 .pp__match-portrait { width: 58px; height: 58px; border-radius: 6px; object-fit: cover; border: 2px solid rgba(255,255,255,.1); display: block; }
 .pp__match-level {
   position: absolute; bottom: -2px; left: -2px;
-  background: #0D1018; border: 1px solid #2A3050;
+  background: #151A27; border: 1px solid #2A3050;
   font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700;
   color: #8892B0; padding: 0 3px; border-radius: 3px; line-height: 15px; z-index: 1;
 }
@@ -706,14 +706,14 @@ onMounted(loadProfile)
 }
 .pp__match-rune {
   width: 20px; height: 20px; border-radius: 50%; object-fit: contain;
-  background: #0D1018; border: 1px solid rgba(255,255,255,.08); display: block;
+  background: #151A27; border: 1px solid rgba(255,255,255,.08); display: block;
 }
-.pp__slot-empty { background: #0D1018 !important; }
+.pp__slot-empty { background: #151A27 !important; }
 .pp__slot-empty--round { border-radius: 50% !important; }
 .pp__match-items-row { display: flex; gap: 2px; align-items: center; }
 .pp__match-item-slot {
   width: 20px; height: 20px; border-radius: 4px; overflow: hidden;
-  background: #0A0E18; border: 1px solid #1A1F2E; flex-shrink: 0;
+  background: #0A0E18; border: 1px solid #2B3346; flex-shrink: 0;
 }
 .pp__match-item-slot--trinket { border-radius: 50%; margin-left: 3px; }
 .pp__match-item { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -726,7 +726,7 @@ onMounted(loadProfile)
 .pp__match-score { font-family: 'Rajdhani', sans-serif; font-size: 20px; font-weight: 700; line-height: 1; white-space: nowrap; }
 .pp__match-k, .pp__match-a { color: #EEF2FF; }
 .pp__match-d { color: #EF4444; }
-.pp__match-sep { color: #3D4460; font-size: 16px; }
+.pp__match-sep { color: #616C8A; font-size: 16px; }
 .pp__match-ratio { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; }
 
 /* 4. Stats zone */
@@ -735,9 +735,9 @@ onMounted(loadProfile)
   padding: 10px 14px; border-right: 1px solid rgba(255,255,255,.04);
 }
 .pp__match-stat-row  { display: flex; align-items: baseline; gap: 6px; }
-.pp__match-stat-lbl  { font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 1px; color: #3D4460; min-width: 40px; }
+.pp__match-stat-lbl  { font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 1px; color: #616C8A; min-width: 40px; }
 .pp__match-stat-val  { font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700; color: #EEF2FF; }
-.pp__match-stat-sub  { font-family: 'Inter', sans-serif; font-size: 9px; color: #3D4460; }
+.pp__match-stat-sub  { font-family: 'Inter', sans-serif; font-size: 9px; color: #616C8A; }
 .pp__match-champ-name {
   font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; color: #8892B0;
   text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 88px;
@@ -761,8 +761,8 @@ onMounted(loadProfile)
 }
 .pp__match-expand-btn {
   width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
-  background: #0D1018; border: 1px solid #1A1F2E; border-radius: 4px;
-  color: #3D4460; cursor: pointer; font-size: 9px; transition: all .15s;
+  background: #151A27; border: 1px solid #2B3346; border-radius: 4px;
+  color: #616C8A; cursor: pointer; font-size: 9px; transition: all .15s;
 }
 .pp__match-expand-btn:hover { border-color: var(--accent); color: var(--accent); }
 .pp__match-expand-btn--open { border-color: color-mix(in srgb,var(--accent) 50%,transparent); color: var(--accent); }
@@ -770,9 +770,9 @@ onMounted(loadProfile)
 .pp__match-expand-btn--open .pp__match-expand-arrow { transform: rotate(180deg); }
 
 /* Scoreboard */
-.pp__match-scoreboard { border-top: 1px solid #1A1F2E; padding: 8px 36px; background: #0A0E18; }
+.pp__match-scoreboard { border-top: 1px solid #2B3346; padding: 8px 36px; background: #0A0E18; }
 .pp__match-sb-grid    { display: grid; grid-template-columns: 1fr 1px 1fr; }
-.pp__match-sb-divider { background: #1A1F2E; margin: 2px 8px; }
+.pp__match-sb-divider { background: #2B3346; margin: 2px 8px; }
 .pp__match-sb-col     { display: flex; flex-direction: column; gap: 1px; padding: 0 8px; }
 .pp__match-sb-col:first-child { padding-left: 0; }
 .pp__match-sb-col:last-child  { padding-right: 0; }
@@ -783,7 +783,7 @@ onMounted(loadProfile)
 .pp__match-sb-row:hover { background: rgba(255,255,255,.03); }
 .pp__match-sb-row--me  { background: color-mix(in srgb, var(--accent) 7%, transparent) !important; }
 .pp__match-sb-icon { width: 24px; height: 24px; border-radius: 4px; object-fit: cover; border: 1px solid rgba(255,255,255,.06); }
-.pp__match-sb-kda  { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; color: #3D4460; }
+.pp__match-sb-kda  { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; color: #616C8A; }
 .pp__match-sb-cs   { font-family: 'Rajdhani', sans-serif; font-size: 11px; color: #2A3050; text-align: right; }
 .pp__match-sb-dmg  { font-family: 'Rajdhani', sans-serif; font-size: 11px; color: #2A3050; text-align: right; }
 .pp__match-sb-row--me .pp__match-sb-kda { color: var(--accent); }

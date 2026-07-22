@@ -15,13 +15,13 @@
 
 /* ── Design tokens ─────────────────────────────────── */
 :root {
-  --bg-base:    #080A10;
-  --bg-surface: #0D1018;
-  --bg-card:    #111520;
-  --bg-hover:   #161B28;
-  --border:     #1A1F2E;
-  --border-2:   #2A2F40;
-  --t-muted:    #3D4460;
+  --bg-base:    #0F1320;
+  --bg-surface: #151A27;
+  --bg-card:    #1B2030;
+  --bg-hover:   #232A3C;
+  --border:     #2B3346;
+  --border-2:   #3A4358;
+  --t-muted:    #616C8A;
   --t-dim:      #8892B0;
   --t-primary:  #EEF2FF;
   --accent:     #FF6B1A;

@@ -217,7 +217,7 @@ async function handleLogin() {
 <style scoped>
 .login {
   width: 100vw; height: 100vh;
-  display: flex; background: #080A10;
+  display: flex; background: #0F1320;
   position: relative; overflow: hidden;
 }
 
@@ -240,7 +240,7 @@ async function handleLogin() {
 .login__bg-mockup { width: 100%; height: 100%; object-fit: cover; object-position: center; opacity: .4; }
 .login__left-overlay {
   position: absolute; inset: 0;
-  background: linear-gradient(to right, transparent 0%, rgba(8,10,16,.4) 70%, #080A10 100%);
+  background: linear-gradient(to right, transparent 0%, rgba(8,10,16,.4) 70%, #0F1320 100%);
 }
 .login__tagblock { position: absolute; bottom: 60px; left: 48px; right: 80px; z-index: 1; }
 .login__tag-eyebrow { font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 4px; color: var(--accent); display: block; margin-bottom: 12px; transition: color .4s ease; }
@@ -279,7 +279,7 @@ async function handleLogin() {
 }
 .login__divider {
   height: 1px;
-  background: linear-gradient(90deg, var(--accent) 0%, #1A1F2E 100%);
+  background: linear-gradient(90deg, var(--accent) 0%, #2B3346 100%);
   margin-bottom: 24px;
   transition: background .4s ease;
 }
@@ -291,9 +291,9 @@ async function handleLogin() {
 .login__team-btn {
   flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
   padding: 10px 14px; border-radius: 8px; cursor: pointer;
-  border: 1px solid #1A1F2E; background: #0D1018;
+  border: 1px solid #2B3346; background: #151A27;
   font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700;
-  letter-spacing: 2px; color: #3D4460;
+  letter-spacing: 2px; color: #616C8A;
   transition: all .25s ease;
 }
 .login__team-btn:hover { border-color: var(--accent); color: #8892B0; }
@@ -330,7 +330,7 @@ async function handleLogin() {
 .login__submit:disabled { opacity: .7; cursor: not-allowed; }
 .login__spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.3); border-top-color: white; border-radius: 50%; animation: spin .6s linear infinite; display: block; }
 
-.login__forgot { font-family: 'Inter', sans-serif; font-size: 12px; color: #3D4460; text-align: center; margin-top: 16px; }
+.login__forgot { font-family: 'Inter', sans-serif; font-size: 12px; color: #616C8A; text-align: center; margin-top: 16px; }
 .login__link { background: none; border: none; color: var(--accent); font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; padding: 0; text-decoration: underline; }
 .login__link:hover { color: var(--accent-2); }
 

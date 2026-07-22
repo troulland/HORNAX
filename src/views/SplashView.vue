@@ -65,7 +65,7 @@ onMounted(() => {
 .splash {
   width: 100vw;
   height: 100vh;
-  background: #080A10;
+  background: #0F1320;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -172,7 +172,7 @@ onMounted(() => {
 .splash__bar-wrap {
   width: 200px;
   height: 1px;
-  background: #1A1F2E;
+  background: #2B3346;
   margin-top: 40px;
   overflow: hidden;
   border-radius: 1px;
@@ -194,7 +194,7 @@ onMounted(() => {
   right: 24px;
   font-family: 'Rajdhani', sans-serif;
   font-size: 11px;
-  color: #3D4460;
+  color: #616C8A;
   letter-spacing: 2px;
 }
 

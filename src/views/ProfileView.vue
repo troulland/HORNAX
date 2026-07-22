@@ -250,7 +250,7 @@ const roleColor = computed(() => ROLE_COLOR[auth.user?.game_role ?? ''] ?? '#889
 .profile__theme-toggle {
   margin-left: auto; display: flex; align-items: center; gap: 7px;
   font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 2px; color: #8892B0;
-  background: #111520; border: 1px solid #1A1F2E; border-radius: 6px; padding: 8px 14px; cursor: pointer; transition: all .15s;
+  background: #1B2030; border: 1px solid #2B3346; border-radius: 6px; padding: 8px 14px; cursor: pointer; transition: all .15s;
 }
 .profile__theme-toggle:hover { border-color: var(--accent); color: #EEF2FF; }
 
@@ -258,15 +258,15 @@ const roleColor = computed(() => ROLE_COLOR[auth.user?.game_role ?? ''] ?? '#889
 .profile__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
 /* Cards */
-.pcard { background: #111520; border: 1px solid #1A1F2E; border-radius: 10px; overflow: hidden; }
+.pcard { background: #1B2030; border: 1px solid #2B3346; border-radius: 10px; overflow: hidden; }
 .pcard--theme { grid-column: 1 / -1; }
-.pcard__head { display: flex; align-items: center; gap: 8px; padding: 14px 20px; border-bottom: 1px solid #1A1F2E; }
+.pcard__head { display: flex; align-items: center; gap: 8px; padding: 14px 20px; border-bottom: 1px solid #2B3346; }
 .pcard__head-icon { color: var(--accent); flex-shrink: 0; }
-.pcard__head-title { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 3px; color: #3D4460; }
+.pcard__head-title { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 3px; color: #616C8A; }
 .pcard__body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
 .pcard__body--row { flex-direction: row; gap: 12px; }
 .pcard__field { display: flex; flex-direction: column; }
-.pcard__field-hint { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 400; letter-spacing: 0; color: #3D4460; margin-left: 6px; }
+.pcard__field-hint { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 400; letter-spacing: 0; color: #616C8A; margin-left: 6px; }
 
 /* Messages */
 .pcard__msg { display: flex; align-items: center; gap: 6px; font-family: 'Inter', sans-serif; font-size: 12px; padding: 8px 12px; border-radius: 4px; }
@@ -286,13 +286,13 @@ const roleColor = computed(() => ROLE_COLOR[auth.user?.game_role ?? ''] ?? '#889
 /* Theme options */
 .theme-option {
   flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px;
-  background: #0D1018; border: 1px solid #1A1F2E; border-radius: 8px; cursor: pointer;
+  background: #151A27; border: 1px solid #2B3346; border-radius: 8px; cursor: pointer;
   color: #8892B0; transition: all .2s;
   font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 1.5px;
 }
-.theme-option:hover { border-color: #2A2F40; color: #EEF2FF; }
+.theme-option:hover { border-color: #3A4358; color: #EEF2FF; }
 .theme-option--active { border-color: var(--accent); background: color-mix(in srgb,var(--accent) 6%,transparent); color: #EEF2FF; }
-.theme-option__sub { font-family: 'Inter', sans-serif; font-size: 10px; color: #3D4460; font-weight: 400; letter-spacing: 0; }
+.theme-option__sub { font-family: 'Inter', sans-serif; font-size: 10px; color: #616C8A; font-weight: 400; letter-spacing: 0; }
 .theme-option--active .theme-option__sub { color: #8892B0; }
 
 /* Light theme overrides */

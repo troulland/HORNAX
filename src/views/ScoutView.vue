@@ -371,7 +371,7 @@ onMounted(loadSavedTeams)
               v-for="(qData, qKey) in { 'SOLO/DUO': s.soloQ, 'FLEX': s.flexQ }"
               :key="qKey"
               class="scout__rank-block"
-              :style="qData ? { '--tc': TIER_COLOR[qData.tier] } : { '--tc': '#3D4460' }"
+              :style="qData ? { '--tc': TIER_COLOR[qData.tier] } : { '--tc': '#616C8A' }"
             >
               <span class="scout__rank-label">{{ qKey }}</span>
               <div v-if="qData" class="scout__rank-body">
@@ -536,7 +536,7 @@ onMounted(loadSavedTeams)
 .scout__title { font-family: 'Rajdhani', sans-serif; font-size: 30px; font-weight: 700; letter-spacing: 4px; color: #EEF2FF; margin: 0; }
 
 /* Form card */
-.scout__form-card { background: #111520; border: 1px solid #1A1F2E; border-radius: 10px; padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; }
+.scout__form-card { background: #1B2030; border: 1px solid #2B3346; border-radius: 10px; padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; }
 .scout__form { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
 .scout__field { display: flex; flex-direction: column; gap: 5px; }
 .scout__field--wide { flex: 1; min-width: 200px; }
@@ -549,12 +549,12 @@ onMounted(loadSavedTeams)
 }
 .scout__add-btn:disabled { opacity: .4; cursor: not-allowed; }
 .scout__add-btn:not(:disabled):hover { opacity: .85; }
-.scout__hint { font-family: 'Inter', sans-serif; font-size: 11px; color: #3D4460; margin: 0; }
+.scout__hint { font-family: 'Inter', sans-serif; font-size: 11px; color: #616C8A; margin: 0; }
 
 /* Empty */
 .scout__empty { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 80px 20px; text-align: center; }
-.scout__empty-icon { color: #1A1F2E; }
-.scout__empty-title { font-family: 'Rajdhani', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: 2px; color: #3D4460; }
+.scout__empty-icon { color: #2B3346; }
+.scout__empty-title { font-family: 'Rajdhani', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: 2px; color: #616C8A; }
 .scout__empty-sub { font-family: 'Inter', sans-serif; font-size: 12px; color: #2A3050; }
 
 /* Grille de cartes (≈ 3 par ligne, responsive) */
@@ -665,12 +665,12 @@ onMounted(loadSavedTeams)
 .scout__carousel-wrap { display: flex; flex-direction: column; gap: 10px; }
 .scout__carousel-nav {
   display: flex; align-items: center; gap: 10px;
-  background: #111520; border: 1px solid #1A1F2E; border-radius: 8px;
+  background: #1B2030; border: 1px solid #2B3346; border-radius: 8px;
   padding: 8px 12px;
 }
 .scout__nav-btn {
   width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
-  background: #0D1018; border: 1px solid #1A1F2E; border-radius: 5px;
+  background: #151A27; border: 1px solid #2B3346; border-radius: 5px;
   color: #8892B0; cursor: pointer; transition: all .15s; flex-shrink: 0;
 }
 .scout__nav-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
@@ -678,11 +678,11 @@ onMounted(loadSavedTeams)
 .scout__dots { display: flex; gap: 6px; flex: 1; justify-content: center; flex-wrap: wrap; }
 .scout__dot {
   width: 8px; height: 8px; border-radius: 50%;
-  background: #1A1F2E; border: none; cursor: pointer; transition: all .2s; padding: 0;
+  background: #2B3346; border: none; cursor: pointer; transition: all .2s; padding: 0;
 }
 .scout__dot--active { background: var(--accent); transform: scale(1.3); }
-.scout__dot:hover:not(.scout__dot--active) { background: #3D4460; }
-.scout__carousel-counter { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 1px; color: #3D4460; flex-shrink: 0; }
+.scout__dot:hover:not(.scout__dot--active) { background: #616C8A; }
+.scout__carousel-counter { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 1px; color: #616C8A; flex-shrink: 0; }
 .scout__carousel-viewport { overflow: hidden; border-radius: 10px; }
 .scout__carousel-track {
   display: flex; transition: transform .35s cubic-bezier(.4,0,.2,1);
@@ -691,7 +691,7 @@ onMounted(loadSavedTeams)
 
 /* Card */
 .scout__card {
-  background: #111520; border: 1px solid #1A1F2E; border-radius: 10px;
+  background: #1B2030; border: 1px solid #2B3346; border-radius: 10px;
   overflow: hidden; display: flex; flex-direction: column; transition: border-color .2s;
 }
 .scout__card:hover { border-color: color-mix(in srgb, var(--accent) 30%, transparent); }
@@ -699,12 +699,12 @@ onMounted(loadSavedTeams)
 
 .scout__card-head {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 14px; border-bottom: 1px solid #1A1F2E;
-  background: #0D1018;
+  padding: 12px 14px; border-bottom: 1px solid #2B3346;
+  background: #151A27;
 }
 .scout__card-id { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
 .scout__card-name { font-family: 'Rajdhani', sans-serif; font-size: 16px; font-weight: 700; color: #EEF2FF; letter-spacing: 1px; }
-.scout__card-tag  { font-family: 'Rajdhani', sans-serif; font-size: 12px; color: #3D4460; }
+.scout__card-tag  { font-family: 'Rajdhani', sans-serif; font-size: 12px; color: #616C8A; }
 .scout__card-region { font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 1.5px; color: var(--accent); background: color-mix(in srgb,var(--accent) 10%,transparent); border: 1px solid color-mix(in srgb,var(--accent) 25%,transparent); border-radius: 3px; padding: 1px 5px; }
 .scout__card-actions { display: flex; gap: 4px; flex-shrink: 0; }
 
@@ -718,23 +718,23 @@ onMounted(loadSavedTeams)
 
 /* Loader */
 .scout__card-loader { padding: 20px 16px; display: flex; flex-direction: column; gap: 8px; }
-.scout__loader-bar { height: 2px; background: #1A1F2E; border-radius: 1px; overflow: hidden; position: relative; }
+.scout__loader-bar { height: 2px; background: #2B3346; border-radius: 1px; overflow: hidden; position: relative; }
 .scout__loader-bar::after { content: ''; position: absolute; inset-y: 0; width: 40%; background: var(--accent); animation: slide 1.2s ease-in-out infinite; }
 @keyframes slide { 0% { left: -40%; } 100% { left: 100%; } }
-.scout__loader-text { font-family: 'Inter', sans-serif; font-size: 11px; color: #3D4460; }
+.scout__loader-text { font-family: 'Inter', sans-serif; font-size: 11px; color: #616C8A; }
 
 /* Error */
 .scout__card-err { padding: 16px; font-family: 'Inter', sans-serif; font-size: 12px; color: #EF4444; }
 
 /* Ranks */
-.scout__ranks { display: flex; gap: 1px; background: #1A1F2E; }
+.scout__ranks { display: flex; gap: 1px; background: #2B3346; }
 .scout__rank-block {
-  flex: 1; padding: 12px 14px; background: #111520;
+  flex: 1; padding: 12px 14px; background: #1B2030;
   display: flex; flex-direction: column; gap: 8px;
 }
-.scout__rank-label { font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 2px; color: #3D4460; }
+.scout__rank-label { font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 2px; color: #616C8A; }
 .scout__rank-body { display: flex; align-items: center; gap: 10px; }
-.scout__rank-img { width: 52px; height: 52px; object-fit: contain; filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--tc, #3D4460) 50%, transparent)); flex-shrink: 0; }
+.scout__rank-img { width: 52px; height: 52px; object-fit: contain; filter: drop-shadow(0 2px 6px color-mix(in srgb, var(--tc, #616C8A) 50%, transparent)); flex-shrink: 0; }
 .scout__rank-letter { font-family: 'Rajdhani', sans-serif; font-size: 36px; font-weight: 900; flex-shrink: 0; }
 .scout__rank-info { display: flex; flex-direction: column; gap: 2px; }
 .scout__rank-tier { font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 1px; line-height: 1; }
@@ -743,23 +743,23 @@ onMounted(loadSavedTeams)
 .scout__rank-unranked { font-family: 'Rajdhani', sans-serif; font-size: 13px; color: #2A3050; padding: 10px 0; }
 
 /* Champs */
-.scout__champs { padding: 12px 14px; border-top: 1px solid #1A1F2E; }
-.scout__champs-title { font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 2px; color: #3D4460; margin-bottom: 10px; }
+.scout__champs { padding: 12px 14px; border-top: 1px solid #2B3346; }
+.scout__champs-title { font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 2px; color: #616C8A; margin-bottom: 10px; }
 .scout__champs-sub { text-transform: none; font-size: 8px; color: #2A3050; }
 .scout__champs-list { display: flex; flex-direction: column; gap: 6px; }
 .scout__champ {
   display: grid; grid-template-columns: 32px 1fr auto auto;
   align-items: center; gap: 8px; padding: 5px 6px; border-radius: 6px;
-  background: #0D1018; border: 1px solid rgba(255,255,255,.03);
+  background: #151A27; border: 1px solid rgba(255,255,255,.03);
 }
-.scout__champ-img  { width: 32px; height: 32px; border-radius: 5px; object-fit: cover; border: 1px solid #1A1F2E; flex-shrink: 0; }
+.scout__champ-img  { width: 32px; height: 32px; border-radius: 5px; object-fit: cover; border: 1px solid #2B3346; flex-shrink: 0; }
 .scout__champ-body { display: flex; flex-direction: column; gap: 1px; min-width: 0; overflow: hidden; }
 .scout__champ-name { font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700; color: #EEF2FF; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .scout__champ-games { font-family: 'Inter', sans-serif; font-size: 10px; color: #8892B0; white-space: nowrap; }
 .scout__champ-wr   { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700; white-space: nowrap; }
 .scout__champ-kda  { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; white-space: nowrap; min-width: 52px; text-align: right; }
 
-.scout__no-champs { padding: 14px 16px; font-family: 'Inter', sans-serif; font-size: 11px; color: #3D4460; border-top: 1px solid #1A1F2E; }
+.scout__no-champs { padding: 14px 16px; font-family: 'Inter', sans-serif; font-size: 11px; color: #616C8A; border-top: 1px solid #2B3346; }
 
 /* Light theme */
 html[data-theme="light"] .scout__form-card { background: #FFFFFF; border-color: #E0E3EF; }
