@@ -1,13 +1,18 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { RefreshCw, Swords, Pencil, X, Upload } from 'lucide-vue-next'
-import { useRiotStore, type ScrimStats, type ScrimSeries, type ScrimGameLite } from '@/stores/riot'
+import { RefreshCw, Swords, Pencil, X, Upload, Ticket, Copy, Check } from 'lucide-vue-next'
+import { useRiotStore, type ScrimStats, type ScrimSeries, type ScrimGameLite, type StoredTournamentCode } from '@/stores/riot'
+import { useAuthStore } from '@/stores/auth'
 import { champIcon, fmtDur, fmtAgo, wrColor } from '@/utils/lol'
 import { STATIC_BASE } from '@/config'
 
 const riot = useRiotStore()
+const auth = useAuthStore()
 const router = useRouter()
+
+// Les viewers (game_role null, lecture seule) ne génèrent pas de codes.
+const canGenerate = computed(() => !!auth.user?.game_role)
 
 const stats = ref<ScrimStats | null>(null)
 const series = ref<ScrimSeries[]>([])
@@ -58,6 +63,38 @@ async function saveEdit() {
   if (ok) { editing.value = null; await load() }
 }
 
+// ── génération de codes de tournoi ──────────────────────────
+const showCodes = ref(false)
+const codeForm = ref({ count: 1, teamSize: 5, mapType: 'SUMMONERS_RIFT', pickType: 'TOURNAMENT_DRAFT', spectatorType: 'ALL', metadata: '' })
+const generating = ref(false)
+const genResult = ref<string[]>([])
+const genError = ref('')
+const copied = ref<string | null>(null)
+const history = ref<StoredTournamentCode[]>([])
+
+async function openCodes() {
+  showCodes.value = true
+  genResult.value = []
+  genError.value = ''
+  history.value = await riot.fetchTournamentCodes()
+}
+async function submitCodes() {
+  generating.value = true
+  genError.value = ''
+  const r = await riot.generateTournamentCode({ ...codeForm.value, metadata: codeForm.value.metadata.trim() || null })
+  generating.value = false
+  if (r.error) { genError.value = r.error; return }
+  genResult.value = r.codes ?? []
+  history.value = await riot.fetchTournamentCodes()
+}
+async function copyCode(code: string) {
+  try {
+    await navigator.clipboard.writeText(code)
+    copied.value = code
+    setTimeout(() => { if (copied.value === code) copied.value = null }, 1500)
+  } catch { /* presse-papiers indisponible */ }
+}
+
 onMounted(async () => {
   await load()
   // synchro auto en arrière-plan (debounce 15 min côté serveur) → espace partagé équipe
@@ -72,10 +109,15 @@ onMounted(async () => {
         <h1 class="page__title">SCRIMS</h1>
         <p class="page__sub">Parties en code de tournoi · 30 derniers jours · partagé avec la team</p>
       </div>
-      <button class="hx-btn-primary sync-btn" :disabled="riot.syncing" @click="sync">
-        <RefreshCw :size="15" :class="{ spin: riot.syncing }" />
-        {{ riot.syncing ? 'Synchro…' : 'Synchroniser' }}
-      </button>
+      <div class="head-actions">
+        <button v-if="canGenerate" class="hx-btn-ghost code-btn" @click="openCodes">
+          <Ticket :size="15" /> Code de tournoi
+        </button>
+        <button class="hx-btn-primary sync-btn" :disabled="riot.syncing" @click="sync">
+          <RefreshCw :size="15" :class="{ spin: riot.syncing }" />
+          {{ riot.syncing ? 'Synchro…' : 'Synchroniser' }}
+        </button>
+      </div>
     </header>
 
     <!-- KPIs + bloc bleu/rouge (un cadre, séparé en deux) -->
@@ -189,6 +231,89 @@ onMounted(async () => {
         </div>
       </div>
     </Teleport>
+
+    <!-- Modal génération de codes de tournoi -->
+    <Teleport to="body">
+      <div v-if="showCodes" class="modal-bg" @click.self="showCodes = false">
+        <div class="modal modal--wide">
+          <div class="modal__head">
+            <span>Générer un code de tournoi</span>
+            <button class="modal__close" @click="showCodes = false"><X :size="16" /></button>
+          </div>
+
+          <div class="code-grid">
+            <div class="fld">
+              <label class="hx-label">Nombre de codes</label>
+              <input v-model.number="codeForm.count" type="number" min="1" max="100" class="hx-input" />
+            </div>
+            <div class="fld">
+              <label class="hx-label">Joueurs / équipe</label>
+              <select v-model.number="codeForm.teamSize" class="hx-input">
+                <option v-for="n in 5" :key="n" :value="n">{{ n }}v{{ n }}</option>
+              </select>
+            </div>
+            <div class="fld">
+              <label class="hx-label">Carte</label>
+              <select v-model="codeForm.mapType" class="hx-input">
+                <option value="SUMMONERS_RIFT">Faille de l'invocateur</option>
+                <option value="HOWLING_ABYSS">Abîme hurlant (ARAM)</option>
+              </select>
+            </div>
+            <div class="fld">
+              <label class="hx-label">Mode de pick</label>
+              <select v-model="codeForm.pickType" class="hx-input">
+                <option value="TOURNAMENT_DRAFT">Draft tournoi</option>
+                <option value="DRAFT_MODE">Draft standard</option>
+                <option value="BLIND_PICK">Blind pick</option>
+                <option value="ALL_RANDOM">All random</option>
+              </select>
+            </div>
+            <div class="fld">
+              <label class="hx-label">Spectateurs</label>
+              <select v-model="codeForm.spectatorType" class="hx-input">
+                <option value="ALL">Tous</option>
+                <option value="LOBBYONLY">Lobby uniquement</option>
+                <option value="NONE">Aucun</option>
+              </select>
+            </div>
+            <div class="fld">
+              <label class="hx-label">Note (optionnel)</label>
+              <input v-model="codeForm.metadata" class="hx-input" placeholder="ex. vs Team X — BO3" />
+            </div>
+          </div>
+
+          <p v-if="genError" class="code-err">{{ genError }}</p>
+
+          <div v-if="genResult.length" class="code-out">
+            <div v-for="c in genResult" :key="c" class="code-row">
+              <code>{{ c }}</code>
+              <button class="code-copy" @click="copyCode(c)">
+                <component :is="copied === c ? Check : Copy" :size="14" />
+                {{ copied === c ? 'Copié' : 'Copier' }}
+              </button>
+            </div>
+          </div>
+
+          <div v-if="history.length" class="code-hist">
+            <span class="eyebrow">Derniers codes générés</span>
+            <div v-for="c in history" :key="c.code" class="code-row hist">
+              <code>{{ c.code }}</code>
+              <span class="code-meta">{{ c.team_size }}v{{ c.team_size }} · {{ c.metadata || '—' }} · {{ c.created_by_name || '?' }}</span>
+              <button class="code-copy icon" :title="copied === c.code ? 'Copié' : 'Copier'" @click="copyCode(c.code)">
+                <component :is="copied === c.code ? Check : Copy" :size="14" />
+              </button>
+            </div>
+          </div>
+
+          <div class="modal__actions">
+            <button class="hx-btn-ghost" @click="showCodes = false">Fermer</button>
+            <button class="hx-btn-primary" :disabled="generating" @click="submitCodes">
+              {{ generating ? 'Génération…' : 'Générer' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -198,7 +323,9 @@ onMounted(async () => {
 .page__head { display: flex; align-items: center; justify-content: space-between; }
 .page__title { font-family: 'Rajdhani', sans-serif; font-size: 26px; font-weight: 700; letter-spacing: 3px; color: var(--t-primary); }
 .page__sub { font-size: 13px; color: var(--t-dim); margin-top: 2px; }
+.head-actions { display: flex; align-items: center; gap: 10px; }
 .sync-btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 20px; font-size: 13px; }
+.code-btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; font-size: 13px; }
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -275,6 +402,24 @@ onMounted(async () => {
 .modal__actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
 .modal__actions .hx-btn-primary, .modal__actions .hx-btn-ghost { padding: 9px 18px; }
 
+/* Modal codes de tournoi */
+.modal--wide { max-width: 560px; }
+.code-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 14px; }
+.fld { display: flex; flex-direction: column; gap: 5px; }
+.fld select.hx-input { appearance: none; cursor: pointer; }
+.code-err { margin-top: 14px; padding: 10px 12px; border-radius: 8px; font-size: 13px; color: #EF4444; background: rgba(239,68,68,.10); border: 1px solid rgba(239,68,68,.25); }
+.code-out { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+.code-row { display: flex; align-items: center; gap: 10px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px 8px 12px; }
+.code-row code { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px; color: var(--t-primary); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.code-copy { display: inline-flex; align-items: center; gap: 6px; background: transparent; border: 1px solid var(--border); color: var(--t-dim); border-radius: 6px; padding: 6px 10px; font-size: 12px; font-family: inherit; cursor: pointer; transition: all .15s; }
+.code-copy:hover { color: var(--accent); border-color: var(--accent); }
+.code-copy.icon { padding: 6px; }
+.code-hist { margin-top: 20px; display: flex; flex-direction: column; gap: 8px; }
+.code-hist .eyebrow { margin-bottom: 2px; }
+.code-row.hist { background: var(--bg-surface); }
+.code-row.hist code { flex: 0 0 auto; }
+.code-meta { flex: 1; font-size: 11px; color: var(--t-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 @media (max-width: 768px) {
   .stats { grid-template-columns: 1fr 1fr; }
   .sideblock { grid-column: 1 / -1; }
@@ -284,5 +429,7 @@ onMounted(async () => {
   .slot { width: 46px; }
   .slot img { width: 32px; height: 32px; }
   .bo__opp { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .head-actions { flex-direction: column; align-items: stretch; }
+  .code-grid { grid-template-columns: 1fr; }
 }
 </style>

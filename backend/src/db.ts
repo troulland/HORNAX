@@ -183,6 +183,27 @@ export async function initDb(): Promise<void> {
       created_at    TEXT DEFAULT (datetime('now'))
     );
     CREATE INDEX IF NOT EXISTS idx_scout_owner ON scout_team(owner_team_id);
+
+    -- Config clé/valeur (ex : id provider & id tournoi Riot mis en cache)
+    CREATE TABLE IF NOT EXISTS app_config (
+      key   TEXT PRIMARY KEY,
+      value TEXT
+    );
+
+    -- Codes de tournoi générés via l'API Tournament-V5 de Riot
+    CREATE TABLE IF NOT EXISTS tournament_code (
+      code           TEXT PRIMARY KEY,
+      team_id        INTEGER NOT NULL,
+      tournament_id  INTEGER,
+      map_type       TEXT,
+      pick_type      TEXT,
+      spectator_type TEXT,
+      team_size      INTEGER,
+      metadata       TEXT,
+      created_by     INTEGER,
+      created_at     TEXT DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_tc_team ON tournament_code(team_id);
   `)
 
   // Cache d'analyse + cartes joueurs d'une équipe scoutée

@@ -61,8 +61,8 @@ export const limiter = new RateLimiter()
 export class RiotNotFound extends Error {}
 export class RiotKeyError extends Error {}
 
-/** GET Riot throttlé + robuste (retry 429 / 5xx). Renvoie le JSON typé. */
-export async function riotGet<T = any>(url: string, retries = 3): Promise<T> {
+/** Requête Riot throttlée + robuste (retry 429 / 5xx). Renvoie le JSON typé. */
+async function riotRequest<T>(url: string, init: RequestInit, retries: number): Promise<T> {
   const key = process.env.RIOT_API_KEY
   if (!key || key.startsWith('RGAPI-REMPLACE')) {
     throw new RiotKeyError('Clé API Riot non configurée (RIOT_API_KEY)')
@@ -70,7 +70,10 @@ export async function riotGet<T = any>(url: string, retries = 3): Promise<T> {
 
   for (let attempt = 0; ; attempt++) {
     await limiter.acquire()
-    const res = await fetch(url, { headers: { 'X-Riot-Token': key } })
+    const res = await fetch(url, {
+      ...init,
+      headers: { 'X-Riot-Token': key, ...(init.headers ?? {}) },
+    })
 
     if (res.status === 429) {
       const retryAfter = Number(res.headers.get('Retry-After') ?? '2')
@@ -78,11 +81,27 @@ export async function riotGet<T = any>(url: string, retries = 3): Promise<T> {
       continue
     }
     if (res.status === 404) throw new RiotNotFound('Ressource Riot introuvable')
-    if (res.status === 403) throw new RiotKeyError('Clé API Riot expirée ou invalide')
+    if (res.status === 403) throw new RiotKeyError('Clé API Riot expirée ou invalide (accès Tournament requis ?)')
     if (!res.ok) {
       if (res.status >= 500 && attempt < retries) { await sleep(1_000 * (attempt + 1)); continue }
-      throw new Error(`Erreur Riot API (${res.status})`)
+      // Corps d'erreur souvent explicite côté Tournament API → on le remonte.
+      const detail = await res.text().catch(() => '')
+      throw new Error(`Erreur Riot API (${res.status})${detail ? ` — ${detail.slice(0, 300)}` : ''}`)
     }
     return res.json() as Promise<T>
   }
+}
+
+/** GET Riot throttlé + robuste. */
+export function riotGet<T = any>(url: string, retries = 3): Promise<T> {
+  return riotRequest<T>(url, { method: 'GET' }, retries)
+}
+
+/** POST Riot throttlé + robuste (Tournament API, corps JSON). */
+export function riotPost<T = any>(url: string, body: unknown, retries = 2): Promise<T> {
+  return riotRequest<T>(
+    url,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) },
+    retries,
+  )
 }

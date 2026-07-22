@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git log *)",
+      "Bash(git credential-manager *)",
+      "Bash(cmdkey /list)",
+      "Bash(git credential *)",
+      "Bash(git -c credential.interactive=false push origin main)"
+    ]
+  }
+}

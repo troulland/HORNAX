@@ -42,6 +42,24 @@ export interface ScrimStats {
   blue: { games: number; wins: number; winRate: number }
   red: { games: number; wins: number; winRate: number }
 }
+export interface TournamentCodeOptions {
+  count?: number
+  teamSize?: number
+  mapType?: string
+  pickType?: string
+  spectatorType?: string
+  metadata?: string | null
+}
+export interface StoredTournamentCode {
+  code: string
+  map_type: string
+  pick_type: string
+  spectator_type: string
+  team_size: number
+  metadata: string | null
+  created_at: string
+  created_by_name: string | null
+}
 export interface RankedGame {
   match_id: string
   game_start: number
@@ -94,6 +112,27 @@ export const useRiotStore = defineStore('riot', () => {
     return res.ok
   }
 
+  /** Génère des codes de tournoi. Renvoie { codes } ou { error } (message lisible). */
+  async function generateTournamentCode(
+    opts: TournamentCodeOptions,
+  ): Promise<{ codes?: string[]; error?: string }> {
+    try {
+      const res = await fetch(`${API}/scrims/tournament-code`, {
+        method: 'POST', headers: headers(), body: JSON.stringify(opts),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) return { error: data.error || 'Échec de génération' }
+      return { codes: data.codes ?? [] }
+    } catch {
+      return { error: 'Serveur injoignable' }
+    }
+  }
+
+  async function fetchTournamentCodes(): Promise<StoredTournamentCode[]> {
+    const res = await fetch(`${API}/scrims/tournament-codes`, { headers: headers() })
+    return res.ok ? (await res.json()).codes : []
+  }
+
   /**
    * Convertit le logo en data URL (base64), redimensionné petit, pour le stocker
    * DIRECTEMENT en base (Turso). Le disque de Render (gratuit) étant éphémère,
@@ -124,5 +163,5 @@ export const useRiotStore = defineStore('riot', () => {
     })
   }
 
-  return { syncing, sync, fetchScrims, fetchSoloq, fetchFlex, editSeries, uploadLogo }
+  return { syncing, sync, fetchScrims, fetchSoloq, fetchFlex, editSeries, uploadLogo, generateTournamentCode, fetchTournamentCodes }
 })

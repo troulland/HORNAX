@@ -35,6 +35,13 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', service: 'hornax-api', timestamp: new Date().toISOString() })
 })
 
+// Callback de résultats de tournoi (Riot POST le résultat d'une game jouée sur un code).
+// URL déclarée à l'enregistrement du provider — on accuse simplement réception (200).
+app.post('/api/riot/tournament-callback', (req: Request, res: Response) => {
+  console.log('[tournament-callback]', JSON.stringify(req.body))
+  res.sendStatus(200)
+})
+
 // Middleware d'erreurs — attrape les rejets des handlers async (voir utils/asyncHandler)
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   console.error('[API error]', err)
